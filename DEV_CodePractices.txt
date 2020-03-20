@@ -1,0 +1,31 @@
+
+COMMON CODE PRACTICES
+
+This document will define code practices for this project that need to be adopted before new code can be approved. This is an active document that will be changed over time as new code practices get developed.
+
+
+1. All functions need to have a description in the cpp files.
+
+2. All class variable members need to have m_ at the begining of the varible.
+
+Example
+m_bFlag for bool
+m_sMyString for strings
+m_iMyNumber for int
+m_lMynumber for long
+m_txtCtl for any class pointer you only need m_
+
+3. If you want to use the global setting structure in your code, include the global.h header at the top of your cpp file.
+
+Example
+Settings.sDatabase
+Settings.sUser
+
+
+4. Utility.cpp is provided for all static utility functions.
+Examples
+    //DATABASE UTILITIES
+    static wxString GetTableNameFromDBWorksTables(long lTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableFieldNameFromTable(wxString sTableName, long lColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+    static void LoadStringArrayFromDatabaseTable(wxArrayString &sArray, long lTableId, long lColumnNumber);// Load an StringArray with from a table given the tableId and Column number
+
