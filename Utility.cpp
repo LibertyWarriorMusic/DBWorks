@@ -216,6 +216,23 @@ bool Utility::HasFlagPassword(wxString flag)
 
 }
 
+bool Utility::HasFlagWeblink(wxString flag)
+{
+    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
+    if (findSelection != wxNOT_FOUND)  {
+        return false;
+    }
+
+    int find = flag.Find("WEBLINK");
+
+    if (find != wxNOT_FOUND)  {
+        return true;
+    }
+
+    return false;
+
+}
+
 // Check to see if we have a read only flag set but make sure it's not in the following selection line;
 //SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
 bool Utility::HasFlagSelection(wxString flag)

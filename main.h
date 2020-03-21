@@ -15,6 +15,9 @@ class MainFrame : public wxFrame
         wxToolBar * m_Toolbar;
         HtmlHelp *m_HtmlWin;
 
+        bool m_bSettingsLoaded=false;
+
+
         wxBoxSizer* mainFormSizerForGrid;
 
         wxString m_sDefaultUsergroupFilterCondition; // Depending on the type of user, you may not have access to certain table types. Example a guest can't see system table types.
@@ -64,7 +67,7 @@ class MainFrame : public wxFrame
         void OnbHelp( wxCommandEvent& event );
         static void CreateToolBars();
 
-
+        void SetSettingsLoaded(bool bSettingsLoadedFlag);
 
         bool Destroy() override;
 
@@ -79,7 +82,7 @@ class MyApp: public wxApp
 {
 private:
     MainFrame *m_MainFrame;
-    static void LoadAppSettings();
+    static bool LoadAppSettings();
     static void ProcessLine(wxString line);
 public:
     bool OnInit() override;

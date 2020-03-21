@@ -10,8 +10,10 @@
 
 // We must forward declare the array because it is used
 // inside the class declaration.
+class wxHyperlinkCtrl;
+class wxDatePickerCtrl;
 
-#include <wx/datectrl.h>
+
 class FieldItem
 {
 public:
@@ -23,6 +25,7 @@ public:
     wxStaticText *TitleCtl;
     wxTextCtrl *textCtl;
     wxComboBox *comCtl;
+    wxHyperlinkCtrl *linkCtl;
     wxDatePickerCtrl *datePickerCtl;
 
     FieldItem();

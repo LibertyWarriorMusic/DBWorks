@@ -58,8 +58,6 @@ enum {
     ID_HELP
 };
 
-
-
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(ID_ButtonAction, MainFrame::OnButtonAction)
     EVT_MENU(MENU_New, MainFrame::NewFile)
@@ -86,7 +84,7 @@ bool MyApp::OnInit()
 {
     
 
-    LoadAppSettings();
+    bool bSettingLoaded= LoadAppSettings();
     
     m_MainFrame = new MainFrame((wxFrame*) nullptr,
                                    -1,
@@ -97,11 +95,14 @@ bool MyApp::OnInit()
                                   );
     
     m_MainFrame->Show(true);
-    
+
+
+    m_MainFrame->SetSettingsLoaded(bSettingLoaded);
+
     return true;
 }
 
-void MyApp::LoadAppSettings()
+bool MyApp::LoadAppSettings()
 {
     wxString        str;
     wxString strExe = wxStandardPaths::Get().GetExecutablePath();
@@ -114,19 +115,26 @@ void MyApp::LoadAppSettings()
 
     // open the file
     wxTextFile      tfile;
-    tfile.Open(strExe);
-
-    // read the first line
-    str = tfile.GetFirstLine();
-    ProcessLine(str); // placeholder, do whatever you want with the string
-
-    // read all lines one by one
-    // until the end of the file
-    while(!tfile.Eof())
-    {
-        str = tfile.GetNextLine();
+    if(tfile.Open(strExe)){
+        // read the first line
+        str = tfile.GetFirstLine();
         ProcessLine(str); // placeholder, do whatever you want with the string
+
+        // read all lines one by one
+        // until the end of the file
+        while(!tfile.Eof())
+        {
+            str = tfile.GetNextLine();
+            ProcessLine(str); // placeholder, do whatever you want with the string
+        }
     }
+    else{
+        //
+        //There is nothing else to do here because the setting already are loaded with default values;
+        return true;
+    }
+
+    return false;
 }
 
 void MyApp::ProcessLine(wxString line)
@@ -193,11 +201,6 @@ void MyApp::ProcessLine(wxString line)
     }else if (setting=="DOUBLE_CLICK_GRID_CELL"){
         Settings.sDClickGridCell=value;
     }
-
-
-
-
-
 }
 
 //=============
@@ -211,6 +214,11 @@ void MainFrame::OnButtonAction( wxCommandEvent& event )
     
 }
 
+void MainFrame::SetSettingsLoaded(bool bSettingsLoadedFlag)
+{
+    m_bSettingsLoaded=bSettingsLoadedFlag;
+
+}
 MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
     m_TableForm = nullptr;
@@ -360,7 +368,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     this->SetMenuBar( m_Menubar );
 
     m_Menubar->Show();
-  
+
+
 }
 
 MainFrame::~MainFrame() = default;

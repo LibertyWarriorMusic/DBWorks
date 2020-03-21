@@ -14,6 +14,8 @@
 #define DONT_ALLOW_TO_GROW 0
 #define WINDOW_WIDTH 600
 
+
+
 ///////////////////////////////////////////////////////////////////////////
 // C++ code generated with wxFormBuilder (version 3.9.0 Feb 26 2020)
 // http://www.wxformbuilder.org/
@@ -24,9 +26,9 @@
 #include <wx/stattext.h>
 #include <wx/gdicmn.h>
 #include <wx/textctrl.h>
-
+#include <wx/hyperlink.h>
 #include <wx/combobox.h>
-#include "wx/odcombo.h"
+#include <wx/datectrl.h>
 #include <wx/button.h>
 #include <wx/sizer.h>
 #include <wx/frame.h>
@@ -57,6 +59,7 @@ FieldItem::FieldItem(){
     textCtl=nullptr;
     comCtl=nullptr;
     datePickerCtl=nullptr;
+    linkCtl=nullptr;
 }
 
 //EVT_COMBOBOX_CLOSEUP
@@ -249,6 +252,54 @@ void GenericItemForm::CreateFields()
 
                                    if (m_sUse=="VIEW" || Utility::HasFlagReadOnly(itemArray[i].flag))
                                        itemArray[i].datePickerCtl->Disable();
+
+
+                                   calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+
+                                   m_mainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+                               }
+                               else if (Utility::HasFlagWeblink(sFlags))
+                                   {
+
+                                   bool bWebLink = false;
+                                   int style = 0;
+
+                                   if (m_sUse=="VIEW" || Utility::HasFlagReadOnly(itemArray[i].flag)){
+                                       style = wxTE_READONLY;
+                                       bWebLink=true;
+                                   }
+
+                                   //The only place we actually want to see the password is when we view the table.
+                                   if(Utility::HasFlagPassword(itemArray[i].flag) && m_sUse!="VIEW" && !bWebLink)
+                                       style = wxTE_PASSWORD;
+
+                                    if(bWebLink){
+                                        //This Hyperlink control needs to have a URL and label, so I just added google, but it gets writen over
+                                        itemArray[i].linkCtl = new wxHyperlinkCtrl( this, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
+                                        itemArray[i].linkCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+                                        gSizer1->Add( itemArray[i].linkCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+                                        itemArray[i].linkCtl->SetURL("");
+                                        itemArray[i].linkCtl->SetLabel("");
+
+                                        if(!itemArray[i].defaultValue.IsEmpty()){
+                                            itemArray[i].linkCtl->SetURL(itemArray[i].defaultValue);
+                                            itemArray[i].linkCtl->SetLabel(itemArray[i].defaultValue);
+                                        }
+                                    }else{
+
+                                        itemArray[i].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+                                        itemArray[i].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+                                        gSizer1->Add( itemArray[i].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+
+                                        if(!itemArray[i].defaultValue.IsEmpty())
+                                            itemArray[i].textCtl->SetValue(itemArray[i].defaultValue);
+
+                                    }
+
+
+
 
 
                                    calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
@@ -503,7 +554,9 @@ void GenericItemForm::InsertItem(){
                         sValue = itemArray[i].comCtl->GetValue();
                     else if(itemArray[i].datePickerCtl != nullptr)
                         sValue = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
-                    
+                    else if(itemArray[i].linkCtl != nullptr)
+                        sValue = itemArray[i].linkCtl->GetURL();
+
                     if(itemArray[i].type=="int"){
                         if (i == count-1)
                             queryString = queryString +  sValue+ ")";
@@ -581,7 +634,8 @@ void GenericItemForm::UpdateItem(){
                         sValue = itemArray[i].comCtl->GetValue();
                     else if(itemArray[i].datePickerCtl != nullptr)
                         sValue = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
-
+                    else if(itemArray[i].linkCtl != nullptr)
+                        sValue = itemArray[i].linkCtl->GetURL();
 
          
                     if(itemArray[i].type=="int"){
@@ -706,11 +760,15 @@ void GenericItemForm::LoadFields()
 
                                     if(itemArray[index].textCtl != nullptr)
                                         itemArray[index].textCtl->SetValue(strData1);
-                                    else if(itemArray[index].comCtl != nullptr){
+                                    else if(itemArray[index].comCtl != nullptr)
                                         itemArray[index].comCtl->SetValue(strData1);
-                                    }
                                     else if(itemArray[index].datePickerCtl != nullptr)
                                         itemArray[index].datePickerCtl->SetValue(Utility::StringToDate(strData1));
+                                    else if(itemArray[index].linkCtl != nullptr){
+                                        itemArray[index].linkCtl->SetURL(strData1);
+                                        itemArray[index].linkCtl->SetLabel(strData1);
+                                    }
+
 
                                 }
                             }
@@ -752,8 +810,7 @@ void GenericItemForm::ParseSpecialCharacters()
                 st = itemArray[i].textCtl->GetValue();
             else if(itemArray[i].comCtl != nullptr)
                 st = itemArray[i].comCtl->GetValue();
-            //  else if(itemArray[i].datePickerCtl != nullptr)
-            //  st = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
+
 
             st=Utility::Escape(st);
 
@@ -761,25 +818,7 @@ void GenericItemForm::ParseSpecialCharacters()
                 itemArray[i].textCtl->SetValue(st);
             else if(itemArray[i].comCtl != nullptr)
                 itemArray[i].comCtl->SetValue(st);
-            //else if(itemArray[i].datePickerCtl != nullptr)
-            //itemArray[i].datePickerCtl->SetValue(Utility::StringToDate(st));
 
-/*
-            if(itemArray[i].textCtl != nullptr)
-                st = itemArray[i].textCtl->GetValue();
-            else if(itemArray[i].comCtl != nullptr)
-                st = itemArray[i].comCtl->GetValue();
-            // else if(itemArray[i].datePickerCtl != nullptr)
-            //   st = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
-
-            st=Utility::Escape(st);
-
-            if(itemArray[i].textCtl != nullptr)
-                itemArray[i].textCtl->SetValue(st);
-            else if(itemArray[i].comCtl != nullptr)
-                itemArray[i].comCtl->SetValue(st);
-            //else if(itemArray[i].datePickerCtl != nullptr)
-            //itemArray[i].datePickerCtl->SetValue(Utility::StringToDate(st));*/
         }
     }
 

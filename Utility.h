@@ -16,6 +16,7 @@ public:
     static bool HasFlagSelection(wxString flag);
     static bool HasFlagSelectionAdditive(wxString flag);
     static bool HasFlagLookupSelection(wxString flag);
+    static bool HasFlagWeblink(wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
 
     //USER FUNCTIONS
