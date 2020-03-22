@@ -20,7 +20,8 @@ public:
     // This is needed if the parent can null any pointers to this class so they can be tested for null condition.
     bool Destroy() override;
 
-    void SetPage(const int &DocumentID);
+    void SetPage(const int &DocumentID); // Loads document from database
+    void SetPage(const wxString &Document); // Document is passed as string.
 
 };
 

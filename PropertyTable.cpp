@@ -56,44 +56,15 @@ PropertyTable::PropertyTable( wxWindow* parent, wxWindowID id, const wxString& t
 
 bool PropertyTable::Create()
 {
-
     GenericTable::Create();
-
-
-
-    //Create the Toolbar
-    
-    wxBitmap createTable;
-    wxBitmap deleteTable;
-    wxBitmap bitmapHelp;
-      
-    // Get the path to the images
-    wxString strExe = wxStandardPaths::Get().GetExecutablePath();
-    strExe.Replace( "DBWorks", "images/newTable.png"); //For mac and linux
-    strExe.Replace( "dbworks", "images/newTable.png"); //For mac and linux
-    strExe.Replace( "dbworks.exe", "images/newTable.png"); // For windows.
-      
-      
-      
+    wxBitmap BitMap;
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
-      
-    createTable.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-    
-    strExe.Replace( "newTable.png", "deleteTable.png"); //For mac and linux
-    deleteTable.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-
-    strExe.Replace( "deleteTable.png", "help.png"); //For mac and linux
-    bitmapHelp.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-
     //Add a new toolbar item.
-    //if (toolbar != NULL)
-    //wxMessageBox( "Adding another button");
-    m_Toolbar->AddTool(ID_CREATE_TABLE, wxT("Create Table"), createTable, wxT("Create this table if it doesn't exit."));
-    m_Toolbar->AddTool(ID_DELETE_TABLE, wxT("Delete Table"), deleteTable, wxT("Delele table from the database."));
-    m_Toolbar->AddTool(ID_HELP, wxT("Help"), bitmapHelp, wxT("Help."));
+    Utility::LoadBitmap(BitMap,"newTable.png");
+    m_Toolbar->AddTool(ID_CREATE_TABLE, wxT("Create Table"), BitMap, wxT("Create this table if it doesn't exit."));
+    Utility::LoadBitmap(BitMap,"deleteTable.png");
+    m_Toolbar->AddTool(ID_DELETE_TABLE, wxT("Delete Table"), BitMap, wxT("Delele table from the database."));
     m_Toolbar->Realize();
-
-
     // Window Properties
     this->SetBackgroundColour(wxColour(140,37,37));
     return true;

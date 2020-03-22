@@ -46,3 +46,8 @@ void HtmlHelp::SetPage(const int &DocumentID){
     m_HtmlWin->SetPage(Utility::LoadSystemDocument(DocumentID));
     m_HtmlWin->Show();
 }
+
+void HtmlHelp::SetPage(const wxString &Document){
+    m_HtmlWin->SetPage(Document);
+    m_HtmlWin->Show();
+}

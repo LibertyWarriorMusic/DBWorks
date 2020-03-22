@@ -4,13 +4,190 @@
 #include <wx/wxprec.h>
 #include<wx/wx.h>
 
-
+#include <wx/stdpaths.h>
 #include "global.h"
 #include "Utility.h"
 #include <mysql.h>
 #include <mysql++.h>
 
 using namespace mysqlpp;
+
+wxString Utility::PassHTMLDocument(wxString sDocument)
+{
+
+    int iStartPosition=0;
+    int iEndPosition =0;
+    int iLength = 0;
+
+    iLength = sDocument.Length();
+    wxString QueryString = "";
+
+    FindBetweenTags(QueryString,sDocument,iStartPosition,iEndPosition,"<query>");
+
+    if (QueryString.IsEmpty()){
+        //Ok, we found our first query.
+        //Remove the query string
+
+        return sDocument; // We didn't find any query, just return
+    }
+    else { // We found a query, now we have to extract the record
+
+        //Trim any white spaces from the start and end of the query.
+        QueryString = QueryString.Trim(false);
+        QueryString = QueryString.Trim(true);
+        //Now we have the query, we can remove it from the sDocumentString
+        sDocument = sDocument.Left(iStartPosition) << sDocument.Right(iLength-iEndPosition);
+
+        iStartPosition = 0;
+        iEndPosition =0;
+        iLength = sDocument.Length();
+        wxString sRecordSet;
+
+        FindBetweenTags(sRecordSet, sDocument,iStartPosition,iEndPosition,"<recordset>");
+
+        if(sRecordSet.IsEmpty()){
+            //At this point, we have a query and a string that contains fields that need to be replaced with database values.
+            return sDocument;
+        }
+        else {
+
+            //Now we have a recordset string, we can remove it from the sDocument, it will be replaced multiple times with fields replaced with field values
+            wxString beforeRecordset = sDocument.Left(iStartPosition);
+            wxString recordsetReplacement = ReplaceFieldTagsWithValuesFromTable(sRecordSet,QueryString);
+            wxString afterRecordset = sDocument.Right(iLength-iEndPosition);
+            sDocument = beforeRecordset + recordsetReplacement + afterRecordset;
+        }
+    }
+    return sDocument;
+}
+
+bool Utility::FindBetweenTags(wxString& ReturnString, wxString& sStringToSearch, int &iStartPosition, int &iEndPosition, wxString tag)
+{
+    //First generate the end tag
+    int tagLength = tag.Length();
+    wxString endTag = "</" + tag.Mid(1,tagLength-1);
+
+    int iStart=wxNOT_FOUND;
+    int iEnd=wxNOT_FOUND;
+
+    wxString RecordSetString = "";
+
+    iStart = sStringToSearch.Find(tag);
+    if(iStart!=wxNOT_FOUND){
+
+        iEnd = sStringToSearch.Find(endTag);
+        if(iEnd!=wxNOT_FOUND){
+
+            //We now have a query
+            //<query>select * from blah</query>
+            //Remove the query tags and return the query.
+            RecordSetString = sStringToSearch.Mid(iStart+tagLength,iEnd-(iStart+tagLength));
+
+            iEnd += tagLength+1;
+            iStartPosition = iStart;
+            iEndPosition = iEnd;
+
+        } else
+            return false;
+    }
+    else
+        return false;
+
+    ReturnString = RecordSetString;
+    return true;
+}
+
+
+wxString Utility::ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxString QueryString)
+{
+    wxString result="";
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            wxString RecordSetTemp = Recordset;
+
+            //NOTE: You should get only one row of data.
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                //Reset the record set
+                RecordSetTemp = Recordset;
+                try {
+
+                    //OK, we have to loop search our recordset and extract all the values between the field tables <field>value</field>, then replace them with the value from the database.
+                    int iStartPosition=0;
+                    int iEndPosition =0;
+                    int iLength = 0;
+
+                    iLength = RecordSetTemp.Length();
+                    wxString FieldName="";
+
+                   while (FindBetweenTags(FieldName,RecordSetTemp,iStartPosition,iEndPosition,"<field>")) {
+
+                       FieldName.Trim(false);
+                       FieldName.Trim(true);
+                       wxString strData1(res[currentRow][FieldName], wxConvUTF8);
+
+                       RecordSetTemp = RecordSetTemp.Left(iStartPosition) << strData1 << RecordSetTemp.Right(iLength-iEndPosition);
+                       iStartPosition=0;
+                       iEndPosition =0;
+                       iLength = RecordSetTemp.Length();
+
+                   }
+
+                   result += RecordSetTemp; //Join up all the record sets.
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+
+    return result;
+}
+
+
+
+bool Utility::LoadBitmap(wxBitmap &image, wxString ImageFileName)
+{
+    wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+    strExe.Replace("DBWorks", "images/"+ImageFileName); //For mac and linux
+    strExe.Replace("dbworks", "images/"+ImageFileName); //For mac and linux
+    strExe.Replace("dbworks.exe", "images/"+ImageFileName); // For windows.
+    //  strExe.Replace("view.png", "help.png"); //For mac and linux
+    return image.LoadFile(strExe, wxBITMAP_TYPE_PNG);
+}
 
 wxString Utility::Escape(wxString & str)
 {
@@ -359,7 +536,7 @@ bool Utility::DoesTableExist(wxString sDatabase, wxString sTable)
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -404,7 +581,7 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -446,7 +623,7 @@ wxString Utility::GetTableNameFromSYS_TABLES(long lTableId)
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -501,7 +678,7 @@ wxString Utility::GetTableFieldNameFromTable(wxString sTableName, long lColumnNu
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
     // Connect to the sample database.
@@ -565,7 +742,7 @@ void Utility::LoadStringArrayFromDatabaseTable(wxArrayString &sArray, long lTabl
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -616,7 +793,7 @@ bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
     bool bFoundRecord=false;
@@ -679,7 +856,7 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName, const wxString& s
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -740,7 +917,7 @@ bool Utility::DoesTableExist(wxString sTableName)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
     wxString queryString = "select * from " + sTableName +";";
@@ -782,7 +959,7 @@ wxString Utility::LoadSystemDocument(int documentId)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -840,7 +1017,7 @@ void Utility::ExecuteQuery(const wxString& QueryString, const wxString& sDatabas
 {
     wxString database(sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -879,7 +1056,7 @@ void Utility::ExecuteQuery(const wxString& QueryString)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 

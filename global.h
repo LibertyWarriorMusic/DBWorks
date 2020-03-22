@@ -10,7 +10,7 @@
 struct  GlobalSettings {
     wxString sMessage="";
     wxString sDatabase="information";
-    wxString sUser="root";
+    wxString sDatabaseUser="root";
     wxString sPassword="password";
     wxString sServer="127.0.0.1:3306";
     wxString sUsergroup="SYSTEM_DATABASE_DEVELOPER";

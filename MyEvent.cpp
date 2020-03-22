@@ -14,6 +14,7 @@ MyEvent::MyEvent( wxWindow* win )
     m_bEdit=false; // Right click edit context menu.
     m_bRefreshDatabase=false;
     m_bDestroyed=false;
+    m_bParseDocument=false;
     m_sTableName="";
     m_lTableID=0;
     m_cellValue=""; // The value of the current clicked cell.

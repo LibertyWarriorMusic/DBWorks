@@ -19,6 +19,14 @@ public:
     static bool HasFlagWeblink(wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
 
+    //Parsers
+    static wxString PassHTMLDocument(wxString sDocument);
+    static bool FindBetweenTags(wxString& ReturnString, wxString& sStringToSearch, int &iStartPosition, int &iEndPosition, wxString tag);
+    static wxString ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxString QueryString);
+
+    //LOAD FILE
+    static bool LoadBitmap(wxBitmap &image, wxString ImageFileName);
+
     //USER FUNCTIONS
     static bool IsAdvancedUser();
     static bool IsStandardUser();

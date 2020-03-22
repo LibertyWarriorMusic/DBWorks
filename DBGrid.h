@@ -46,6 +46,7 @@ private:
     //Context Menu Event Functions
     void OnClickProperties(wxCommandEvent& event);
     void OnClickOpen(wxCommandEvent& event);
+    void OnClickOpenDocument(wxCommandEvent& event);
     void OnClickEdit(wxCommandEvent& event);
     void OnClickMenuFilter(wxCommandEvent& event);
     void OnClickMenuFilterShowAll(wxCommandEvent& event);
@@ -86,7 +87,7 @@ public:
 protected:
     void OnGridRClick(wxGridEvent& event );
     void OnGridDLClick(wxGridEvent& event );
-
+    void OnGridClick(wxGridEvent& event );
 
 
 

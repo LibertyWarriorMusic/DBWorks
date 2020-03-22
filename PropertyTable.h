@@ -31,7 +31,7 @@ class PropertyTable : public GenericTable
     protected:
         void OnbCreateTable( wxCommandEvent& event );
         void OnMyEvent(MyEvent& event);
-        void OnbHelp( wxCommandEvent& event );
+        virtual void OnbHelp( wxCommandEvent& event ) override;
 
     public:
         void OnbDeleteTable( wxCommandEvent& event );

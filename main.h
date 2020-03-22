@@ -12,7 +12,7 @@ class MainFrame : public wxFrame
         wxString GetSelectedRowTable(); //Get the current selected grid row from the database
         void OnButtonAction( wxCommandEvent& event );
         DBGrid* m_MainGrid;
-        wxToolBar * m_Toolbar;
+        wxToolBar * m_Toolbar1;
         HtmlHelp *m_HtmlWin;
 
         bool m_bSettingsLoaded=false;
@@ -30,8 +30,10 @@ class MainFrame : public wxFrame
         wxString PrepareDeleteQuery(); //Prepare the delete query
 
         int iOldComboIndex;
-        void OnComboChange(wxCommandEvent& event);
-        void OnComboDropDown( wxCommandEvent& event );
+        void OnUserGroupComboChange(wxCommandEvent& event);
+        void OnUserGroupComboDropDown( wxCommandEvent& event );
+        void OnDatabaseComboChange(wxCommandEvent& event);
+        void OnDatabaseComboDropDown( wxCommandEvent& event );
         void LoadGrid(); //Load or reload the grid from the database.
 
         void CheckIfTableDefinitionsMatchDatabaseTable();
@@ -41,6 +43,10 @@ class MainFrame : public wxFrame
         wxString GetUserWhereCondition();
         void SetGridWhereCondition(wxString whereToBlend="");
 
+        void SetUsergroupWindowVisibility();
+        void Refresh();
+        void PopulateToolbar();
+
     protected:
 
         wxStatusBar* m_StatusBar;
@@ -48,7 +54,8 @@ class MainFrame : public wxFrame
         wxMenu *m_FileMenu;
         GenericTable * m_TableForm;
         wxComboBox * m_DatabaseCombo;
-
+        wxComboBox * m_UserGroupCombo;
+        wxStaticText * m_txtCltUserGroup;
     public:
 
         explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );

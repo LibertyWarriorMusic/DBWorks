@@ -18,6 +18,7 @@ class MyEvent : public wxEvent
     bool m_bEdit;
     bool m_bRefreshDatabase;
     bool m_bDestroyed;
+    bool m_bParseDocument;
 
     wxString m_cellValue; // The value of the current clicked cell.
     wxString m_cellFieldName; // The field name for that cell

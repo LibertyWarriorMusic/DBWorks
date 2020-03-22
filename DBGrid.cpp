@@ -28,12 +28,14 @@ enum {
     ID_MENU_OPEN,
     ID_MENU_EDIT,
     ID_MENU_FILTER,
-    ID_MENU_FILTER_SHOW_ALL
+    ID_MENU_FILTER_SHOW_ALL,
+    ID_MENU_DOCUMENT
 };
 
 wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
     EVT_MENU(ID_MENU_PROPERTIES, DBGrid::OnClickProperties)
     EVT_MENU(ID_MENU_OPEN, DBGrid::OnClickOpen)
+    EVT_MENU(ID_MENU_DOCUMENT, DBGrid::OnClickOpenDocument)
     EVT_MENU(ID_MENU_EDIT, DBGrid::OnClickEdit)
     EVT_MENU(ID_MENU_FILTER, DBGrid::OnClickMenuFilter)
     EVT_MENU(ID_MENU_FILTER_SHOW_ALL, DBGrid::OnClickMenuFilterShowAll)
@@ -48,12 +50,14 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
     m_iCol = 0;
     m_iGetCellRowIndex=0;
 
+
+
     // Connect Events
     Connect(wxEVT_SIZE,wxGridEventHandler( DBGrid::OnSizeGridSpreadSheet ), nullptr, this );
     Connect(wxEVT_GRID_SELECT_CELL,wxGridEventHandler( DBGrid::OnGridEvents ), nullptr, this );
     Connect(wxEVT_GRID_CELL_RIGHT_CLICK,wxGridEventHandler( DBGrid::OnGridRClick ), nullptr, this );
     Connect(wxEVT_GRID_CELL_LEFT_DCLICK,wxGridEventHandler( DBGrid::OnGridDLClick ), nullptr, this );
-
+    //Connect(wxEVT_GRID_CELL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
 
 }
  DBGrid::~DBGrid()
@@ -62,6 +66,7 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
     Disconnect( wxEVT_GRID_SELECT_CELL, wxGridEventHandler( DBGrid::OnGridEvents ), nullptr, this );
     Disconnect( wxEVT_GRID_CELL_RIGHT_CLICK, wxGridEventHandler( DBGrid::OnGridRClick ), nullptr, this );
     Disconnect( wxEVT_GRID_CELL_LEFT_DCLICK, wxGridEventHandler( DBGrid::OnGridDLClick ), nullptr, this );
+   // Disconnect( wxEVT_GRID_CELL_LEFT_CLICK, wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
     //m_GridArray.Empty();
 }
 
@@ -333,11 +338,6 @@ void DBGrid::SetEventType(long type)
     
 }
 
-
-
-
-
-
 // ADD MENU ITEM TO CONTEXT MENU
 void DBGrid::OnGridRClick(wxGridEvent& event )
 {
@@ -346,13 +346,25 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
     SetGridCursor(m_iRow,m_iCol);
     wxPoint point = event.GetPosition();
     auto *menu = new wxMenu;
+    //For everyone at the moment, create a filter for the current grid.
+    wxString sColumnTitle = GetColLabelValue(m_iCol);
+    wxString sCellValue = GetCellValue(m_iRow,m_iCol);
+    wxString sHTMLDocument = GetCellValue(m_iRow,2);
+    wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
+
 
     if (Utility::IsSystemDatabaseDeveloper() ) {
 
         if(m_sTableName==SYS_TABLES)
             menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
-        else
+        else{
             menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+            if(sHTMLDocument=="Help Document"){
+                menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
+            }
+
+        }
+
 
         //Only show for the system tables.
         if(m_sTableName==SYS_TABLES)
@@ -360,8 +372,6 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
 
         menu->AppendSeparator();
         menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-
-
     }
     else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
 
@@ -374,22 +384,15 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
             menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
 
             if(!Utility::IsGuest()){
-
                 menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-
             }
-
         }
     }
-
 
     menu->AppendSeparator();
     menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
 
-    //For everyone at the moment, create a filter for the current grid.
-    wxString sColumnTitle = GetColLabelValue(m_iCol);
-    wxString sCellValue = GetCellValue(m_iRow,m_iCol);
-    wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
+
 
     int len = menuLabel.Length();
     if(len > 100){
@@ -397,8 +400,6 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
         menuLabel << " ....";
     }
     menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
-
-
     PopupMenu( menu, point);
 }
 
@@ -406,14 +407,13 @@ void DBGrid::HideColumn(int colNumber)
 {
    // SetColumnWidth(colNumber,0);
    HideCol(colNumber);
-
 }
-
 
 void DBGrid::CreateFields()
 {
      // Don't add any rows yet, they will be added when we query the database.
      CreateGrid( 0, (int)m_GridArray.GetCount()+1,wxGrid::wxGridSelectCells);
+     SetSelectionMode(wxGridSelectRows );
      EnableEditing( false );
      EnableGridLines( true );
      EnableDragGridSize( false );
@@ -779,6 +779,11 @@ void DBGrid::OnClickEdit(wxCommandEvent& event)
     GetParent()->ProcessWindowEvent( my_event );
 }
 
+void DBGrid::OnGridClick(wxGridEvent& event )
+{
+    //SelectRow(event.GetRow());
+}
+
 void DBGrid::OnGridDLClick(wxGridEvent& event )
 {
     //Create a new event to tell the parent to open record or edit the record.
@@ -791,7 +796,7 @@ void DBGrid::OnGridDLClick(wxGridEvent& event )
 
         return;
     }
-
+    //Change the behaviour of double click cell to view or edit item depending on the system setting.
     if(Settings.sDClickGridCell=="VIEW")
         my_event.m_bOpen = true;
     else if(Settings.sDClickGridCell=="EDIT" && m_sTableName!=SYS_TABLES && !Utility::IsGuest())
@@ -810,3 +815,23 @@ void DBGrid::OnGridDLClick(wxGridEvent& event )
     GetParent()->ProcessWindowEvent( my_event );
 }
 
+//This is where we are going to parse the HTML document.
+void DBGrid::OnClickOpenDocument(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
+
+    if(IsCellHighlighted(m_iRow,2)){
+        wxLogMessage(MSG_FIELD_NOT_CREATED);
+        return;
+    }
+
+    my_event.m_bParseDocument = true;
+
+    //The cell value will with the HTML document to parse
+    wxString str = GetCellValue(m_iRow,3);
+    my_event.m_cellValue=str;
+
+    //my_event.SetRow(event.GetRow());
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}

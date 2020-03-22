@@ -146,7 +146,7 @@ bool GenericTable::Create()
         m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericTable::OnbExitApp ), nullptr, this );
         
         //Set the grid settings
-        m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
+        m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
     
     
         //If we have an error and the grid faled to load, just destroy it.
@@ -162,84 +162,50 @@ bool GenericTable::Create()
             m_Toolbar = CreateToolBar();
 
 
-        if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser()) {
-            //======
-            //Load images for the toolbar
+    wxBitmap BitMap;
 
-            wxBitmap imageAdd;
-            strExe.Replace("DBWorks", "images/add.png"); //For mac and linux
-            strExe.Replace("dbworks", "images/add.png"); //For mac and linux
-            strExe.Replace("dbworks.exe", "images/add.png"); // For windows.
-            imageAdd.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_ADD, wxT("Add Entry"), imageAdd, wxT("Add a new entry"));
+    Utility::LoadBitmap(BitMap,"help.png");
+    m_Toolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
 
 
-            wxBitmap imageEdit;
-            strExe.Replace("add.png", "edit.png");
-            imageEdit.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_EDIT, wxT("Edit Selected Entry"), imageEdit, wxT("Edit selected entry"));
+    if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser()) {
+        //======
+        //Load images for the toolbar
+
+        Utility::LoadBitmap(BitMap,"add.png");
+        m_Toolbar->AddTool(ID_TOOL_ADD, wxT("Add Entry"), BitMap, wxT("Add a new entry"));
+
+        Utility::LoadBitmap(BitMap,"edit.png");
+        m_Toolbar->AddTool(ID_TOOL_EDIT, wxT("Edit Selected Entry"), BitMap, wxT("Edit selected entry"));
+
+        Utility::LoadBitmap(BitMap,"delete.png");
+        m_Toolbar->AddTool(ID_TOOL_DELETE, wxT("Delete Selected Rows"), BitMap, wxT("Delete seleted entries"));
+
+        Utility::LoadBitmap(BitMap,"view.png");
+        m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), BitMap, wxT("View seleted entries"));
+
+    }else if (Utility::IsStandardUser() ){
 
 
+        Utility::LoadBitmap(BitMap,"add.png");
+        m_Toolbar->AddTool(ID_TOOL_ADD, wxT("Add Entry"), BitMap, wxT("Add a new entry"));
 
-            wxBitmap imageDelete;
-            strExe.Replace("edit.png", "delete.png");
-            imageDelete.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_DELETE, wxT("Delete Selected Rows"), imageDelete, wxT("Delete seleted entries"));
+        Utility::LoadBitmap(BitMap,"edit.png");
+        m_Toolbar->AddTool(ID_TOOL_EDIT, wxT("Edit Selected Entry"), BitMap, wxT("Edit selected entry"));
 
+        Utility::LoadBitmap(BitMap,"view.png");
+        m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), BitMap, wxT("View seleted entries"));
 
-            wxBitmap imageView;
-            strExe.Replace("delete.png", "view.png");
-            imageView.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), imageView, wxT("View seleted entries"));
+        m_Grid->HideColumn(0);
 
+    }else if(Utility::IsGuest()){
 
-        }else if (Utility::IsStandardUser() ){
+        Utility::LoadBitmap(BitMap,"view.png");
+        m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), BitMap, wxT("View seleted entries"));
 
+        m_Grid->HideColumn(0);
 
-            wxBitmap imageAdd;
-            strExe.Replace("DBWorks", "images/add.png"); //For mac and linux
-            strExe.Replace("dbworks", "images/add.png"); //For mac and linux
-            strExe.Replace("dbworks.exe", "images/add.png"); // For windows.
-            imageAdd.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_ADD, wxT("Add Entry"), imageAdd, wxT("Add a new entry"));
-
-
-            wxBitmap imageEdit;
-            strExe.Replace("add.png", "edit.png");
-            imageEdit.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_EDIT, wxT("Edit Selected Entry"), imageEdit, wxT("Edit selected entry"));
-
-
-            wxBitmap imageView;
-            strExe.Replace("edit.png", "view.png");
-            imageView.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), imageView, wxT("View seleted entries"));
-
-            m_Grid->HideColumn(0);
-
-        }else if(Utility::IsGuest()){
-
-            wxBitmap imageView;
-            strExe.Replace("DBWorks", "images/view.png"); //For mac and linux
-            strExe.Replace("dbworks", "images/view.png"); //For mac and linux
-            strExe.Replace("dbworks.exe", "images/view.png"); // For windows.
-            imageView.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View Selected Rows"), imageView, wxT("View seleted entries"));
-
-
-            m_Grid->HideColumn(0);
-
-        }
-
-        if (m_sTableName!=SYS_FIELDS){
-            wxBitmap bitmapHelp;
-            strExe.Replace("view.png", "help.png"); //For mac and linux
-            bitmapHelp.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-            m_Toolbar->AddTool(ID_HELP, wxT("Help"), bitmapHelp, wxT("Help."));
-
-
-        }
-
+    }
 
 
         m_Toolbar->Realize();
@@ -287,7 +253,7 @@ void GenericTable::OnbAddItem( wxCommandEvent& event )
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
-    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
    
     formItem->SetUse("ADD");
     formItem->CreateFields();
@@ -322,7 +288,7 @@ void GenericTable::EditItem(long rowID)
 
     formItem->SetUse("UPDATE");
 
-    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
     formItem->CreateFields();
 
 
@@ -370,7 +336,7 @@ void GenericTable::ViewItem(long rowID)
         }
 
         formItem->SetUse("VIEW");
-        formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+        formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
         formItem->CreateFields();
 
 
@@ -430,7 +396,8 @@ void GenericTable::OnMyEvent(MyEvent& event )
     else if(event.m_bDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
-
+    else if (event.m_bParseDocument)
+        OnParseDocument(event.m_cellValue);
     //wxMessageBox( _("Looks like it works!"), _("MyEvent reached"),
      //   wxOK | wxICON_INFORMATION, this );
     //SetStatusText("Event Worked");
@@ -441,6 +408,19 @@ void GenericTable::OnMyEvent(MyEvent& event )
     }
 }
 
+void GenericTable::OnParseDocument(wxString sDocument)
+{
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+    if(m_HtmlWin != nullptr)
+        m_HtmlWin->Destroy();
+
+    //This will simply show the passed document
+    m_HtmlWin = new HtmlHelp((wxFrame*) this, -1, "Help", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_HtmlWin->SetPage(Utility::PassHTMLDocument(sDocument)); //
+    m_HtmlWin->Show(true);
+
+}
 //We need to add the 'WHERE' but there is nothing to blend for now.
 void GenericTable::SetGridWhereCondition(wxString whereToBlend)
 {

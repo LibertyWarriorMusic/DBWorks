@@ -167,7 +167,7 @@ void MyApp::ProcessLine(wxString line)
     if (setting=="DATABASE"){
         Settings.sDatabase=value;
     }else if (setting=="USER"){
-        Settings.sUser=value;
+        Settings.sDatabaseUser=value;
     }else if (setting=="PASSWORD"){
         Settings.sPassword=value;
     }else if (setting=="SERVER"){
@@ -219,14 +219,26 @@ void MainFrame::SetSettingsLoaded(bool bSettingsLoadedFlag)
     m_bSettingsLoaded=bSettingsLoadedFlag;
 
 }
+
+
+
+
 MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
     m_TableForm = nullptr;
     m_HtmlWin = nullptr;
     m_MainGrid = nullptr;
+    m_StatusBar = nullptr;
+    m_Menubar= nullptr;
+    m_FileMenu= nullptr;
+    m_DatabaseCombo= nullptr;
+    m_UserGroupCombo= nullptr;
+    m_txtCltUserGroup = nullptr;
+
 
     iOldComboIndex=0;
     m_sDefaultUsergroupFilterCondition="";
+
 
 
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -258,116 +270,168 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
       m_Menubar->Append(m_FileMenu, _("&File"));
 
-
-    LoadGrid();
-    
-
-
-
     
     //this->Centre( wxBOTH );
     m_StatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
 
     //======
     // Setup the toolbar
-    m_Toolbar = this->CreateToolBar();
-    wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+    m_Toolbar1 = this->CreateToolBar();
+
+
+
+
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
+
+    wxBitmap BitMap;
+
+
+    Utility::LoadBitmap(BitMap,"help.png");
+    m_Toolbar1->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
+
+
 
     if (Utility::IsSystemDatabaseDeveloper() ) {
 
-        //Load images for the toolbar
-        wxBitmap imageAdd;
-        strExe.Replace("DBWorks", "images/add.png"); //For mac and linux
-        strExe.Replace("dbworks", "images/add.png"); //For mac and linux
-        strExe.Replace("dbworks.exe", "images/add.png"); // For windows.
-        imageAdd.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-        m_Toolbar->AddTool(ID_TOOL_ADD, wxT("Add a new table to the database."), imageAdd,
+        Utility::LoadBitmap(BitMap,"add.png");
+        m_Toolbar1->AddTool(ID_TOOL_ADD, wxT("Add a new table to the database."), BitMap,
                            wxT("Add a new table to the database."));
 
-        wxBitmap imageEdit;
-        strExe.Replace("add.png", "edit.png");
-        imageEdit.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-        m_Toolbar->AddTool(ID_TOOL_EDIT, wxT("Edit the selected table."), imageEdit, wxT("Edit the selected table."));
+        Utility::LoadBitmap(BitMap,"edit.png");
+        m_Toolbar1->AddTool(ID_TOOL_EDIT, wxT("Edit the selected table."), BitMap, wxT("Edit the selected table."));
 
 
-        wxBitmap imageDelete;
-        strExe.Replace("edit.png", "delete.png");
-        imageDelete.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-        m_Toolbar->AddTool(ID_TOOL_DELETE, wxT("Delete the selected table, will also delete all data."), imageDelete,
+        Utility::LoadBitmap(BitMap,"delete.png");
+        m_Toolbar1->AddTool(ID_TOOL_DELETE, wxT("Delete the selected table, will also delete all data."), BitMap,
                            wxT("Delete the selected table, will also delete all data."));
 
-        wxBitmap imageView;
-        strExe.Replace("delete.png", "view.png");
-        imageView.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-        m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), imageView, wxT("View the selected table."));
+
+        Utility::LoadBitmap(BitMap,"view.png");
+        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), BitMap, wxT("View the selected table."));
 
     }
     else if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
 
 
-        strExe.Replace("DBWorks", "images/view.png"); //For mac and linux
-        strExe.Replace("dbworks", "images/view.png"); //For mac and linux
-        strExe.Replace("dbworks.exe", "images/view.png"); // For windows.
-
-
-        wxBitmap imageView;
-
-        imageView.LoadFile(strExe, wxBITMAP_TYPE_PNG);
-        m_Toolbar->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), imageView, wxT("View the selected table."));
+        Utility::LoadBitmap(BitMap,"view.png");
+        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), BitMap, wxT("View the selected table."));
 
         // For standard users, we don't want to see ID and Table name
         if(Utility::IsStandardUser() || Utility::IsGuest())
         {
             m_MainGrid->HideColumn(0);
             m_MainGrid->HideColumn(2);
+            m_MainGrid->HideColumn(3);
 
         } else
             m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
     }
 
-    wxBitmap bitmapHelp;
-    strExe.Replace("view.png", "help.png"); //For mac and linux
-    bitmapHelp.LoadFile(strExe, wxBITMAP_TYPE_PNG);
+    wxStaticText * txtCltDatabase = new wxStaticText( m_Toolbar1, wxID_ANY, "Database ", wxDefaultPosition, wxDefaultSize, 0 );
 
-    wxStaticText * txtClt = new wxStaticText( m_Toolbar, wxID_ANY, "Database ", wxDefaultPosition, wxDefaultSize, 0 );
 
-    m_DatabaseCombo = new wxComboBox( m_Toolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
-    m_DatabaseCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnComboChange ), nullptr, this );
-    m_DatabaseCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnComboDropDown ), nullptr, this );
+    m_DatabaseCombo = new wxComboBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
+    m_DatabaseCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnDatabaseComboChange ), nullptr, this );
+    m_DatabaseCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnDatabaseComboDropDown ), nullptr, this );
 
-    m_Toolbar->AddControl(txtClt);
-    m_Toolbar->AddControl(m_DatabaseCombo);
 
-    wxArrayString sSelectionItemArray;
-    Utility::ExtractSelectionItems(sSelectionItemArray,Settings.sDatbaseSelectionList);
+    m_Toolbar1->AddControl(txtCltDatabase);
+    m_Toolbar1->AddControl(m_DatabaseCombo);
+
+
+    wxArrayString sDatabaseSelectionItemArray;
+    Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,Settings.sDatbaseSelectionList);
 
     //Fill the list box with the selection items.
-    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
-        m_DatabaseCombo->Append(sSelectionItemArray[index]);
+    for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ )
+        m_DatabaseCombo->Append(sDatabaseSelectionItemArray[index]);
+
+    m_DatabaseCombo->SetStringSelection(Settings.sDatabase);
+
+    m_txtCltUserGroup = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
+
+    if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator()  ) {
+        m_txtCltUserGroup->SetLabel("Usergroup");
+        m_UserGroupCombo = new wxComboBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
+        m_UserGroupCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnUserGroupComboChange ), nullptr, this );
+        m_UserGroupCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnUserGroupComboDropDown ), nullptr, this );
+        m_UserGroupCombo->SetSize(260,-1);
+
+        wxArrayString sUserGroupSelectionItemArray;
+        Utility::ExtractSelectionItems(sUserGroupSelectionItemArray,"SELECTION{SYSTEM_DATABASE_DEVELOPER;SYSTEM_DATABASE_ADMINISTRATOR;ADVANCED_USER;STANDARD_USER;GUEST;}");
+
+        //Fill the list box with the selection items.
+        for ( int index=0; index<sUserGroupSelectionItemArray.GetCount(); index++ )
+            m_UserGroupCombo->Append(sUserGroupSelectionItemArray[index]);
+
+        m_Toolbar1->AddControl(m_txtCltUserGroup);
+        m_Toolbar1->AddControl(m_UserGroupCombo);
+
+        m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
 
 
-    m_DatabaseCombo->SetSelection(0);
 
-    //m_Toolbar->AddSeparator();
-    m_Toolbar->AddTool(ID_HELP, wxT("Help"), bitmapHelp, wxT("Help."));
+    }
+    m_Toolbar1->Realize();
 
+    mainFormSizerForGrid = new wxBoxSizer( wxVERTICAL );
+    this->SetToolBar(m_Toolbar1);
 
-
-
-
-
-
-    m_Toolbar->Realize();
-    this->SetToolBar(m_Toolbar);
     this->SetBackgroundColour(wxColour(70,70,130));
-
 
     // Connect Events
     //m_buttonCalculate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( MainFrame::OnButtonAction ), NULL, this );
     this->SetMenuBar( m_Menubar );
 
+    //Load the grid
+    LoadGrid();
+
     m_Menubar->Show();
+}
+
+//You only need to do this on the main window, show and hide different windows.
+//NOTE, this function needs to be modified to reflect what visibility we give in the mainframe constructor.
+void MainFrame::SetUsergroupWindowVisibility() {
+
+    if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()) {
+
+        if(Utility::IsStandardUser() || Utility::IsGuest())
+        {
+            m_MainGrid->HideColumn(0);
+            m_MainGrid->HideColumn(2);
+            m_MainGrid->HideColumn(3);
+
+
+          //  m_Toolbar->RemoveTool(ID_TOOL_ADD);
+          //  m_Toolbar->RemoveTool(ID_TOOL_EDIT);
+          //  m_Toolbar->RemoveTool(ID_TOOL_DELETE);
+
+
+        } else
+            m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
+
+    }
+
+    if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator()  ) {
+
+
+
+        m_MainGrid->SetColumnWidth(0,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
+        m_MainGrid->SetColumnWidth(2,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
+        m_MainGrid->SetColumnWidth(3,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
+
+
+        //m_Toolbar1->Realize();
+    }
+
+    Refresh();
+}
+
+void MainFrame::PopulateToolbar()
+{
+   // m_Toolbar->RemoveTool(ID_TOOL_ADD,bt);
+   // m_Toolbar->RemoveTool(ID_TOOL_EDIT,bt);
+   // m_Toolbar->RemoveTool(ID_TOOL_DELETE,bt);
 
 
 }
@@ -379,11 +443,13 @@ void MainFrame::LoadGrid()
     bool bDeleteOldSizer = false;
 
     if(m_MainGrid != nullptr){
+
+        mainFormSizerForGrid->Remove(3);
+
         bDeleteOldSizer = true;
         m_MainGrid->Destroy();
     }
 
-    mainFormSizerForGrid = new wxBoxSizer( wxVERTICAL );
     //Create the spread sheet grid
     m_MainGrid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
     m_MainGrid->AddItem("Title","title","","");
@@ -401,7 +467,7 @@ void MainFrame::LoadGrid()
     //Set the sizer to be attached to the main form
     this->SetSizer( mainFormSizerForGrid , bDeleteOldSizer);
 
-    m_MainGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,SYS_TABLES, "sys_tablesId","");
+    m_MainGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES, "sys_tablesId","");
     SetGridWhereCondition();
     if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
         m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
@@ -423,12 +489,28 @@ wxString MainFrame::GetUserWhereCondition()
     return "";
 }
 
-void MainFrame::OnComboDropDown( wxCommandEvent& event )
+void MainFrame::OnUserGroupComboChange( wxCommandEvent& event ) {
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    Settings.sUsergroup = combo->GetStringSelection();
+    SetGridWhereCondition();
+    SetUsergroupWindowVisibility();
+}
+
+
+
+
+void MainFrame::OnUserGroupComboDropDown( wxCommandEvent& event )
+{
+
+}
+
+void MainFrame::OnDatabaseComboDropDown( wxCommandEvent& event )
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
     iOldComboIndex = combo->GetSelection();
 }
-void MainFrame::OnComboChange( wxCommandEvent& event )
+
+void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
     wxString value = combo->GetStringSelection();
@@ -588,7 +670,7 @@ void MainFrame::OnbAddItem( wxCommandEvent& event )
         m_FormItem->SetUse("ADD");
         m_FormItem->CreateFields();
         
-        m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
+        m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
         
         m_FormItem->Show(true);
         SetStatusText("Add Table.");
@@ -620,7 +702,7 @@ void MainFrame::OpenEditForm(int sRow) {
 
     m_FormItem->SetUse("UPDATE");
     m_FormItem->CreateFields();
-    m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
+    m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
 
 
 
@@ -686,7 +768,7 @@ void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -812,7 +894,7 @@ void MainFrame::ExecuteQuery(const wxString& queryString)
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
-    wxString user(Settings.sUser);
+    wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
 
@@ -874,7 +956,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
 
             m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+linkID);// We will grab this from our form.
             //Add the field items
-            m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sUser,Settings.sPassword);
+            m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
 
             m_TableForm->AddField("Linking ID","sys_tablesId","int","HIDE-READONLY",linkID,"",""); // This is the linking ID
             m_TableForm->AddField("Field Name","valfield","varchar(100)","","","","");
@@ -908,20 +990,8 @@ void MainFrame::OnMyEvent(MyEvent& event)
     }
     else{
         // We are showing everything
-        wxString userWhere = GetUserWhereCondition();
-        if( !userWhere.IsEmpty()){
-
-
-        }
-
         SetGridWhereCondition(event.m_sWhereCondition);
-        if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
-            m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
-        else
-            m_MainGrid->LoadGridFromDatabase(); //Load all tables.
-
-        CheckIfTableDefinitionsMatchDatabaseTable();
-        this->Layout();
+        Refresh();
     }
 }
 
@@ -1022,5 +1092,23 @@ bool MainFrame::Destroy()
     return bResult;
 }
 
+void MainFrame::Refresh()
+{
+    // We are showing everything
+    wxString userWhere = GetUserWhereCondition();
+    /* if( !userWhere.IsEmpty()){
+
+
+     }*/
+
+
+    if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
+        m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
+    else
+        m_MainGrid->LoadGridFromDatabase(); //Load all tables.
+
+    CheckIfTableDefinitionsMatchDatabaseTable();
+    this->Layout();
+}
 
 

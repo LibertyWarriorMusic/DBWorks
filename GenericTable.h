@@ -36,7 +36,7 @@ class GenericTable : public wxFrame
         //Pointers
         HtmlHelp *m_HtmlWin;
 
-
+        void OnParseDocument(wxString sDocument);
 
     void OnButtonAction( wxCommandEvent& event );
       
@@ -62,7 +62,7 @@ class GenericTable : public wxFrame
 
         void OnbViewItem( wxCommandEvent& event );
         void OnbExitApp(wxCommandEvent& event);
-        void OnbHelp( wxCommandEvent& event );
+        virtual void OnbHelp( wxCommandEvent& event );
 
     public:
 
