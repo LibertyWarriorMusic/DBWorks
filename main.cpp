@@ -242,6 +242,10 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_sDefaultUsergroupFilterCondition="";
 
 
+    //Let's check if the information database exists, if not, create it.
+    if(!Utility::DoesDatabaseExist("information")){
+        Utility::ExecuteQuery("CREATE DATABASE information");
+    }
 
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
