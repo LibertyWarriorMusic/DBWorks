@@ -3,6 +3,11 @@ Generic database solution using wxWidgets - C++ - MySQL
 
 ACTIVELY UNDER DEVELOPMENT MARCH 2020
 
+Try it out, you can download the Mac only installer file
+DBWorks.PKG
+Note, you will need to have MySql on your system and create an empty database called information.
+
+
 
 //===========================================
 
