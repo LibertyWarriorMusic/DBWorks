@@ -3,9 +3,20 @@ Generic database solution using wxWidgets - C++ - MySQL
 
 ACTIVELY UNDER DEVELOPMENT MARCH 2020
 
-Try it out, you can download the Mac only installer file
-DBWorks.PKG
-Note, you will need to have MySql on your system and create an empty database called information.
+//===========================================
+
+# TRY OUT THE INSTALLER:
+
+Try it out now, download the _Mac only_ installer file and double click it to install.
+The program will be installed in your applications folder in a sub folder called _DatabaseWorks_
+These are the only files that get loaded on your system, and to remove them, you simply drag the DatabaseWorks folder to the bin.
+
+When installing new additions of the program, you don't have to remove the old version, it gets overwritten on install.
+
+
+**DBWorks.PKG**
+Note, you will need to have MySql on your system.
+The application will automatically create a database called 'information'
 
 
 

@@ -243,8 +243,10 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
 
     //Let's check if the information database exists, if not, create it.
-    if(!Utility::DoesDatabaseExist("information")){
-        Utility::ExecuteQuery("CREATE DATABASE information");
+    if(!CheckCreateDatabase(Settings.sDatabase)){
+        wxLogMessage(MSG_FAILED_TO_CREATE_DATABASE);
+        this->Close();
+        return;
     }
 
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -338,7 +340,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
 
     wxArrayString sDatabaseSelectionItemArray;
-    Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,Settings.sDatbaseSelectionList);
+    wxString databasesToSelect = "SELECTION{" + Settings.sDatabase +";" + Settings.sDatbaseSelectionList + "}";
+    Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,databasesToSelect);
 
     //Fill the list box with the selection items.
     for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ )
@@ -523,17 +526,28 @@ void MainFrame::OnDatabaseComboDropDown( wxCommandEvent& event )
 void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-    wxString value = combo->GetStringSelection();
+    wxString sDatabase = combo->GetStringSelection();
+    if(!CheckCreateDatabase(sDatabase)){
+        combo->SetSelection(iOldComboIndex); // Restore the old selection because the database doesn't exit.
+        wxLogMessage(MSG_DATABASE_DOES_NOT_EXIST);
+    }
+    else{
+        Settings.sDatabase = sDatabase;
+        LoadGrid();
+    }
+}
+
+bool MainFrame::CheckCreateDatabase(wxString sDatabase) {
 
     //This the database doesn't exist, then we need to create it.
-    if(!Utility::DoesDatabaseExist(value)){
-        Utility::ExecuteQuery("CREATE DATABASE " + value);
-    }
+    if(!Utility::DoesDatabaseExist(sDatabase))
+        Utility::CreateDatabase(sDatabase);
+
 
     //Check to see if the database was created.
-    if(Utility::DoesDatabaseExist(value)){
+    if(Utility::DoesDatabaseExist(sDatabase)){
         //Check to see if the system tables exist, of not, create them.
-        if(!Utility::DoesTableExist(value,"sys_tables")){
+        if(!Utility::DoesTableExist(sDatabase,"sys_tables")){
 
 
             //We can load from a file or write in code here. I think it's better to write it code. The other option is the place this in sys_docs table as a system document type.
@@ -560,19 +574,17 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
 
             if(!query.IsEmpty()){
 
-                Utility::ExecuteQuery(query,value);
+                Utility::ExecuteQuery(query,sDatabase);
             }
 
         }
-        if(!Utility::DoesTableExist(value,"sys_fields")){
+        if(!Utility::DoesTableExist(sDatabase,"sys_fields")){
 
             //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
             wxString query="";
-            wxFile file("SQL/createsysfields.sql");
-            file.ReadAll(&query,wxConvUTF8);
+            //wxFile file("SQL/createsysfields.sql");
+            //file.ReadAll(&query,wxConvUTF8);
 
-            if(!query.IsEmpty())
-                Utility::ExecuteQuery(query,value);
 
             //Option 2 Load from table sys_docs.
             //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
@@ -592,9 +604,13 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
                     "PRIMARY KEY (`sys_fieldsId`)"
                     ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
 
+            if(!query.IsEmpty())
+                Utility::ExecuteQuery(query,sDatabase);
+
+
         }
 
-        if(!Utility::DoesTableExist(value,"sys_docs")){
+        if(!Utility::DoesTableExist(sDatabase,"sys_docs")){
 
             //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
             wxString query="";
@@ -616,19 +632,16 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
                     " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
 
             if(!query.IsEmpty())
-                Utility::ExecuteQuery(query,value);
+                Utility::ExecuteQuery(query,sDatabase);
 
         }
 
-        Settings.sDatabase = value;
-        LoadGrid();
     }
     else{
-        combo->SetSelection(iOldComboIndex); // Restore the old selection because the database doesn't exit.
-        wxLogMessage(MSG_DATABASE_DOES_NOT_EXIST);
+        return false;
     }
+    return true;
 }
-
 
 void MainFrame::CreateToolBars()
 {

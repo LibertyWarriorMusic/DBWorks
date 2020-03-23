@@ -480,7 +480,7 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
     QueryString = "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '"+sDatabase+"'";
 
 
-    wxString database(Settings.sDatabase);
+    wxString database("INFORMATION_SCHEMA");
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
@@ -952,6 +952,49 @@ void Utility::ExecuteQuery(const wxString& QueryString, const wxString& sDatabas
         //f->SetStatusText("Error: "+ wxString(er.what()));
     }
 }
+void Utility::CreateDatabase(wxString sDatabaseToCreate){
+
+    wxString database("INFORMATION_SCHEMA");
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    try{
+        // Connect to the sample database.
+        Connection conn(false);
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+
+            wxString QueryString= "CREATE DATABASE "  + sDatabaseToCreate;
+            Query query = conn.query(QueryString);
+            query.execute();
+
+        }
+        //else SetStatusText("Did not connect to database.");
+
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    } catch (const Exception& er) {
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        // Catch-all for any other MySQL++ exceptions
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    }
+}
+
+
+
+
 
 void Utility::ExecuteQuery(const wxString& QueryString)
 {

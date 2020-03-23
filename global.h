@@ -39,3 +39,4 @@ extern GlobalSettings Settings;
 #define MSG_MYSQL_RESERVED_WORD "Table not altered, the following field is a MySQL reserved word, you need to change the field name:"
 #define MSG_ONLY_DATABASE_DEVELOPERS "Only database developers are allowed access to this feature."
 #define MSG_NEED_TO_SELECT_ROW "You need to select a single row first."
+#define MSG_FAILED_TO_CREATE_DATABASE "Failed to create the database, check that you have MySQL running."

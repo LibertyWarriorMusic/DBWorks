@@ -37,6 +37,7 @@ public:
     static wxString DateNow();
 
     //DATABASE UTILITIES
+    static void CreateDatabase(wxString sDatabaseToCreate);
     static void CreateSystemTables(wxString sDatabase);
     static bool DoesDatabaseExist(wxString sDatabase);
     static bool DoesTableExist(wxString sDatabase,wxString sTable);
