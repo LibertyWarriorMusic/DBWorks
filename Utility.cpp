@@ -334,18 +334,29 @@ void Utility::ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag)
     }
 }
 
-
-
-// Check to see if we have a read only flag set but make sure it's not in the following selection line;
-//SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
-bool Utility::HasFlagReadOnly(const wxString& flag)
+bool Utility::HasFlag(wxString flags, wxString flag)
 {
-    int findSelection = flag.Find(FLAG_OPTIONS);
-    if (findSelection != wxNOT_FOUND)  {
-        return false;
+
+    if (flag=="SELECTION" || flag=="SELECTION_ADDITIVE"){
+
+        // Check to see if we have a read only flag set but make sure it's not in the following selection line;
+        //FLAG_OPTIONS see global.h
+        int findSelection = flags.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
+        if (findSelection != wxNOT_FOUND)  {
+            return true;
+        }
+
+    } else{
+
+        // Check to see if we have a read only flag set but make sure it's not in the following selection line;
+        //FLAG_OPTIONS see global.h
+        int findSelection = flags.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
+        if (findSelection != wxNOT_FOUND)  {
+            return false;
+        }
     }
 
-    int find = flag.Find("READONLY");
+    int find = flags.Find(flag);
 
     if (find != wxNOT_FOUND)  {
         return true;
@@ -353,116 +364,6 @@ bool Utility::HasFlagReadOnly(const wxString& flag)
 
     return false;
 
-}
-
-// Check to see if we have a read only flag set but make sure it's not in the following selection line;
-//SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
-bool Utility::HasFlagMultiline(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return false;
-    }
-
-    int find = flag.Find("MULTILINE");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
-
-}
-
-// Check to see if we have a read only flag set but make sure it's not in the following selection line;
-//SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
-bool Utility::HasFlagPassword(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return false;
-    }
-
-    int find = flag.Find("PASSWORD");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
-
-}
-
-bool Utility::HasFlagWeblink(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return false;
-    }
-
-    int find = flag.Find("WEBLINK");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
-
-}
-
-// Check to see if we have a read only flag set but make sure it's not in the following selection line;
-//SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
-bool Utility::HasFlagSelection(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return true; //NOTE This returns true because PropertyTable-Edit-flag control is a selection and needs to display all the options after SELECTION{
-        //It just happens to be that SELECTION is one of the options, yes a bit of a head spin. This might cause some stupid bug or it might be fine, not sure until testing.
-    }
-
-    int find = flag.Find("SELECTION");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
-}
-
-bool Utility::HasFlagSelectionAdditive(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return true; //NOTE This returns true because PropertyTable-Edit-flag control is a selection and needs to display all the options after SELECTION{
-        //It just happens to be that SELECTION is one of the options, yes a bit of a head spin. This might cause some stupid bug or it might be fine, not sure until testing.
-    }
-
-    int find = flag.Find("SELECTION_ADDITIVE");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
-}
-
-// Check to see if we have a read only flag set but make sure it's not in the following selection line;
-//SELECTION{MULTILINE;HIDE;READONLY;SELECTION{val1;val2;etc;}}
-bool Utility::HasFlagLookupSelection(wxString flag)
-{
-    int findSelection = flag.Find(FLAG_OPTIONS);// NOT the FLAG_OPTIONS is defined in global.h
-    if (findSelection != wxNOT_FOUND)  {
-        return true; //NOTE This returns true because PropertyTable-Edit-flag control is a selection and needs to display all the options after SELECTION{
-        //It just happens to be that SELECTION is one of the options, yes a bit of a head spin. This might cause some stupid bug or it might be fine, not sure until testing.
-    }
-
-    int find = flag.Find("LOOKUP_SELECTION");
-
-    if (find != wxNOT_FOUND)  {
-        return true;
-    }
-
-    return false;
 }
 
 bool Utility::IsEmpty(wxString str){
@@ -1089,4 +990,17 @@ void Utility::ExecuteQuery(const wxString& QueryString)
         // Catch-all for any other MySQL++ exceptions
         //f->SetStatusText("Error: "+ wxString(er.what()));
     }
+}
+
+// Place all the mySQL reserved where
+bool Utility::IsReservedMySQLWord(wxString wordToFind)
+{
+
+    wxString reserved = MYSQLRESERVEDWORDS;
+    reserved = reserved.Lower();
+    wordToFind = wordToFind.Lower();
+    if (reserved.Find(wordToFind)!=wxNOT_FOUND)
+        return true;
+
+    return false;
 }

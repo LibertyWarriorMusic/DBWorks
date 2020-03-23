@@ -208,6 +208,12 @@ void PropertyTable::AlterTable(int row) {
             }
         }
 
+        if(Utility::IsReservedMySQLWord(fieldName)){
+            wxLogMessage(MSG_MYSQL_RESERVED_WORD + fieldName);
+
+            return;
+        }
+
         wxString previousFieldName="";
 
         if(row>0)
@@ -228,9 +234,11 @@ void PropertyTable::AlterTable(int row) {
         QueryString = "ALTER TABLE " + m_sGridTableName + " ADD COLUMN " + fieldName + " " + valtype + " " + valnull + " " + valkey + DEFVAL + extra + " after "+previousFieldName+ ";";
 
 
+
+
         wxString msg;
 
-        msg << "Are you sure you want to alter this table with:?" << "\n"  << QueryString;
+        msg << MSG_ALTER_TABLE << "\n"  << QueryString;
 
         auto *dlg = new wxMessageDialog(nullptr, msg, wxT("Alter Table"), wxYES_NO | wxICON_EXCLAMATION);
 

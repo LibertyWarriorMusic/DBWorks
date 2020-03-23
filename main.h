@@ -27,7 +27,7 @@ class MainFrame : public wxFrame
         void OpenEditForm(int sRow); //Open the user data form
 
         static void ExecuteQuery(const wxString& queryString); //Execute a query string
-        wxString PrepareDeleteQuery(); //Prepare the delete query
+        wxString PrepareDeleteQuery(wxString sTable); //Prepare the delete query
 
         int iOldComboIndex;
         void OnUserGroupComboChange(wxCommandEvent& event);

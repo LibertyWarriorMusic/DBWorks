@@ -1,0 +1,32 @@
+CHANGE LOG
+VERSION 0.01 Beta
+
+14 March 2020:
+Added right click context menu functionality in the properties table.
+Uploaded a screen image for the application.
+
+
+
+15 March 2020:
+FEATURE:00002 Direct Linking: DATE_LOGGED:10 March 2020 DATA_IMPLEMENTED: Implemented
+We need to creating table linking features. There will be two types of link, simple direct linking and a lookup table linking.
+This request implements the simple direct linking.
+Simple direct linking is when you create a FLAG called LOOKUP_SELECTION{TableName;ColumnNumber;}. This will load a combobox with entries from another table.
+For example, you might have a people table that you want to use as a field lookup in another table. You simply write down the table name and the field column number so the application
+knows where to extract the data from.
+
+16 March 2020:
+FEATURE:00004 Help Documentation  DATE_LOGGED:15 March 2020 DATA_IMPLEMENTED: 16 March 2020
+Implemented a help button that displaces help documents that are stored in the system table sys_docs.
+This table will need to be created into a users database, the program is going to need an install script down the track.
+
+
+16 March 2020:
+FEATURE:00003 Multiple Users DATE_LOGGED:15 March 2020 DATA_IMPLEMENTED: Not Yet Implemented
+The ability to have different users for the application. By becoming a certain user, you will have different access to the database.
+SYSTEM DATABASE DEVELOPER: The person who creates the tables and link structures for users.
+SYSTEM DATABASE ADMINISTRATOR: A person who administers the database and directs users, offering help.
+ADVANCED USER: An advanced user of the database, a person other users will first seek for help.
+STANDARD USER: All other users of the database
+
+

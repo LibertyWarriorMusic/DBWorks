@@ -10,14 +10,9 @@ class Utility {
 public:
     static void ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch);
     static void ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag);
-    static bool HasFlagReadOnly(const wxString& flag);
-    static bool HasFlagMultiline(wxString flag);
-    static bool HasFlagPassword(wxString flag);
-    static bool HasFlagSelection(wxString flag);
-    static bool HasFlagSelectionAdditive(wxString flag);
-    static bool HasFlagLookupSelection(wxString flag);
-    static bool HasFlagWeblink(wxString flag);
+    static bool HasFlag(wxString flags, wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
+    static bool IsReservedMySQLWord(wxString wordToFind);
 
     //Parsers
     static wxString PassHTMLDocument(wxString sDocument);

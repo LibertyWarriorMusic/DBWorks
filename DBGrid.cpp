@@ -88,7 +88,7 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
 
             item->title = m_GridArray[index].title;
             item->field = m_GridArray[index].field;
-            item->flag = m_GridArray[index].flag;
+            item->flags = m_GridArray[index].flags;
             item->defaultValue = m_GridArray[index].defaultValue;
 
             GridItemList.Add(item);
@@ -180,7 +180,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
                                 wxString fieldName = m_GridArray[index].field;
                                 wxString defaultValue = m_GridArray[index].defaultValue;
-                                wxString flag = m_GridArray[index].flag;
+                                wxString flag = m_GridArray[index].flags;
                                 //wsString strData1 = "";
                                 //strData1 =  res[i][fieldName];
 
@@ -220,7 +220,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
                                         strData1 = defaultValue;
                                 }
 
-                                if(Utility::HasFlagPassword(flag)){
+                                if(Utility::HasFlag(flag,"PASSWORD")){
 
                                     if(!Utility::IsEmpty(strData1))
                                         SetCellValue(iTracRowIncaseOfSkip,index+1,Utility::ReplaceStringWithAsterix(strData1));
@@ -359,7 +359,10 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
             menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
         else{
             menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
-            if(sHTMLDocument=="Help Document"){
+
+            m_iDocumentColumn = HasRowDocumentFlag(m_iRow);// This will return -1 if we have not document.
+
+            if(m_iDocumentColumn>=0){
                 menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
             }
 
@@ -402,7 +405,18 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
     menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
     PopupMenu( menu, point);
 }
+//Searches for all the columns in a given row on the grid and checks to see if there is DOCUMENT set in the flag.
+// Return -1 if no DOCUMENT flag found, return the ID where the document can be found
+int DBGrid::HasRowDocumentFlag(int iRow) {
 
+    for (int i=0;i<m_GridArray.GetCount();i++){
+        if(Utility::HasFlag(m_GridArray[i].flags, "DOCUMENT")){
+            return i+1;//Because the GridArray doesn't hold the ID of the table, it is generated from the table name automatically.
+        }
+    }
+    return -1;
+
+}
 void DBGrid::HideColumn(int colNumber)
 {
    // SetColumnWidth(colNumber,0);
@@ -443,12 +457,12 @@ void DBGrid::CreateFields()
              SetColLabelValue(i+1, m_GridArray[i].title);
     }
 }
-void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& defaultVal="")
+void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal="")
 {
     auto *item = new GridItem();
     item->title = fieldTitle;
     item->field = field;
-    item->flag = flag;
+    item->flags = flags;
     item->defaultValue = defaultVal;
     m_GridArray.Add(item);
 
@@ -509,7 +523,7 @@ void DBGrid::ResizeSpreadSheet()
              int find = wxNOT_FOUND;
              
              if(col>0)
-                 find =m_GridArray[col-1].flag.Find("HIDE");
+                 find =m_GridArray[col-1].flags.Find("HIDE");
              
              if(col>0 && find != wxNOT_FOUND){
 
@@ -820,15 +834,15 @@ void DBGrid::OnClickOpenDocument(wxCommandEvent& event)
 {
     MyEvent my_event( this );
 
-    if(IsCellHighlighted(m_iRow,2)){
+    if(IsCellHighlighted(m_iRow,m_iDocumentColumn)){
         wxLogMessage(MSG_FIELD_NOT_CREATED);
         return;
     }
 
     my_event.m_bParseDocument = true;
 
-    //The cell value will with the HTML document to parse
-    wxString str = GetCellValue(m_iRow,3);
+    //The cell value with the HTML document to parse
+    wxString str = GetCellValue(m_iRow,m_iDocumentColumn);
     my_event.m_cellValue=str;
 
     //my_event.SetRow(event.GetRow());

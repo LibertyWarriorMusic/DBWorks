@@ -5,7 +5,7 @@ class GridItem
 public:
     wxString field;
     wxString title;
-    wxString flag;
+    wxString flags;
     wxString defaultValue;
 };
 
@@ -23,6 +23,7 @@ private:
     
     int m_iRow; //Used when we right click on a cell to store the cell position
     int m_iCol;
+    int m_iDocumentColumn; //If we found a DOCUMENT flag, this store the column where the document is located, else it's -1;
     
     wxString m_sDatabase; //Database connection details
     wxString m_sUser;
@@ -37,7 +38,8 @@ private:
     wxString m_sWhereCondition;// A where condition to filter the grid if required
     
     ArrayGridItem m_GridArray; //Stores the information that builds the grid, field, title flags extra.
-    
+    int HasRowDocumentFlag(int iRow);
+
     void DeleteGridRows();
     
     void OnSizeGridSpreadSheet( wxGridEvent& event );
@@ -78,7 +80,7 @@ public:
     void DeleteEntryFromDatabase(const wxString& contactId);
     void CreateFields(); // Creates the fields of the grid, used in initalising.
     
-    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& defaultVal);
+    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal);
     wxString getSelectedFieldValue(const wxString& fieldname);
     void SetEventType(long type);
     // We are going to do this with every frame class so we can send messages to parents that this window may of been destroyed internally.

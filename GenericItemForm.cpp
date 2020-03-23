@@ -119,7 +119,7 @@ void GenericItemForm::CreateFields()
 
                                 gSizer1->Add( itemArray[i].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
-                               if(Utility::HasFlagMultiline(sFlags)){
+                               if(Utility::HasFlag(sFlags,"MULTILINE")){
 
                                     //Don't do rich text right now because you copy and past into the field, some special characters might be present that you can't see.
                                     //I still need to implement parsing for special characters, then we might be able to use this style again.
@@ -142,7 +142,7 @@ void GenericItemForm::CreateFields()
                                    m_mainFormSizer->Add( gSizer1, ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
 
-                               }else if(Utility::HasFlagLookupSelection(sFlags) && m_sTableName!=SYS_FIELDS){ //SELECTION
+                               }else if(Utility::HasFlag(sFlags,"LOOKUP_SELECTION") && m_sTableName!=SYS_FIELDS){ //SELECTION
 
                                    // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
                                    //Create a wxComboCtrl. We need to fill it with the values extracted from
@@ -156,7 +156,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlagReadOnly(itemArray[i].flag))
+                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                    itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -183,7 +183,7 @@ void GenericItemForm::CreateFields()
 
                                    m_mainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
 
-                               }else if(Utility::HasFlagSelection(sFlags) || Utility::HasFlagSelectionAdditive(sFlags)){ //SELECTION
+                               }else if(Utility::HasFlag(sFlags,"SELECTION") || Utility::HasFlag(sFlags,"SELECTION_ADDITIVE")){ //SELECTION
 
                                    //Create a wxComboCtrl. We need to fill it with the values extracted from
 
@@ -196,7 +196,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlagReadOnly(itemArray[i].flag))
+                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                   itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -227,7 +227,7 @@ void GenericItemForm::CreateFields()
                                    m_mainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
 
                                     //If we have additive selection, these events will prevent the replacement of text and add them together.
-                                    if(Utility::HasFlagSelectionAdditive(sFlags)){
+                                    if(Utility::HasFlag(sFlags,"SELECTION_ADDITIVE")){
                                         itemArray[i].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( GenericItemForm::OnComboChange ), nullptr, this );
                                         itemArray[i].comCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( GenericItemForm::OnComboDropDown ), nullptr, this );
                                     }
@@ -235,7 +235,7 @@ void GenericItemForm::CreateFields()
 
                                }
                                else if(itemArray[i].type == "DATE"){ // You can also create different controls for different types.
-                               int style = 0;
+                                   int style = 0;
 
                                    style = wxDP_DEFAULT | wxDP_DROPDOWN | wxDP_SHOWCENTURY;
 
@@ -250,7 +250,7 @@ void GenericItemForm::CreateFields()
                                        itemArray[i].datePickerCtl->SetValue(wxDateTime::Now());
                                    }
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlagReadOnly(itemArray[i].flag))
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY"))
                                        itemArray[i].datePickerCtl->Disable();
 
 
@@ -259,19 +259,19 @@ void GenericItemForm::CreateFields()
 
                                    m_mainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
                                }
-                               else if (Utility::HasFlagWeblink(sFlags))
+                               else if (Utility::HasFlag(sFlags,"WEBLINK"))
                                    {
 
                                    bool bWebLink = false;
                                    int style = 0;
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlagReadOnly(itemArray[i].flag)){
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY")){
                                        style = wxTE_READONLY;
                                        bWebLink=true;
                                    }
 
                                    //The only place we actually want to see the password is when we view the table.
-                                   if(Utility::HasFlagPassword(itemArray[i].flag) && m_sUse!="VIEW" && !bWebLink)
+                                   if(Utility::HasFlag(itemArray[i].flag,"PASSWORD") && m_sUse!="VIEW" && !bWebLink)
                                        style = wxTE_PASSWORD;
 
                                     if(bWebLink){
@@ -312,11 +312,11 @@ void GenericItemForm::CreateFields()
 
                                    int style = 0;
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlagReadOnly(itemArray[i].flag))
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY"))
                                        style = wxTE_READONLY;
 
                                    //The only place we actually want to see the password is when we view the table.
-                                   if(Utility::HasFlagPassword(itemArray[i].flag) && m_sUse!="VIEW")
+                                   if(Utility::HasFlag(itemArray[i].flag,"PASSWORD") && m_sUse!="VIEW")
                                        style = wxTE_PASSWORD;
 
                                    itemArray[i].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
@@ -575,7 +575,7 @@ void GenericItemForm::InsertItem(){
                 }
 
             }
-             
+
             
             Query query = conn.query(queryString);
             query.execute();

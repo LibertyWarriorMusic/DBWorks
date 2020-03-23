@@ -235,6 +235,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_UserGroupCombo= nullptr;
     m_txtCltUserGroup = nullptr;
 
+    bool b_DatabaseDeveloper=false;
+
 
     iOldComboIndex=0;
     m_sDefaultUsergroupFilterCondition="";
@@ -293,6 +295,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     if (Utility::IsSystemDatabaseDeveloper() ) {
 
+        b_DatabaseDeveloper = true;
+
         Utility::LoadBitmap(BitMap,"add.png");
         m_Toolbar1->AddTool(ID_TOOL_ADD, wxT("Add a new table to the database."), BitMap,
                            wxT("Add a new table to the database."));
@@ -311,20 +315,10 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     }
     else if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
-
+        b_DatabaseDeveloper=false;
 
         Utility::LoadBitmap(BitMap,"view.png");
         m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), BitMap, wxT("View the selected table."));
-
-        // For standard users, we don't want to see ID and Table name
-        if(Utility::IsStandardUser() || Utility::IsGuest())
-        {
-            m_MainGrid->HideColumn(0);
-            m_MainGrid->HideColumn(2);
-            m_MainGrid->HideColumn(3);
-
-        } else
-            m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
     }
 
     wxStaticText * txtCltDatabase = new wxStaticText( m_Toolbar1, wxID_ANY, "Database ", wxDefaultPosition, wxDefaultSize, 0 );
@@ -386,6 +380,21 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     //Load the grid
     LoadGrid();
 
+    if(!b_DatabaseDeveloper){
+
+        // For standard users, we don't want to see ID and Table name
+        if(Utility::IsStandardUser() || Utility::IsGuest())
+        {
+            m_MainGrid->HideColumn(0);
+            m_MainGrid->HideColumn(2);
+            m_MainGrid->HideColumn(3);
+
+        } else
+            m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
+
+    }
+
+
     m_Menubar->Show();
 }
 
@@ -444,7 +453,7 @@ void MainFrame::LoadGrid()
 
     if(m_MainGrid != nullptr){
 
-        mainFormSizerForGrid->Remove(3);
+        //mainFormSizerForGrid->Remove(3);
 
         bDeleteOldSizer = true;
         m_MainGrid->Destroy();
@@ -495,9 +504,6 @@ void MainFrame::OnUserGroupComboChange( wxCommandEvent& event ) {
     SetGridWhereCondition();
     SetUsergroupWindowVisibility();
 }
-
-
-
 
 void MainFrame::OnUserGroupComboDropDown( wxCommandEvent& event )
 {
@@ -655,36 +661,52 @@ void MainFrame::Quit(wxCommandEvent& WXUNUSED(event))
     Close(TRUE); // Close the window
 }
 
-void MainFrame::OnbAddItem( wxCommandEvent& event )
-{
-     
-        m_FormItem = new GenericItemForm((wxFrame*) this, -1,"Add Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
-        
+void MainFrame::OnbAddItem( wxCommandEvent& event ) {
+
+    if (!Utility::IsSystemDatabaseDeveloper()) {
+        wxLogMessage(MSG_ONLY_DATABASE_DEVELOPERS);
+    } else {
+
+        m_FormItem = new GenericItemForm((wxFrame *) this, -1, "Add Table", wxDefaultPosition, wxDefaultSize,
+                                         (unsigned) wxCAPTION | (unsigned) wxSTAY_ON_TOP);
+
         //m_FormItem->SetDatabaseSettings(Settings.Database, Settings.Server, Settings.User, Settings.Password);
-         //Define the database
-         //Define the database
-        m_FormItem->AddItem("Title","title","","","");
-        m_FormItem->AddItem("Tablename","tablename","","","");
-    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;}","VARCHAR(255)","user");
-         m_FormItem->AddItem("Comments","comments","MULTILINE","","");
+        //Define the database
+        //Define the database
+        m_FormItem->AddItem("Title", "title", "", "", "");
+        m_FormItem->AddItem("Tablename", "tablename", "", "", "");
+        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;}", "VARCHAR(255)", "user");
+        m_FormItem->AddItem("Comments", "comments", "MULTILINE", "", "");
         m_FormItem->SetUse("ADD");
         m_FormItem->CreateFields();
-        
-        m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
-        
+
+        m_FormItem->SetSettings(Settings.sDatabase, Settings.sServer, Settings.sDatabaseUser, Settings.sPassword,
+                                SYS_TABLES, "sys_tablesId");
+
         m_FormItem->Show(true);
         SetStatusText("Add Table.");
+    }
+
+
 }
+
+
+
+
 
 void MainFrame::OnbEditItem( wxCommandEvent& event )
 {
-           wxArrayInt rowsSelected = m_MainGrid->GetSelectedRows();
-           int size = rowsSelected.size();
-           
-           if(size==1){
-               int row = rowsSelected[0];
-               OpenEditForm(row);
-           }
+    if (!Utility::IsSystemDatabaseDeveloper()) {
+        wxLogMessage(MSG_ONLY_DATABASE_DEVELOPERS);
+    } else {
+        wxArrayInt rowsSelected = m_MainGrid->GetSelectedRows();
+        int size = rowsSelected.size();
+
+        if (size == 1) {
+            int row = rowsSelected[0];
+            OpenEditForm(row);
+        }
+    }
 }
 
 void MainFrame::OpenEditForm(int sRow) {
@@ -727,7 +749,7 @@ wxString MainFrame::GetSelectedRowTable()
     
     if(size==1){
         int row = rowsSelected[0];
-        tableName = m_MainGrid->GetCellValue(row,2);
+        tableName = m_MainGrid->GetCellValue(row,2);// Column two hold the table name
     }
 
     return tableName;
@@ -863,26 +885,46 @@ select sys_fields.valtype, sys_fields.title, sys_fields.flags, sys_fields.valdef
 */
 void MainFrame::OnbDeleteItem( wxCommandEvent& event )
 {
-    auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to delete this table?"), wxT("Delete Table"), (unsigned)wxYES_NO | (unsigned)wxICON_EXCLAMATION);
 
-    if ( dlg->ShowModal() == wxID_YES ){
+    if (!Utility::IsSystemDatabaseDeveloper()) {
+        wxLogMessage(MSG_ONLY_DATABASE_DEVELOPERS);
+    } else {
+        wxString sTable = GetSelectedRowTable();
+        if(sTable.IsEmpty()){
 
-        wxString queryString = PrepareDeleteQuery();
-        ExecuteQuery(queryString);
-        m_MainGrid->DeleteSelectedRow();
+            wxLogMessage(MSG_NEED_TO_SELECT_ROW);
+
+        } else{
+
+
+            auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to delete this table?"), wxT("Delete Table"), (unsigned)wxYES_NO | (unsigned)wxICON_EXCLAMATION);
+
+            if ( dlg->ShowModal() == wxID_YES ){
+
+                wxString queryString = PrepareDeleteQuery(sTable);
+                ExecuteQuery(queryString);
+                m_MainGrid->DeleteSelectedRow();
+            }
+
+
+            dlg->Destroy();
+            m_MainGrid->ResizeSpreadSheet();
+            this->Layout();
+
+        }
+
+
+
+
     }
 
-
-    dlg->Destroy();
-    m_MainGrid->ResizeSpreadSheet();
-    this->Layout();
 }
-wxString MainFrame::PrepareDeleteQuery()
+wxString MainFrame::PrepareDeleteQuery(wxString sTable)
 {
 
     wxString queryString;
 
-    queryString = "DROP TABLE IF EXISTS `"+Settings.sDatabase+"`.`"+GetSelectedRowTable()+"`;";
+    queryString = "DROP TABLE IF EXISTS `"+Settings.sDatabase+"`.`"+sTable+"`;";
 
     return queryString;
 }
