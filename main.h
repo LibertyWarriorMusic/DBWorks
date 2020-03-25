@@ -1,5 +1,6 @@
 
 #include "HtmlHelp.h"
+#include "ImportMySQLDatabase.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class MainFrame
@@ -14,8 +15,14 @@ class MainFrame : public wxFrame
         DBGrid* m_MainGrid;
         wxToolBar * m_Toolbar1;
         HtmlHelp *m_HtmlWin;
+        ImportMySQLDatabase *m_ImportMySQLForm;
 
         bool m_bSettingsLoaded=false;
+
+        wxString GetCurrentStoredWhereCondition();
+        void SetCurrentStoredWhereCondition(wxString sWhereCondition);
+        wxString m_sCurrentStoredWhereCondition;
+
 
 
         wxBoxSizer* mainFormSizerForGrid;
@@ -42,10 +49,12 @@ class MainFrame : public wxFrame
         // The default filter for different usertypes.
         wxString GetUserWhereCondition();
         void SetGridWhereCondition(wxString whereToBlend="");
-
+        void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);
         void SetUsergroupWindowVisibility();
         void Refresh();
         void PopulateToolbar();
+
+        void ImportDatabase(wxString sDatabase, wxString sNewDatabaseName);
 
     protected:
 
@@ -56,6 +65,8 @@ class MainFrame : public wxFrame
         wxComboBox * m_DatabaseCombo;
         wxComboBox * m_UserGroupCombo;
         wxStaticText * m_txtCltUserGroup;
+        wxStaticText * m_txtCltCheckTableTxt;
+        wxCheckBox * m_AutoCheckDefinitionsCheckCtl;
     public:
 
         explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
@@ -71,6 +82,7 @@ class MainFrame : public wxFrame
         void OnbEditItem( wxCommandEvent& event );
         void OnbDeleteItem( wxCommandEvent& event );
         void OnbViewItem( wxCommandEvent& event );
+        void OnAutoCheckDefinitions(wxCommandEvent& event);
         void OnbHelp( wxCommandEvent& event );
         static void CreateToolBars();
 

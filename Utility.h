@@ -5,6 +5,21 @@
 #ifndef DBWORKS_UTILITY_H
 #define DBWORKS_UTILITY_H
 
+
+class TableFieldItem
+{
+public:
+    wxString fieldName;
+    wxString fieldType;
+    wxString fieldNull;
+    wxString fieldKey;
+    wxString fieldDefault;
+    wxString fieldExtra;
+};
+
+
+WX_DECLARE_OBJARRAY(TableFieldItem, ArrayTableFields);
+
 //The Utility class only holds static functions that can be used throughout the application.
 class Utility {
 public:
@@ -18,6 +33,7 @@ public:
     static wxString PassHTMLDocument(wxString sDocument);
     static bool FindBetweenTags(wxString& ReturnString, wxString& sStringToSearch, int &iStartPosition, int &iEndPosition, wxString tag);
     static wxString ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxString QueryString);
+    static bool DoesSelectionExistInCombobox(wxComboBox *combo,   wxString sSelectionLabel);
 
     //LOAD FILE
     static bool LoadBitmap(wxBitmap &image, wxString ImageFileName);
@@ -38,19 +54,29 @@ public:
 
     //DATABASE UTILITIES
     static void CreateDatabase(wxString sDatabaseToCreate);
-    static void CreateSystemTables(wxString sDatabase);
+    static bool CreateSystemTables(wxString sDatabase);
     static bool DoesDatabaseExist(wxString sDatabase);
     static bool DoesTableExist(wxString sDatabase,wxString sTable);
-    static wxString GetTableNameFromSYS_TABLES(long lTableId); // Loads an array with all values from a table given TableId and ColumnNumber
-    static wxString GetTableFieldNameFromTable(wxString sTableName, long lColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
-    static void LoadStringArrayFromDatabaseTable(wxArrayString &sArray, long lTableId, long lColumnNumber);// Load an StringArray with from a table given the tableId and Column number
+    static wxString GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
+    static wxString GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, long lColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+    static void LoadStringArrayFromDatabaseTable(wxString sDatabase, wxArrayString &sArray, long lTableId, long lColumnNumber);// Load an StringArray with from a table given the tableId and Column number
+    static void LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray);
+    static void LoadStringArrayWithDatabaseTableNames( wxString sDatabase,  wxArrayString &sArray);
     static void ExecuteQuery(const wxString& QueryString); //Execute a query string
-    static void ExecuteQuery(const wxString& QueryString, const wxString& sDatabase);
+    static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
     static bool DoesTableExist(wxString sTableName);
+    static bool DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue);// Check to see if a record with a particular value exists.
     static bool DoesFieldExitInTable(const wxString& sTableName, const wxString& sTieldName);
     static bool IsEmpty(wxString str); // This function will remove any white spaces in the string before testing if empty.
     static bool GetFieldList(wxArrayString &fieldList, wxString TableId); // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
     static wxString LoadSystemDocument(int documentId);
+    static wxString CreateTable(wxString sDatabase, wxString sTableName, ArrayTableFields m_Fields );
+    static bool LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableName, ArrayTableFields &m_Fields );
+    static wxString InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableName); // Insert a new table into the sys_tables
+    static void InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem); //Insert a new table field
+    static void AppendDBWorksDatabases(wxArrayString &arrayToAppend);
+    static void SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
 };
 
 

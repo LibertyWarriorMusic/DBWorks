@@ -348,7 +348,7 @@ wxString PropertyTable::PrepareDeleteQuery()
 
 void PropertyTable::OnMyEvent(MyEvent& event) {
 
-    if(event.m_bProperties){
+    if(event.m_bTableFieldDefinitions){
         wxMessageBox("Event Function Properties : PropertyTable.Cpp 480");
     }
     else if(event.m_bOpen){

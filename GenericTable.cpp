@@ -63,6 +63,8 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
     m_DrawPane = nullptr;
     m_Toolbar = nullptr;
     m_HtmlWin = nullptr;
+    m_sCurrentStoredWhereCondition="";
+    m_iSavedRowIndex=-1;
 }
 
 
@@ -215,12 +217,24 @@ bool GenericTable::Create()
         this->SetBackgroundColour(wxColour(77,120,77));
         //This is here for debugging.
         //SetStatusText("Message = " + Settings.Message);
-    
+
+    if (Utility::IsSystemDatabaseDeveloper())
+        SetIDTitleName(m_sTableName+"Id *");
+    else
+        SetIDTitleName("ID");
+
     return true;
     
 }
 
-
+void GenericTable::HideIDColumn()
+{
+    m_Grid->HideCol(0);
+}
+void GenericTable::SetIDTitleName(wxString sTitle)
+{
+    m_Grid->SetColLabelValue(0,sTitle);
+}
 void GenericTable::OnbExitApp(wxCommandEvent& event)
 {
     Close(true);
@@ -240,28 +254,40 @@ GenericTable::~GenericTable()
 //Button Handle functions
 void GenericTable::OnbAddItem( wxCommandEvent& event )
 {
+    wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
+    int size = rowsSelected.size();
+
+    if(size==1){
+        int row = rowsSelected[0];
+        AddItem(row);
+    }
+
+}
+void GenericTable::AddItem(long rowID)
+{
 
     formItem = new GenericItemForm((wxFrame*) this, -1,"Add Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP| (unsigned)wxRESIZE_BORDER);
-    
-    
+
+
     int count = m_FieldArray.GetCount();
 
     if (count>0){
-        
+
         for(int index=0;index<count;index++)
             formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue);
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
     formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
-   
+
     formItem->SetUse("ADD");
     formItem->CreateFields();
-    
 
-    
+
+
     formItem->Show(true);
     SetStatusText("Add Item.");
+
 }
 
 void GenericTable::OnbEditItem( wxCommandEvent& event )
@@ -276,6 +302,9 @@ void GenericTable::OnbEditItem( wxCommandEvent& event )
 }
 void GenericTable::EditItem(long rowID)
 {
+
+    m_iSavedRowIndex = rowID; // Save the row so we now what to refresh.
+
     formItem = new GenericItemForm((wxFrame*) this, -1,"Edit Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
     int count = m_FieldArray.GetCount();
 
@@ -387,7 +416,7 @@ void GenericTable::OnMyEvent(MyEvent& event )
    // msg << event.GetEventType();
        // wxMessageBox( msg);
     //NOTE: We get here if resizing or right menu clicking, so we need to create a flag to indicated which.
-    if(event.m_bProperties)
+    if(event.m_bTableFieldDefinitions)
          wxMessageBox("We are in Table from properties.");
     else if(event.m_bOpen)
         ViewItem(event.m_iRow);
@@ -398,15 +427,51 @@ void GenericTable::OnMyEvent(MyEvent& event )
     }
     else if (event.m_bParseDocument)
         OnParseDocument(event.m_cellValue);
-    //wxMessageBox( _("Looks like it works!"), _("MyEvent reached"),
-     //   wxOK | wxICON_INFORMATION, this );
-    //SetStatusText("Event Worked");
+
+
     if(event.m_bRefreshDatabase){
-        SetGridWhereCondition(event.m_sWhereCondition);
-        m_Grid->LoadGridFromDatabase();
-        this->Layout(); // This is the key, you need to relayout the form.
+
+        if(!event.m_sWhereCondition.IsEmpty()){
+            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
+            SetGridWhereCondition(event.m_sWhereCondition);
+            Refresh();
+
+        }else{
+            //If the events where condition is empty, then see if we have a stored where condition.
+            if(event.m_bShowAll){
+                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
+            }
+            SetGridWhereCondition(GetCurrentStoredWhereCondition());
+            Refresh();
+        }
     }
 }
+
+// If we have a store row, we don't need reload all the grids, only updata the signle row.
+void GenericTable::Refresh()
+{
+
+    if(m_iSavedRowIndex>-1)
+        m_Grid->LoadGridRowFromDatabase(m_iSavedRowIndex);
+    else
+        m_Grid->LoadGridFromDatabase();
+
+    this->Layout(); // This is the key, you need to relayout the form.
+
+    //After the row has been updated, we need to put this back to -1 so the entire grid can be refreshed.
+    m_iSavedRowIndex = -1;
+
+}
+
+wxString GenericTable::GetCurrentStoredWhereCondition()
+{
+    return m_sCurrentStoredWhereCondition;
+}
+void GenericTable::SetCurrentStoredWhereCondition(wxString sWhereCondition)
+{
+    m_sCurrentStoredWhereCondition = sWhereCondition;
+}
+
 
 void GenericTable::OnParseDocument(wxString sDocument)
 {

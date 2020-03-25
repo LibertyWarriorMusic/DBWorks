@@ -9,7 +9,7 @@
 
 
 clear
-Files="DBGrid.cpp GenericItemForm.cpp ImagePanel.cpp MyEvent.cpp GenericTable.cpp PropertyTable.cpp main.cpp Utility.cpp HtmlHelp.cpp"
+Files="DBGrid.cpp GenericItemForm.cpp ImagePanel.cpp MyEvent.cpp GenericTable.cpp PropertyTable.cpp main.cpp Utility.cpp HtmlHelp.cpp ImportMySQLDatabase.cpp"
 
 echo Making Database Works, please wait.....
 

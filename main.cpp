@@ -20,6 +20,7 @@
 #include <wx/stdpaths.h>
 #include <wx/filename.h>
 #include <wx/toolbar.h>
+#include <wx/checkbox.h>
 
 #include "Utility.h"
 #include "global.h"
@@ -55,7 +56,8 @@ enum {
     ID_TOOL_EDIT,
     ID_TOOL_DELETE,
     ID_TOOL_VIEW,
-    ID_HELP
+    ID_HELP,
+    ID_AUTO_CHECK_DEFINITION
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -71,6 +73,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TOOL(ID_TOOL_DELETE, MainFrame::OnbDeleteItem)
     EVT_TOOL(ID_TOOL_VIEW, MainFrame::OnbViewItem)
     EVT_TOOL(ID_HELP, MainFrame::OnbHelp)
+    EVT_TOOL(ID_AUTO_CHECK_DEFINITION, MainFrame::OnAutoCheckDefinitions)
     EVT_MYEVENT(MainFrame::OnMyEvent)
 wxEND_EVENT_TABLE()
 
@@ -201,6 +204,30 @@ void MyApp::ProcessLine(wxString line)
     }else if (setting=="DOUBLE_CLICK_GRID_CELL"){
         Settings.sDClickGridCell=value;
     }
+    else if (setting=="IMPORT_KEYS_HAVING_PRIMARY_FIELDS"){
+        if(value=="NO")
+            Settings.bImportPrimaryKey=false;
+        else if (value=="YES")
+            Settings.bImportPrimaryKey=true;
+    }
+    else if (setting=="IMPORT_CREATE_TABLES"){
+        if(value=="NO")
+            Settings.bImportCreateTables=false;
+        else if (value=="YES")
+            Settings.bImportCreateTables=true;
+    }
+    else if (setting=="IMPORT_DATA"){
+        if(value=="NO")
+            Settings.bImportData=false;
+        else if (value=="YES")
+            Settings.bImportData=true;
+    }
+    else if (setting=="AUTO_CHECK_DEFINITIONS"){
+        if(value=="NO")
+            Settings.bAutoCheckDefinitions=false;
+        else if (value=="YES")
+            Settings.bAutoCheckDefinitions=true;
+    }
 }
 
 //=============
@@ -234,12 +261,44 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_DatabaseCombo= nullptr;
     m_UserGroupCombo= nullptr;
     m_txtCltUserGroup = nullptr;
+    m_ImportMySQLForm = nullptr;
+    m_txtCltCheckTableTxt = nullptr;
+    m_AutoCheckDefinitionsCheckCtl = nullptr;
 
     bool b_DatabaseDeveloper=false;
+    m_sCurrentStoredWhereCondition="";
 
 
     iOldComboIndex=0;
     m_sDefaultUsergroupFilterCondition="";
+
+    //The dbworks database is where we store all our database names.
+    //This database is a place to store system information that you don't want installed inside user databases.
+    //Most system information is stored inside the user databases in sys_tables sys_fields and sys_docs.
+    if(!Utility::DoesDatabaseExist("dbworks")){
+
+        Utility::CreateDatabase("dbworks");
+        //Check to see if we have a system database, if not create it.
+
+        if(!Utility::DoesTableExist("dbworks","sys_databases")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_databases` ("
+                    "`sys_databasesId` int NOT NULL AUTO_INCREMENT,"
+                    "`databasename` varchar(200) NOT NULL,"
+                    "`comments` longtext,"
+                    "PRIMARY KEY (`sys_databasesId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                Utility::ExecuteQuery("dbworks",query);
+
+        }
+
+    }
 
 
     //Let's check if the information database exists, if not, create it.
@@ -256,6 +315,11 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
       m_Menubar = new wxMenuBar( 0 );
 
       m_FileMenu = new wxMenu();
+
+
+
+    m_FileMenu->Append(MENU_Open,
+                       _("&Import a MySQL Database"), _("Import an existing file"));
 /*
       m_FileMenu->Append(MENU_New,
           _("&New"), _("Create a new file"));
@@ -343,9 +407,18 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     wxString databasesToSelect = "SELECTION{" + Settings.sDatabase +";" + Settings.sDatbaseSelectionList + "}";
     Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,databasesToSelect);
 
+    //Now we want to append database from the dbworks - sys_databases table
+    Utility::AppendDBWorksDatabases(sDatabaseSelectionItemArray);
+
     //Fill the list box with the selection items.
-    for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ )
-        m_DatabaseCombo->Append(sDatabaseSelectionItemArray[index]);
+    for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ ){
+        if(!Utility::DoesSelectionExistInCombobox(m_DatabaseCombo,sDatabaseSelectionItemArray[index]))
+            m_DatabaseCombo->Append(sDatabaseSelectionItemArray[index]);
+    }
+
+
+
+
 
     m_DatabaseCombo->SetStringSelection(Settings.sDatabase);
 
@@ -369,6 +442,27 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         m_Toolbar1->AddControl(m_UserGroupCombo);
 
         m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
+
+        //Create the checkbox for auto check definitions to tables
+        if(Utility::IsSystemDatabaseDeveloper()){
+
+            m_txtCltCheckTableTxt = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
+            m_txtCltCheckTableTxt->SetLabel("Auto check definitions");
+            m_Toolbar1->AddControl(m_txtCltCheckTableTxt);
+
+            m_AutoCheckDefinitionsCheckCtl = new wxCheckBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_Toolbar1->AddControl(m_AutoCheckDefinitionsCheckCtl);
+            m_AutoCheckDefinitionsCheckCtl->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( MainFrame::OnAutoCheckDefinitions ), nullptr, this );
+
+
+
+
+
+            if(Settings.bAutoCheckDefinitions)
+                m_AutoCheckDefinitionsCheckCtl->SetValue(true);
+        }
+
+        //Add a checkbox to enable Refresh
 
 
 
@@ -484,15 +578,10 @@ void MainFrame::LoadGrid()
     this->SetSizer( mainFormSizerForGrid , bDeleteOldSizer);
 
     m_MainGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES, "sys_tablesId","");
-    SetGridWhereCondition();
-    if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
-        m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
-    else
-        m_MainGrid->LoadGridFromDatabase(); //Load all tables.
 
-    CheckIfTableDefinitionsMatchDatabaseTable();
-    //Layout the grid.
-    this->Layout();
+
+    SetGridWhereCondition();
+    Refresh();
 }
 
 wxString MainFrame::GetUserWhereCondition()
@@ -543,104 +632,8 @@ bool MainFrame::CheckCreateDatabase(wxString sDatabase) {
     if(!Utility::DoesDatabaseExist(sDatabase))
         Utility::CreateDatabase(sDatabase);
 
+    return Utility::CreateSystemTables(sDatabase);
 
-    //Check to see if the database was created.
-    if(Utility::DoesDatabaseExist(sDatabase)){
-        //Check to see if the system tables exist, of not, create them.
-        if(!Utility::DoesTableExist(sDatabase,"sys_tables")){
-
-
-            //We can load from a file or write in code here. I think it's better to write it code. The other option is the place this in sys_docs table as a system document type.
-            wxString query="";
-
-            //OPTION 1 LOAD FROM FILE
-            //wxFile file("SQL/createsystables.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysTablesDocID);
-
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_tables` ("
-                    "  `sys_tablesId` int NOT NULL AUTO_INCREMENT,"
-                    "  `title` varchar(100) NOT NULL,"
-                    "  `tablename` varchar(100) NOT NULL,"
-                    "  `tabletype` varchar(255) NOT NULL,"
-                    "  `comments` varchar(255) DEFAULT NULL,"
-                    "  PRIMARY KEY (`sys_tablesId`)"
-                    ") ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;";
-
-
-            if(!query.IsEmpty()){
-
-                Utility::ExecuteQuery(query,sDatabase);
-            }
-
-        }
-        if(!Utility::DoesTableExist(sDatabase,"sys_fields")){
-
-            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
-            wxString query="";
-            //wxFile file("SQL/createsysfields.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_fields` ("
-                    "`sys_fieldsId` int NOT NULL AUTO_INCREMENT,"
-                    " `sys_tablesId` int NOT NULL,"
-                    " `valfield` varchar(100) NOT NULL,"
-                    " `valtype` varchar(100) NOT NULL,"
-                    " `valnull` varchar(10) NOT NULL,"
-                    " `valkey` varchar(10) DEFAULT NULL,"
-                    " `valdefault` varchar(255) DEFAULT NULL,"
-                    "`valextra` varchar(255) DEFAULT NULL,"
-                    " `title` varchar(100) DEFAULT NULL,"
-                    " `flags` varchar(200) DEFAULT NULL,"
-                    "PRIMARY KEY (`sys_fieldsId`)"
-                    ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
-
-            if(!query.IsEmpty())
-                Utility::ExecuteQuery(query,sDatabase);
-
-
-        }
-
-        if(!Utility::DoesTableExist(sDatabase,"sys_docs")){
-
-            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
-            wxString query="";
-
-            //Option 1;
-            //wxFile file("SQL/createsysdocs.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysDocsDocID);
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_docs` ("
-                    "`sys_docsId` int NOT NULL AUTO_INCREMENT,"
-                    "`Title` varchar(200) NOT NULL,"
-                    "`TypeOfDoc` varchar(100) NOT NULL,"
-                    "`Document` longtext,"
-                    "PRIMARY KEY (`sys_docsId`)"
-                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
-
-            if(!query.IsEmpty())
-                Utility::ExecuteQuery(query,sDatabase);
-
-        }
-
-    }
-    else{
-        return false;
-    }
-    return true;
 }
 
 void MainFrame::CreateToolBars()
@@ -653,9 +646,30 @@ void MainFrame::NewFile(wxCommandEvent& WXUNUSED(event))
 
 }
 
+void MainFrame::OnAutoCheckDefinitions(wxCommandEvent& event)
+{
+    if(m_AutoCheckDefinitionsCheckCtl->GetValue()){
+        Settings.bAutoCheckDefinitions=true;
+        CheckIfTableDefinitionsMatchDatabaseTable();
+        Refresh();
+    }
+    else{
+        Settings.bAutoCheckDefinitions=false;
+        //We are going to keep the tables red.
+    }
+}
+
+
+
 void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
 {
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+    if(m_ImportMySQLForm != nullptr)
+        m_ImportMySQLForm->Destroy();
 
+    m_ImportMySQLForm = new ImportMySQLDatabase((wxFrame*) this, -1, "Import MySQL Database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_ImportMySQLForm->Show(true);
 }
 
 void MainFrame::CloseFile(wxCommandEvent& WXUNUSED(event))
@@ -994,7 +1008,7 @@ void MainFrame::ExecuteQuery(const wxString& queryString)
 void MainFrame::OnMyEvent(MyEvent& event)
 {
 
-    if(event.m_bProperties){
+    if(event.m_bTableFieldDefinitions){
         //We are going to show the field types for this table
         m_MainGrid->SetGridCursor(event.m_iRow,event.m_iCol);
 
@@ -1004,7 +1018,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
         }
 
         // Instead of opening contacts, we are going to open the generic form table.
-        m_TableForm = new PropertyTable((wxFrame*) this, -1,event.m_sTableName +" fields",wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
+        m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+event.m_sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
 
         if (m_TableForm != nullptr){
 
@@ -1017,17 +1031,20 @@ void MainFrame::OnMyEvent(MyEvent& event)
             //Add the field items
             m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
 
-            m_TableForm->AddField("Linking ID","sys_tablesId","int","HIDE-READONLY",linkID,"",""); // This is the linking ID
-            m_TableForm->AddField("Field Name","valfield","varchar(100)","","","","");
-            m_TableForm->AddField("Type","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","");
-            m_TableForm->AddField("Can be Null","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","");
-            m_TableForm->AddField("Key","valkey","varchar(10)","","","","");
-            m_TableForm->AddField("Default","valdefault","varchar(255)","","","","");
-            m_TableForm->AddField("Extra","valextra","varchar(255)","","","","");
+            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"",""); // This is the linking ID
+            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","");
+            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","");
+            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","");
+            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","");
+            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","");
+            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","");
             m_TableForm->AddField("Title","title","varchar(100)","","","","");
             m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","",""); // FLAG_OPTIONS are in global.h
             m_TableForm->Create();// Create the table.
+            //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+            m_TableForm->HideIDColumn();
             m_TableForm->Show(true);
+
 
         }
 
@@ -1045,20 +1062,47 @@ void MainFrame::OnMyEvent(MyEvent& event)
     else if(event.m_bDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
         m_TableForm = nullptr;
-        CheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
+        m_ImportMySQLForm = nullptr;
+        if(Settings.bAutoCheckDefinitions)
+            CheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
+    }
+    else if(event.m_bImportDatabase){
+        ImportDatabase(event.m_sDatabaseName, event.m_sNewDatabaseName);
     }
     else{
         // We are showing everything
-        SetGridWhereCondition(event.m_sWhereCondition);
-        Refresh();
+        //This is where we need to remember the current where conditon
+
+        //If this is not empty, then we have a new where condition so we can override the stored where condition in the mainframe.
+        if(!event.m_sWhereCondition.IsEmpty()){
+            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
+            SetGridWhereCondition(event.m_sWhereCondition);
+            Refresh();
+
+        }else{
+            //If the events where condition is empty, then see if we have a stored where condition.
+            if(event.m_bShowAll){
+                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
+            }
+            SetGridWhereCondition(GetCurrentStoredWhereCondition());
+            Refresh();
+        }
+
     }
 }
-
+wxString MainFrame::GetCurrentStoredWhereCondition()
+{
+    return m_sCurrentStoredWhereCondition;
+}
+void MainFrame::SetCurrentStoredWhereCondition(wxString sWhereCondition)
+{
+    m_sCurrentStoredWhereCondition = sWhereCondition;
+}
 
 // This is where we blend the user where condition with the filter where condition
 void MainFrame::SetGridWhereCondition(wxString whereToBlend)
 {
-    wxString userWhere = GetUserWhereCondition();
+    wxString userWhere = GetUserWhereCondition(); //Gets the administraion where condidtion
     wxString sWhereCon = "";
 
     if (whereToBlend.IsEmpty() && !userWhere.IsEmpty()){
@@ -1084,6 +1128,7 @@ void MainFrame::SetGridWhereCondition(wxString whereToBlend)
 //If something doesn't match, the database fieldname field text will turn red.
 void MainFrame::CheckIfTableDefinitionsMatchDatabaseTable()
 {
+
     wxString sCellValue;
 
     if(m_MainGrid->GetFirstRowCellValue(sCellValue,2)){
@@ -1153,21 +1198,137 @@ bool MainFrame::Destroy()
 
 void MainFrame::Refresh()
 {
-    // We are showing everything
-    wxString userWhere = GetUserWhereCondition();
-    /* if( !userWhere.IsEmpty()){
-
-
-     }*/
-
-
     if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
         m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
     else
         m_MainGrid->LoadGridFromDatabase(); //Load all tables.
 
-    CheckIfTableDefinitionsMatchDatabaseTable();
+    //OK, this is a very show function and needs a checkbox to turn it off.
+    if(Settings.bAutoCheckDefinitions)
+        CheckIfTableDefinitionsMatchDatabaseTable();
+
+
+
     this->Layout();
 }
 
+
+void MainFrame::ImportDatabase(wxString sDatabase, wxString sNewDatabaseName){
+
+
+    auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to import this database?"), wxT("Import Database"), (unsigned)wxYES_NO | (unsigned)wxICON_EXCLAMATION);
+
+    if ( dlg->ShowModal() == wxID_YES ){
+        dlg->Destroy();
+        //Step 1: We need to read all the tables in the database and place them in a string array.
+        // SHOW TABLES;
+        /* Example
+        +-----------------------+
+        | Tables_in_spreadsheet |
+        +-----------------------+
+        | books                 |
+        */
+
+        //If we have a database name supplied, it will create a new database
+        if(!sNewDatabaseName.IsEmpty()){
+            if(!Utility::DoesDatabaseExist(sNewDatabaseName)){
+
+                Utility::CreateDatabase(sNewDatabaseName);
+                Utility::SaveDatabaseToDBWorks(sNewDatabaseName);
+                if(!Utility::CreateSystemTables(sNewDatabaseName)){
+                    wxLogMessage("Failed to create the system tables, see database administrator for help.");
+                    return;
+                }
+
+            } else{
+                wxLogMessage("The database you want to import into already exists, try importing again but choose a different database name.");
+                return;
+            }
+
+        } else{
+            // If the user didn't supply a database name, then we are going to import all the tables into this database.
+            sNewDatabaseName=Settings.sDatabase;
+        }
+
+
+        wxArrayString saTables;
+        Utility::LoadStringArrayWithDatabaseTableNames(sDatabase, saTables);
+
+        //Loop through all the tables. We need to read the tables from the database and fill th
+        for(int index=0; index < saTables.GetCount(); index++){
+
+            //Step 2: For each table, we need to read all the fields and,
+            // DESCRIBE tablename;
+            /*Example
+            +----------+--------------+------+-----+---------+-------+
+            | Field    | Type         | Null | Key | Default | Extra |
+            +----------+--------------+------+-----+---------+-------+
+            | title    | varchar(50)  | NO   |     | NULL    |       |
+            | price    | int          | NO   |     | NULL    |       |
+            | language | varchar(100) | YES  |     | ENGLISH |       |
+            | author   | varchar(200) | NO   |     | NULL    |       |
+            | comments | varchar(900) | YES  |     | NULL    |       |
+            +----------+--------------+------+-----+---------+-------+
+            */
+
+            //This will call the SQL Describe method and load the tableFieldItemArray with table fields.
+            ArrayTableFields tableFieldItemArray;
+            Utility::LoadFieldArrayWithTableFields(sDatabase, saTables[index], tableFieldItemArray);
+
+
+            // Step 3: Add table to sys_tables and save the table ID.
+            //Step 4: Similar to PropertyTable::PrepareCreateQuery() but instead of reading from the grid and creating the table, we are reading from the table and creating table definition
+            // in sys_fields
+            //THIS IS THE WRONG FUNCTION TO CALL.
+            //NOTE, We want to create table definition in the new database or existing database if newdatabase string is empty.
+            CreateTableDefinitions(sNewDatabaseName, saTables[index], tableFieldItemArray);
+
+
+            if(Settings.bImportCreateTables){
+                //This is where we create the actual tables in the database
+                Utility::CreateTable(sNewDatabaseName, saTables[index], tableFieldItemArray);
+            }
+
+            if(Settings.bImportCreateTables && Settings.bImportData){
+                //Now the table exist in the database, we can import all the data.
+
+            }
+
+
+        }
+        //Step 5: Place the database in the dropdown selection list and load the database tables. NOTE We need a place to store imported database for uses to select, at they moment they are just in
+        // the ini file. Also, give an option to import in new database, maybe even renaming it, OR import all the tables into the current open database.
+
+        //Note: The user might import into an existing name, we don't want duplicates here.
+        if(!Utility::DoesSelectionExistInCombobox(m_DatabaseCombo,sNewDatabaseName))
+            m_DatabaseCombo->Append(sNewDatabaseName); // Append the imported database to the combo box NOTE We still need a place to save our database.
+
+
+
+
+
+        m_DatabaseCombo->SetStringSelection(sNewDatabaseName);
+        Settings.sDatabase = sNewDatabaseName;
+        Refresh();
+    }
+
+}
+
+//This is where we create a new database and fill
+void MainFrame::CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray){
+
+    if (Utility::DoesTableExist(sTableName))
+    {
+        //We want to create an error log if the table already exists, but it won't if it's a new database.
+    } else{
+        //Create the table definition is sys_tables and return the table ID
+
+        wxString tableId = Utility::InsertTableInSYS_TABLES(sDatabase,sTableName);
+
+        for (int index=0;index < tableFieldItemArray.GetCount();index++){
+            if(!tableId.IsEmpty())
+                Utility::InsertFieldInSYS_FIELDS(sDatabase,tableId,tableFieldItemArray[index]);
+        }
+    }
+}
 

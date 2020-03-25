@@ -36,6 +36,14 @@ class GenericTable : public wxFrame
         //Pointers
         HtmlHelp *m_HtmlWin;
 
+        wxString GetCurrentStoredWhereCondition();
+        void SetCurrentStoredWhereCondition(wxString sWhereCondition);
+        wxString m_sCurrentStoredWhereCondition;
+
+        int m_iSavedRowIndex; // This is the row index that needs to be updatad when add or edit a field.
+
+        void Refresh();
+
         void OnParseDocument(wxString sDocument);
 
     void OnButtonAction( wxCommandEvent& event );
@@ -57,12 +65,15 @@ class GenericTable : public wxFrame
         void OnbAddItem( wxCommandEvent& event );
         void OnbEditItem( wxCommandEvent& event );
 
+        void AddItem(long rowID);
         void  EditItem(long rowID);
         void ViewItem(long rowID);
 
         void OnbViewItem( wxCommandEvent& event );
         void OnbExitApp(wxCommandEvent& event);
         virtual void OnbHelp( wxCommandEvent& event );
+
+
 
     public:
 
@@ -78,6 +89,8 @@ class GenericTable : public wxFrame
         virtual void SetGridTableName(wxString& name){};
 
         bool Destroy() override;
+        void HideIDColumn();
+        void SetIDTitleName(wxString sTitle);
 
         void OnMyEvent(MyEvent& event);
         wxDECLARE_EVENT_TABLE();

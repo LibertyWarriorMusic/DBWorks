@@ -10,15 +10,19 @@ class MyEvent : public wxEvent
     int m_iCol;
 
     wxString m_sTableName;
+    wxString m_sDatabaseName;
+    wxString m_sNewDatabaseName;
     long m_lTableID;
 
     //These flags indicate which context menu we came from
-    bool m_bProperties;
+    bool m_bTableFieldDefinitions;
     bool m_bOpen;
     bool m_bEdit;
-    bool m_bRefreshDatabase;
+    bool m_bRefreshDatabase; //Refresh the entire grid reloading every record.
     bool m_bDestroyed;
     bool m_bParseDocument;
+    bool m_bShowAll;
+    bool m_bImportDatabase;
 
     wxString m_cellValue; // The value of the current clicked cell.
     wxString m_cellFieldName; // The field name for that cell

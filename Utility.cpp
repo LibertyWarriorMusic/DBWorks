@@ -10,7 +10,24 @@
 #include <mysql.h>
 #include <mysql++.h>
 
+#include <wx/arrimpl.cpp>
+WX_DEFINE_OBJARRAY(ArrayTableFields);
+
 using namespace mysqlpp;
+
+bool Utility::DoesSelectionExistInCombobox(wxComboBox *combo,   wxString sSelectionLabel)
+{
+    for (int i =0 ; i< combo->GetCount() ;i++){
+
+      if(combo->GetString(i)==sSelectionLabel)
+        return true;
+    }
+    return false;
+}
+
+
+
+
 
 wxString Utility::PassHTMLDocument(wxString sDocument)
 {
@@ -330,7 +347,7 @@ void Utility::ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag)
 
         long ColumnNumber;
         flagContents[1].ToLong(&ColumnNumber);
-        LoadStringArrayFromDatabaseTable(sArray,TableId,ColumnNumber);
+        LoadStringArrayFromDatabaseTable(Settings.sDatabase, sArray,TableId,ColumnNumber);
     }
 }
 
@@ -519,10 +536,10 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
     return false;
 }
 
-wxString Utility::GetTableNameFromSYS_TABLES(long lTableId)
+wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId)
 {
 
-    wxString database(Settings.sDatabase);
+    wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
@@ -575,9 +592,65 @@ wxString Utility::GetTableNameFromSYS_TABLES(long lTableId)
     return "";
 }
 
-wxString Utility::GetTableFieldNameFromTable(wxString sTableName, long lColumnNumber)
+wxString Utility::GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName)
 {
-    wxString database(Settings.sDatabase);
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString;
+        QueryString << "select sys_tablesId from " << SYS_TABLES << " where tablename= '"+sTableName+"'";
+
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            //NOTE: You should get only one row of data.
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData1(res[currentRow]["sys_tablesId"], wxConvUTF8);
+                    return strData1;
+                }
+                catch (int& num) {
+                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+    return "";
+
+}
+
+wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, long lColumnNumber)
+{
+    wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
@@ -634,14 +707,14 @@ wxString Utility::GetTableFieldNameFromTable(wxString sTableName, long lColumnNu
 //First we need to find the tablename from the SYS_TABLES table having lTableId.
 //Then we need to find the field name correcsponding with lcolumnNumber.
 // Once we have the tablename and field name, we can load the table.
-void Utility::LoadStringArrayFromDatabaseTable(wxArrayString &sArray, long lTableId, long lColumnNumber){
+void Utility::LoadStringArrayFromDatabaseTable(wxString sDatabase, wxArrayString &sArray, long lTableId, long lColumnNumber){
 
 
-    wxString sTableName = GetTableNameFromSYS_TABLES(lTableId);
-    wxString sFieldName = GetTableFieldNameFromTable(sTableName,lColumnNumber);
+    wxString sTableName = GetTableNameFromSYS_TABLES(sDatabase, lTableId);
+    wxString sFieldName = GetTableFieldNameFromTable(sDatabase, sTableName,lColumnNumber);
 
 
-    wxString database(Settings.sDatabase);
+    wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
@@ -689,6 +762,62 @@ void Utility::LoadStringArrayFromDatabaseTable(wxArrayString &sArray, long lTabl
     }
 
 }
+
+void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
+
+
+    wxString database("INFORMATION_SCHEMA"); // This doesn't have to be this database, but we know this database is created in MySQL
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "SHOW DATABASES;";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow]["Database"], wxConvUTF8);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}
+
+
+
+
 // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
 bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
 {
@@ -914,7 +1043,7 @@ wxString Utility::LoadSystemDocument(int documentId)
 
 
 
-void Utility::ExecuteQuery(const wxString& QueryString, const wxString& sDatabase)
+void Utility::ExecuteQuery(const wxString& sDatabase , const wxString& QueryString )
 {
     wxString database(sDatabase);
     wxString server(Settings.sServer);
@@ -1046,4 +1175,436 @@ bool Utility::IsReservedMySQLWord(wxString wordToFind)
         return true;
 
     return false;
+}
+
+
+//First we need to find the tablename from the SYS_TABLES table having lTableId.
+//Then we need to find the field name correcsponding with lcolumnNumber.
+// Once we have the tablename and field name, we can load the table.
+void Utility::LoadStringArrayWithDatabaseTableNames(wxString sDatabase, wxArrayString &sArray ){
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "SHOW TABLES;";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow]["Tables_in_"+sDatabase], wxConvUTF8);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}
+
+
+// If the table doesn't exist, this will prepare a create string.
+wxString Utility::CreateTable(wxString sDatabase, wxString sTableName, ArrayTableFields m_FieldsArray )
+{
+    wxString queryString="";
+
+    wxString fieldName;
+    wxString valtype;
+    wxString valnull;
+    wxString valkey;
+    wxString valdefault;
+    wxString valextra;
+
+
+    queryString = "CREATE TABLE IF NOT EXISTS `"+sDatabase+"`.`"+sTableName+"` (";
+    queryString += "`"+sTableName+"Id` INT NOT NULL AUTO_INCREMENT, ";
+
+    for (int row = 0 ; row < m_FieldsArray.GetCount(); row++){
+
+        //Reset
+        //buildString="";
+        fieldName="";
+        valtype="";
+        valnull="";
+        valkey="";
+        valdefault="";
+        valextra="";
+
+        queryString += "`";
+
+
+        fieldName=m_FieldsArray[row].fieldName;
+        valtype=m_FieldsArray[row].fieldType;
+
+        wxString val=m_FieldsArray[row].fieldNull;
+        if(val.Lower()=="no")
+            valnull=" NOT NULL ";
+        else
+            valnull=" ";
+        //valnull=m_FieldsArray[row].fieldNull;
+
+        valkey=m_FieldsArray[row].fieldKey;
+
+        val=m_FieldsArray[row].fieldDefault; //Default needs to be DEFAULT = 'value' if a value exists, otherwise it can be empty.
+        if(val.Lower()=="null" || val == "0")
+            valdefault=" ";
+        else if (Utility::IsEmpty(val))
+            valdefault="";
+        else
+            valdefault= " DEFAULT '" + valkey + "'";
+
+
+
+        valextra=m_FieldsArray[row].fieldExtra;
+
+
+        queryString += fieldName + "` " + valtype + valnull + " " + valkey + " " + valdefault + " " + valextra + ",";
+        //Update the string
+    }
+
+    queryString += "PRIMARY KEY (`"+sTableName+"Id`));";
+
+    ExecuteQuery(sDatabase,queryString);
+
+    return Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+}
+
+//Will need to describe the table and fill the m_fields
+// If the table was created by DBWorks and it has a primary key PRI and the primary key name is the tablenameId, then don't create the field.
+// Also, we don't want to create primary keys because the dbworks automatically creates them.
+// We might want a future option to ask the user to include primary keys fields as none primary keys.
+bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableName, ArrayTableFields &m_Fields )
+{
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "DESCRIBE " + sTableName + ";";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                    wxString sType(res[currentRow]["Type"], wxConvUTF8);
+                    wxString sNull(res[currentRow]["Null"], wxConvUTF8);
+                    wxString sKey(res[currentRow]["Key"], wxConvUTF8);
+                    wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
+                    wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
+
+
+                    if(sKey=="PRI"){
+                        //If we have a PRI key, then don't create it because the database creates it's own PRI
+                        //Check the option to create a primary key but never create one if dbworks created it, that will be tablenameId
+                        if(Settings.bImportPrimaryKey && sField !=sTableName+"Id" ){
+
+                            auto *tableField = new TableFieldItem();
+                            tableField->fieldName=sField;
+                            tableField->fieldType=sType;
+                            tableField->fieldNull=sNull;
+                            tableField->fieldKey="";// Don't include the PRI here
+                            tableField->fieldDefault = sDefault;
+                        }
+
+                    } else{
+                        auto* tableField = new TableFieldItem();
+                        tableField->fieldName=sField;
+                        tableField->fieldType=sType;
+                        tableField->fieldNull=sNull;
+                        tableField->fieldKey=sKey;
+                        tableField->fieldDefault = sDefault;
+                        m_Fields.Add(tableField);
+                    }
+
+
+
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+ return true;
+}
+
+bool Utility::CreateSystemTables(wxString sDatabase)
+{
+    //Check to see if the database was created.
+    if(DoesDatabaseExist(sDatabase)){
+
+
+        //Check to see if the system tables exist, of not, create them.
+        if(!DoesTableExist(sDatabase,"sys_tables")){
+
+
+            //We can load from a file or write in code here. I think it's better to write it code. The other option is the place this in sys_docs table as a system document type.
+            wxString query="";
+
+            //OPTION 1 LOAD FROM FILE
+            //wxFile file("SQL/createsystables.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysTablesDocID);
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_tables` ("
+                    "  `sys_tablesId` int NOT NULL AUTO_INCREMENT,"
+                    "  `title` varchar(100) NOT NULL,"
+                    "  `tablename` varchar(100) NOT NULL,"
+                    "  `tabletype` varchar(255) NOT NULL,"
+                    "  `comments` varchar(255) DEFAULT NULL,"
+                    "  PRIMARY KEY (`sys_tablesId`)"
+                    ") ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;";
+
+
+            if(!query.IsEmpty()){
+
+                ExecuteQuery(sDatabase,query);
+            }
+
+        }
+        if(!DoesTableExist(sDatabase,"sys_fields")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+            //wxFile file("SQL/createsysfields.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_fields` ("
+                    "`sys_fieldsId` int NOT NULL AUTO_INCREMENT,"
+                    " `sys_tablesId` int NOT NULL,"
+                    " `valfield` varchar(100) NOT NULL,"
+                    " `valtype` varchar(100) NOT NULL,"
+                    " `valnull` varchar(10) NOT NULL,"
+                    " `valkey` varchar(10) DEFAULT NULL,"
+                    " `valdefault` varchar(255) DEFAULT NULL,"
+                    "`valextra` varchar(255) DEFAULT NULL,"
+                    " `title` varchar(100) DEFAULT NULL,"
+                    " `flags` varchar(200) DEFAULT NULL,"
+                    "PRIMARY KEY (`sys_fieldsId`)"
+                    ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+
+        }
+
+        if(!DoesTableExist(sDatabase,"sys_docs")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+            //Option 1;
+            //wxFile file("SQL/createsysdocs.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysDocsDocID);
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_docs` ("
+                    "`sys_docsId` int NOT NULL AUTO_INCREMENT,"
+                    "`Title` varchar(200) NOT NULL,"
+                    "`TypeOfDoc` varchar(100) NOT NULL,"
+                    "`Document` longtext,"
+                    "PRIMARY KEY (`sys_docsId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
+    }
+    else{
+        return false;
+    }
+
+    return true;
+}
+
+wxString Utility::InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableName)
+{
+   wxString QueryString = "INSERT INTO sys_tables (title,tablename,tabletype,comments) VALUES ('"+sTableName+"','"+sTableName+"','user_imported','')";
+   ExecuteQuery(sDatabase,QueryString);
+   return GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+
+}
+
+void Utility::InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem)
+{
+    wxString tableID;
+    tableID << sTableId;
+
+    wxString QueryString = "INSERT INTO sys_fields (sys_tablesId,valfield,valtype,valnull,valkey,valdefault,valextra,title,flags) VALUES ('"+ tableID +"','"+ fieldItem.fieldName +"','"+ Utility::Escape(fieldItem.fieldType) +"','"+ fieldItem.fieldNull +"','"+ fieldItem.fieldKey +"','"+ Utility::Escape(fieldItem.fieldDefault) +"','"+ fieldItem.fieldExtra +"','"+ fieldItem.fieldName +"','')";
+    ExecuteQuery(sDatabase,QueryString);
+
+}
+//Loads all the database to the array string from the dbworks database table sys_databases
+void Utility::AppendDBWorksDatabases(wxArrayString &arrayToAppend)
+{
+
+    wxString database("dbworks");
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        wxString QueryString =   "";
+        QueryString << "SELECT databasename FROM  sys_databases";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // Get each row in result set, and print its contents
+            for (size_t i = 0; i < res.num_rows(); ++i) {
+
+                try {
+
+                    wxString strData1(res[i]["databasename"], wxConvUTF8);
+                    arrayToAppend.Add(strData1);
+
+                }
+                catch (int num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+
+    }
+
+}
+
+void Utility::SaveDatabaseToDBWorks(wxString sDatabaseNameToSave){
+
+    if(!DoesRecordExist("dbworks","sys_databases","databasename",sDatabaseNameToSave)){
+        wxString QueryString = "INSERT INTO sys_databases (databasename,comments) VALUES ('"+sDatabaseNameToSave+"','user_imported')";
+        ExecuteQuery("dbworks",QueryString);
+    }
+}
+
+bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue)// Check to see if a record with a particular value exists.
+{
+    wxString QueryString;
+    QueryString = "SELECT "+sFieldname+" FROM "+sTable+" WHERE sFieldname = '" + sValue + "' LIMIT 1";
+
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+            if( res.num_rows() > 0 )
+                return true;
+            else
+                return false;
+        }
+        else {
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+    return false;
+
 }

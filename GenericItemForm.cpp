@@ -472,20 +472,27 @@ void GenericItemForm::OnbOK( wxCommandEvent& event )
         InsertItem();
     else if(m_sUse=="UPDATE")
         UpdateItem();
+    else{
+        //If we are only viewing, there is no need to refresh the grid.
+        Close(TRUE);
+        return;
+
+    }
 
     //Send a message to the main frame to update the spreadsheet
     //Refresh the control by generating an event to the main frame.
     MyEvent my_event( this );
-    my_event.m_bRefreshDatabase=true;
+    my_event.m_bRefreshDatabase = true;
     GetParent()->ProcessWindowEvent( my_event );
 
      Close(TRUE);
 }
 void GenericItemForm::OnbCancel( wxCommandEvent& event )
 {
+    //The is no need to refresh the parent if we are canceling.
     //Refresh the control by generating an event to the main frame.
-    MyEvent my_event( this );
-    GetParent()->ProcessWindowEvent( my_event ) ;
+ //   MyEvent my_event( this );
+ //   GetParent()->ProcessWindowEvent( my_event ) ;
 
     Close(TRUE);
 }
@@ -661,10 +668,6 @@ void GenericItemForm::UpdateItem(){
             query.execute();
 
             StoreQueryResult res = query.store();
-
-            //Refresh the control by generating an event to the main frame.
-            MyEvent my_event( this );
-            GetParent()->ProcessWindowEvent( my_event );
     
         }
 

@@ -4,7 +4,7 @@
 #define SYS_TABLES "sys_tables" //This is the name of the table in the information database that holds all user tables.
 #define SYS_FIELDS "sys_fields"//This is the name of the table in the information database that holds all user fields linked to sys_table.
 #define SYS_DOCS "sys_docs" //This is the name of the table in the information database that holds system documents.
-#define MYSQLRESERVEDWORDS "KEY TABLE " // This is all the mysql reserved words.
+#define MYSQLRESERVEDWORDS "KEY TABLE DATABASE" // This is all the mysql reserved words.
 //Place all global settings here, can be use anywhere in the project.
 //Thse setting are only set from settings.ini file.
 struct  GlobalSettings {
@@ -22,6 +22,11 @@ struct  GlobalSettings {
     int iSysTablesDocID=4;
     int iSysFieldsDocID=9;
     int iSysDocsDocID=10;
+    bool bImportPrimaryKey=true;
+    bool bImportCreateTables=false;
+    bool bImportData=false;
+    bool bAutoCheckDefinitions=false;
+
     wxString sDatbaseSelectionList="SELECTION{information;test;final_release;}";
 };
 extern GlobalSettings Settings;

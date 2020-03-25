@@ -24,11 +24,6 @@ private:
     int m_iRow; //Used when we right click on a cell to store the cell position
     int m_iCol;
     int m_iDocumentColumn; //If we found a DOCUMENT flag, this store the column where the document is located, else it's -1;
-    
-    wxString m_sDatabase; //Database connection details
-    wxString m_sUser;
-    wxString m_sServer;
-    wxString m_sPassword;
 
     int m_iGetCellRowIndex; //Used with the GetfirstCellValue and GetNextCellValue functions to keep track of the cells.
     int m_iGetCellColumnNumber; //Used with the GetfirstCellValue and GetNextCellValue functions to remember the cell column number.
@@ -68,6 +63,7 @@ public:
 
     void SetGridWhereCondition(wxString sWhere);
     bool LoadGridFromDatabase(bool bCheckTableExists=false); //Loads the grid with data from the m_sTableName table;
+    bool LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists=false); //Loads the grid with data from the m_sTableName table;
     void ResizeSpreadSheet(); //Resises the fields to the text with respect to max and min size limits.
 
 

@@ -106,10 +106,10 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
     //auto *f = dynamic_cast<wxFrame*>(this->GetParent());
 
-    wxString database(m_sDatabase);
-    wxString server(m_sServer);
-    wxString user(m_sUser);
-    wxString pass(m_sPassword);
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
 
 
     // Connect to the sample database.
@@ -146,7 +146,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
             int iTracRowIncaseOfSkip = 0;
             // Get each row in result set, and print its contents
-            for (size_t index = 0; index < RowsInTable; ++index) {
+            for (size_t indexRow = 0; indexRow < RowsInTable; ++indexRow) {
                 bool bSkip=false;
                 try {
 
@@ -155,7 +155,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
                         if (!Utility::IsSystemDatabaseDeveloper()){
 
-                            wxString tableName(res[index][m_GridArray[1].field], wxConvUTF8);
+                            wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
                             if(!Utility::DoesTableExist(tableName))
                                 bSkip=true;
 
@@ -269,6 +269,178 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
     ResizeSpreadSheet();
     return true;
     // f->SetStatusText("Database Connected");
+}
+
+bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
+{
+    if(m_gridRow>-1){
+
+        //auto *f = dynamic_cast<wxFrame*>(this->GetParent());
+
+        wxString database(Settings.sDatabase);
+        wxString server(Settings.sServer);
+        wxString user(Settings.sDatabaseUser);
+        wxString pass(Settings.sPassword);
+
+        //Get the database item that needs to be updated.
+        wxString Id = GetCellValue(m_gridRow,0);
+
+
+        // Connect to the sample database.
+        Connection conn(false);
+
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+            //SetStatusText("Database Connected");
+            wxString QueryString = "select * from " + m_sTableName + " WHERE " +m_sTableName+"Id="+Id + " LIMIT 1";
+            Query query = conn.query(QueryString);
+            StoreQueryResult res = query.store();
+
+
+
+            // Display results
+            if (res) {
+                //This is where we need to check if our result set has the same number of field definitions as our grid, if not, we need to inform the user to create the table alteration.
+                int count = m_GridArray.GetCount();
+                int RowsInTable = res.num_rows();
+
+                if (count ==0 ){
+                    wxLogMessage(MSG_FIELD_NOT_CREATED);
+                    return false;
+                }
+
+                //int iTracRowIncaseOfSkip = 0;
+                // Get each row in result set, and print its contents
+                for (size_t indexRow = 0; indexRow < RowsInTable; ++indexRow) {
+                    bool bSkip=false;
+                    try {
+
+                        if(bCheckTableExists){
+
+
+                            if (!Utility::IsSystemDatabaseDeveloper()){
+
+                                wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
+                                if(!Utility::DoesTableExist(tableName))
+                                    bSkip=true;
+
+                            }
+                        }
+
+                        if(!bSkip){
+
+                            wxString strData0(res[0][m_sPrimaryKeyName], wxConvUTF8);
+
+                            SetCellValue(m_gridRow,0,strData0); //from wxSmith
+                            SetReadOnly(m_gridRow,0);
+
+
+
+
+                            if (count>0){
+
+                                for(int index=0;index<count;index++){
+
+                                    wxString fieldName = m_GridArray[index].field;
+                                    wxString defaultValue = m_GridArray[index].defaultValue;
+                                    wxString flag = m_GridArray[index].flags;
+                                    //wsString strData1 = "";
+                                    //strData1 =  res[i][fieldName];
+
+                                    //CHeck if the field name exist
+                                    bool bMatch=false;
+                                    int numField = res.num_fields();
+
+                                    for(int i=0;i<numField;i++){
+                                        String  strName;
+
+                                        strName = res.field_name(i);
+
+                                        if(strName == fieldName){
+                                            bMatch = true;
+                                            break;
+                                        }
+
+                                    }
+
+
+                                    if(!bMatch){
+                                        wxLogMessage(MSG_FIELD_NOT_CREATED);
+                                        return false;
+
+                                    }
+
+
+                                    wxString strData1(res[indexRow][fieldName], wxConvUTF8);
+
+
+                                    //Make sure we don't have an empty field because of a bug that cause field left to overwright the right field
+                                    if(strData1.IsEmpty()){
+                                        //This is where we can place a default value only if there is no value in the database.
+                                        if (defaultValue.IsEmpty())
+                                            strData1 = " ";
+                                        else
+                                            strData1 = defaultValue;
+                                    }
+
+                                    if(Utility::HasFlag(flag,"PASSWORD")){
+
+                                        if(!Utility::IsEmpty(strData1))
+                                            SetCellValue(m_gridRow,index+1,Utility::ReplaceStringWithAsterix(strData1));
+                                        else
+                                            SetCellValue(m_gridRow,index+1,strData1);
+                                    }
+                                    else
+                                        SetCellValue(m_gridRow,index+1,strData1); //Set the value of the cell from the table value.
+
+
+                                    SetReadOnly(m_gridRow,index+1);//All entries on the grid are ready only, you can't change values directly via the grid.
+                                }
+                            }
+
+
+                            //iTracRowIncaseOfSkip++;
+
+                        }
+
+                    }
+                    catch (int& num) {
+
+                        //f->SetStatusText("Database Connected - Row doesn't exist:");
+                        wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                        return false;
+
+                    }
+
+
+                }
+            }
+            else {
+                //cerr << "Failed to get stock table: " << query.error() << endl;
+                //return 1;
+                //f->SetStatusText("Database Connected - Failed to get item list:");
+                wxLogMessage(MSG_FIELD_NOT_CREATED);
+                return false;
+            }
+        }
+        else{
+            wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+            //f->SetStatusText("Did not connect to database.");
+            return false;
+        }
+
+        ResizeSpreadSheet();
+        return true;
+
+
+
+
+    }
+    return true;
 }
 
 
@@ -393,7 +565,9 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
     }
 
     menu->AppendSeparator();
-    menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
+
+    if(m_sTableName!=SYS_FIELDS)
+        menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
 
 
 
@@ -402,7 +576,10 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
         menuLabel = menuLabel.Left(100);
         menuLabel << " ....";
     }
-    menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
+    if(m_sTableName!=SYS_FIELDS)
+        menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
+
+
     PopupMenu( menu, point);
 }
 //Searches for all the columns in a given row on the grid and checks to see if there is DOCUMENT set in the flag.
@@ -473,10 +650,10 @@ void DBGrid::SetSettings(const wxString& database, const wxString& server, const
     m_sTableName = tableName;
     m_sPrimaryKeyName = KeyName;
     m_sWhereCondition = whereCondition;
-    m_sDatabase=database;
-    m_sServer=server;
-    m_sUser=user;
-    m_sPassword=password;
+  //  m_sDatabase=database;
+  //  m_sServer=server;
+   // m_sUser=user;
+   // m_sPassword=password;
 }
 
 wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
@@ -574,18 +751,6 @@ void DBGrid::ResizeSpreadSheet()
          }
      }
 
-     //We just might need to send a message to the parent sizer to refresh.
-    //AutoSizeRows();
-
-     //int numRow = GetNumberRows();
-    // int height = (numRow * 20) + 50;
-    // SetSize(-1,height);
-
-
-
-    //ForceRefresh();
-    //SetVirtualSize(GetSize());
-
 }
 
 //Delete all the rows from the grid so it can be repopulated again.
@@ -605,7 +770,6 @@ void DBGrid::DeleteSelectedRow()
         
         wxString scontactId = GetCellValue(row,0);
         DeleteEntryFromDatabase(scontactId);
-        //SetStatusText(spasswordId);
     }
     LoadGridFromDatabase();
 }
@@ -615,11 +779,13 @@ void DBGrid::DeleteSelectedRow()
 void DBGrid::DeleteEntryFromDatabase(const wxString& Id){
 
     auto *f = dynamic_cast<wxFrame*>(this->GetParent());
-    
-    wxString database(m_sDatabase);
-    wxString server(m_sServer);
-    wxString user(m_sUser);
-    wxString pass(m_sPassword);
+
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
        
     try{
         // Connect to the sample database.
@@ -719,6 +885,7 @@ void DBGrid::OnClickMenuFilterShowAll(wxCommandEvent& event)
     my_event.m_iRow = m_iRow;
     my_event.m_iCol = m_iCol;
     my_event.m_bRefreshDatabase=true;
+    my_event.m_bShowAll=true;
     my_event.m_sTableName = m_sTableName;
     my_event.m_sWhereCondition = "";
 
@@ -738,7 +905,7 @@ void DBGrid::OnClickProperties(wxCommandEvent& event)
     MyEvent my_event( this );
     my_event.m_iRow = m_iRow;
     my_event.m_iCol = m_iCol;
-    my_event.m_bProperties = true;
+    my_event.m_bTableFieldDefinitions = true;
     my_event.m_sTableName = GetCellValue(m_iRow,2);//Get the value of the first column. NOTE: This is generic, I might be able to set the table name differently.
     wxString str = GetCellValue(m_iRow,0);
     long val;

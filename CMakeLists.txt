@@ -12,7 +12,8 @@ set(SOURCE_FILES
         PropertyTable.cpp
         main.cpp
         Utility.cpp
-        HtmlHelp.cpp)
+        HtmlHelp.cpp
+        ImportMySQLDatabase.cpp)
 
 find_package(wxWidgets)
 include(${wxWidgets_USE_FILE})

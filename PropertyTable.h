@@ -45,6 +45,8 @@ class PropertyTable : public GenericTable
         void SetSettings(wxString& database, wxString& server, wxString& user, wxString& password) override; // Set Database settings.
         void SetGridTableName(wxString& name) override; //Set the table that this property grid is working on
 
+
+
         bool Destroy() override;
         ~PropertyTable() override;
     
