@@ -254,13 +254,13 @@ GenericTable::~GenericTable()
 //Button Handle functions
 void GenericTable::OnbAddItem( wxCommandEvent& event )
 {
-    wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
-    int size = rowsSelected.size();
+    //wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
+    //int size = rowsSelected.size();
 
-    if(size==1){
-        int row = rowsSelected[0];
-        AddItem(row);
-    }
+   // if(size==1){
+       // int row = rowsSelected[0];
+        AddItem(-1);
+   // }
 
 }
 void GenericTable::AddItem(long rowID)
