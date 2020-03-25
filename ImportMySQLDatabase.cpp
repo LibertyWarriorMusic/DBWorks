@@ -112,7 +112,7 @@ void ImportMySQLDatabase::OnbImport( wxCommandEvent& event )
     m_sNewDatabaseName =  m_NewDatabaseNameCtl->GetValue();
     m_sNewDatabaseName.Replace(" ",""); //Remove any spaces from the name.
 
-
+    Close(TRUE);
     //Refresh the control by generating an event to the main frame.
     MyEvent my_event( this );
     my_event.m_sDatabaseName = m_sSelectedDatabase;
@@ -120,5 +120,5 @@ void ImportMySQLDatabase::OnbImport( wxCommandEvent& event )
     my_event.m_bImportDatabase = true;
     GetParent()->ProcessWindowEvent( my_event ) ;
 
-    Close(TRUE);
+
 }
