@@ -21,6 +21,7 @@
 #include <wx/filename.h>
 #include <wx/toolbar.h>
 #include <wx/checkbox.h>
+#include <wx/gauge.h>
 
 #include "Utility.h"
 #include "global.h"
@@ -29,6 +30,8 @@
 #include "DBGrid.h"
 #include "GenericTable.h"
 #include "PropertyTable.h"
+#include "myProgressControl.h"
+
 #include <mysql.h>
 #include <mysql++.h>
 
@@ -47,11 +50,12 @@ GlobalSettings Settings;
 enum {
     ID_ButtonAction = wxID_HIGHEST + 1000,
     MENU_New,
-    MENU_Open,
+    MENU_IMPORT,
     MENU_Close,
     MENU_Save,
     MENU_SaveAs,
     MENU_Quit,
+    MENU_DELETE_DATABASE,
     ID_TOOL_ADD,
     ID_TOOL_EDIT,
     ID_TOOL_DELETE,
@@ -63,10 +67,11 @@ enum {
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(ID_ButtonAction, MainFrame::OnButtonAction)
     EVT_MENU(MENU_New, MainFrame::NewFile)
-    EVT_MENU(MENU_Open, MainFrame::OpenFile)
+    EVT_MENU(MENU_IMPORT, MainFrame::OpenFile)
     EVT_MENU(MENU_Close, MainFrame::CloseFile)
     EVT_MENU(MENU_Save, MainFrame::SaveFile)
     EVT_MENU(MENU_SaveAs, MainFrame::SaveFileAs)
+    EVT_MENU(MENU_DELETE_DATABASE, MainFrame::OnDeleteCurrentDatabase)
     EVT_MENU(MENU_Quit, MainFrame::Quit)
     EVT_TOOL(ID_TOOL_ADD, MainFrame::OnbAddItem)
     EVT_TOOL(ID_TOOL_EDIT, MainFrame::OnbEditItem)
@@ -92,7 +97,10 @@ bool MyApp::OnInit()
     m_saTableIndex=0;
     m_ProgressStep=0;
     m_ProgessCount=0;
+    m_dataRecordIndex=0;
     m_sTableID="";
+    m_saTables = nullptr;
+    //m_Res = nullptr;
 
     bool bSettingLoaded= LoadAppSettings();
     
@@ -265,228 +273,425 @@ void MyApp::StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName) {
 
 void MyApp::onIdle(wxIdleEvent& evt)
 {
-    if(bProgress_loop_on)
-    {
-        if(m_bImportingDatabase){
+    if(bProgress_loop_on) {
+
+        //IMPORT DATABASE
+        if (m_bImportingDatabase) {
 
 
-                if (m_iIdleStep==1){
+            if (m_iIdleStep == 1) {
 
-                    //Step 1: We need to read all the tables in the database and place them in a string array.
-                    // SHOW TABLES;
-                    // Example
-                    // +-----------------------+
-                    // | Tables_in_spreadsheet |
-                    // +-----------------------+
-                    // | books                 |
-                    //
-                    m_MainFrame->SetProgressLabel("Importing database: " + m_DatabaseToImport);
+                //Step 1: We need to read all the tables in the database and place them in a string array.
+                // SHOW TABLES;
+                // Example
+                // +-----------------------+
+                // | Tables_in_spreadsheet |
+                // +-----------------------+
+                // | books                 |
+                //
+                m_MainFrame->SetProgressLabel("Importing database: " + m_DatabaseToImport);
 
-                    auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to import this database?"),
-                                                    wxT("Import Database"),
-                                                    (unsigned) wxYES_NO | (unsigned) wxICON_EXCLAMATION);
+                auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to import this database?"),
+                                                wxT("Import Database"),
+                                                (unsigned) wxYES_NO | (unsigned) wxICON_EXCLAMATION);
 
-                    if (dlg->ShowModal() == wxID_YES) {
-                        saTables = new wxArrayString;
-                        m_iIdleStep++;
-                    } else {
-                        m_bImportingDatabase = false;
-                        activateRenderLoop(false);//StopAllidle process.
+                if (dlg->ShowModal() == wxID_YES) {
+                    m_saTables = new wxArrayString;
+                    m_iIdleStep++;
+                } else {
+                    m_bImportingDatabase = false;
+                    activateRenderLoop(false);//StopAllidle process.
+                }
+
+
+                dlg->Close(true);
+
+
+            }
+            else if (m_iIdleStep == 2)
+            {
+
+
+
+
+
+                //If we have a database name supplied, it will create a new database
+                if (!m_NewDatabaseNameToImportInto.IsEmpty()) {
+
+                    if(m_NewDatabaseNameToImportInto=="information" || m_NewDatabaseNameToImportInto=="dbworks" ){
+
+                        wxLogMessage("You can't overwrite a system database, please choose another database name.");
+                        m_iIdleStep=8;
+                        return;
                     }
 
+                    //If the database exists, drop it then create it again.
+                    if (Utility::DoesDatabaseExist(m_NewDatabaseNameToImportInto))
+                        Utility::ExecuteQuery("DROP DATABASE " + m_NewDatabaseNameToImportInto);
 
-                    dlg->Close(true);
+                    Utility::CreateDatabase(m_NewDatabaseNameToImportInto);
 
 
+                    //Save the database name to the dbworks database to remember our imported and loaded databases
+                    //The dbworks database only holds names at the moment.
+                    Utility::SaveDatabaseToDBWorks(m_NewDatabaseNameToImportInto);
+                }
+                else
+                    // If the user didn't supply a database name, then we are going to import all the tables into this database.
+                    m_NewDatabaseNameToImportInto = Settings.sDatabase;
+
+                if(m_NewDatabaseNameToImportInto=="information" || m_NewDatabaseNameToImportInto=="dbworks" ){
+
+                    wxLogMessage("You can't overwrite a system database, please choose another database name.");
+                    m_iIdleStep=8;
+                    return;
+                }
+
+                if (!Utility::CreateSystemTables(m_NewDatabaseNameToImportInto)) {
+                    wxLogMessage("Failed to create the system tables, see database administrator for help.");
+                    m_iIdleStep=8;
+                    return;
+                }
+
+
+
+                m_iIdleStep++;
+            }
+            else if (m_iIdleStep == 3)
+            {
+
+                //We only read all the table names here with the SHOW TABLES mysql command.
+                Utility::LoadStringArrayWithDatabaseTableNames(m_DatabaseToImport, *m_saTables);
+                m_saTableIndex = 0;
+                m_iIdleStep++;
+
+            } else if (m_iIdleStep == 4)
+            {
+
+
+                //We need to calculate the number of steps for the progess bar
+                if (m_saTableIndex == 0){
+                    m_ProgessCount=0;
+                    m_ProgressStep=Utility::CalculateProgressStepsforImport(m_saTables->GetCount());
+                }
+
+
+                //Loop through all the tables. We need to read the tables from the database and fill th
+                //for(int index=0; index < saTables->GetCount(); index++){
+
+                //if(m_progressCount<100){
+                //  m_progressCount+=progressStep;
+
+                //m_MainFrame->UpdateProgressBar(m_progressCount);
+                //}
+                //Step 2: For each table, we need to read all the fields and,
+                // DESCRIBE tablename;
+                /*Example
+                +----------+--------------+------+-----+---------+-------+
+                | Field    | Type         | Null | Key | Default | Extra |
+                +----------+--------------+------+-----+---------+-------+
+                | title    | varchar(50)  | NO   |     | NULL    |       |
+                | price    | int          | NO   |     | NULL    |       |
+                | language | varchar(100) | YES  |     | ENGLISH |       |
+                | author   | varchar(200) | NO   |     | NULL    |       |
+                | comments | varchar(900) | YES  |     | NULL    |       |
+                +----------+--------------+------+-----+---------+-------+
+                */
+
+                //This will call the SQL Describe method and load the tableFieldItemArray with table fields.
+                ArrayTableFields tableFieldItemArray;
+                Utility::LoadFieldArrayWithTableFields(m_DatabaseToImport, m_saTables->Item(m_saTableIndex),
+                                                       tableFieldItemArray);
+
+
+                // Step 3: Add table to sys_tables and save the table ID.
+                //Step 4: Similar to PropertyTable::PrepareCreateQuery() but instead of reading from the grid and creating the table, we are reading from the table and creating table definition
+                // in sys_fields
+                //THIS IS THE WRONG FUNCTION TO CALL.
+                //NOTE, We want to create table definition in the new database or existing database if new database string is empty.
+                m_MainFrame->SetProgressLabel("Creating Table Def: " + m_saTables->Item(m_saTableIndex));
+                m_MainFrame->CreateTableDefinitions(m_NewDatabaseNameToImportInto, m_saTables->Item(m_saTableIndex),
+                                                    tableFieldItemArray);
+
+
+                if (Settings.bImportCreateTables) {
+
+                    m_MainFrame->SetProgressLabel("Creating Table: " + m_saTables->Item(m_saTableIndex));
+                    //This is where we create the actual tables in the database
+                    Utility::CreateTable(m_NewDatabaseNameToImportInto, m_saTables->Item(m_saTableIndex),
+                                         tableFieldItemArray);
 
                 }
-                else if(m_iIdleStep==2){
-                    //If we have a database name supplied, it will create a new database
-                    if(!m_NewDatabaseNameToImportInto.IsEmpty()){
 
-                        if(!Utility::DoesDatabaseExist(m_NewDatabaseNameToImportInto)){
+                //if(Settings.bImportCreateTables && Settings.bImportData){
+                //Now the table exist in the database, we can import all the data.
 
-                            Utility::CreateDatabase(m_NewDatabaseNameToImportInto);
 
-                            Utility::SaveDatabaseToDBWorks(m_NewDatabaseNameToImportInto);
+                UpdateProgressBar();
+                m_saTableIndex++;
 
-                            if(!Utility::CreateSystemTables(m_NewDatabaseNameToImportInto)){
-                                wxLogMessage("Failed to create the system tables, see database administrator for help.");
+
+                if (m_saTableIndex == m_saTables->GetCount()) {
+                    m_iIdleStep++;
+                    m_saTableIndex = 0;// reset it, but it will be reset when we start
+                }
+            }else if (m_iIdleStep == 5)
+            {
+                //Load all the data
+                // We need to run through all the tables again and fill them with data
+                if (Settings.bImportCreateTables && Settings.bImportData) {
+
+
+                            //If you are importing a dbworks created database, don't load data into the system tables, or you will get insane results and corrupt the data.
+                            if (m_saTables->Item(m_saTableIndex) == SYS_FIELDS || m_saTables->Item(m_saTableIndex) ==SYS_TABLES) {
+                                m_iIdleStep = 8;
                                 return;
                             }
 
-                        } else{
-                            wxLogMessage("The database you want to import into already exists, try importing again but choose a different database name.");
-                            return;
-                        }
+                           if(m_dataRecordIndex==0){
 
-                    } else{
-                        // If the user didn't supply a database name, then we are going to import all the tables into this database.
-                        m_NewDatabaseNameToImportInto=Settings.sDatabase;
-                    }
-                    m_iIdleStep++;
-                }
-                else if(m_iIdleStep==3){
+                               m_ProgessCount=0;
+                               m_ProgressStep=Utility::CalculateProgressStepsforImport(m_saTables->GetCount());
 
-                    Utility::LoadStringArrayWithDatabaseTableNames(m_DatabaseToImport, *saTables);
-                    m_iIdleStep++;
-                }
-                else if(m_iIdleStep==4){
+                               m_tableFieldItemArray.Clear();
+                               Utility::LoadFieldArrayWithTableFields(m_DatabaseToImport, m_saTables->Item(m_saTableIndex),m_tableFieldItemArray);
+
+                                wxString database(m_DatabaseToImport);
+                                wxString server(Settings.sServer);
+                                wxString user(Settings.sDatabaseUser);
+                                wxString pass(Settings.sPassword);
 
 
-                    //We need to calculate the number of steps for the progess bar
-                    if (m_saTableIndex==0)
-                        CalculateProgressStepsforImport(saTables->GetCount());
+                                // Connect to the sample database.
+                                Connection conn(false);
 
-                    //Loop through all the tables. We need to read the tables from the database and fill th
-                    //for(int index=0; index < saTables->GetCount(); index++){
+                                if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                                                 (const_cast<char*>((const char*)server.mb_str())),
+                                                 (const_cast<char*>((const char*)user.mb_str())),
+                                                 (const_cast<char*>((const char*)pass.mb_str())))) {
 
-                        //if(m_progressCount<100){
-                          //  m_progressCount+=progressStep;
+                                    //SetStatusText("Database Connected");
+                                    wxString QueryString = "SELECT * FROM " + m_saTables->Item(m_saTableIndex) + ";";
+                                    Query query = conn.query(QueryString);
+                                    m_Res = query.store();
 
-                            //m_MainFrame->UpdateProgressBar(m_progressCount);
-                        //}
-                        //Step 2: For each table, we need to read all the fields and,
-                        // DESCRIBE tablename;
-                        /*Example
-                        +----------+--------------+------+-----+---------+-------+
-                        | Field    | Type         | Null | Key | Default | Extra |
-                        +----------+--------------+------+-----+---------+-------+
-                        | title    | varchar(50)  | NO   |     | NULL    |       |
-                        | price    | int          | NO   |     | NULL    |       |
-                        | language | varchar(100) | YES  |     | ENGLISH |       |
-                        | author   | varchar(200) | NO   |     | NULL    |       |
-                        | comments | varchar(900) | YES  |     | NULL    |       |
-                        +----------+--------------+------+-----+---------+-------+
-                        */
+                                    if(!m_Res){
 
-                        //This will call the SQL Describe method and load the tableFieldItemArray with table fields.
-                        ArrayTableFields tableFieldItemArray;
-                        Utility::LoadFieldArrayWithTableFields(m_DatabaseToImport, saTables->Item(m_saTableIndex), tableFieldItemArray);
-
-
-                        // Step 3: Add table to sys_tables and save the table ID.
-                        //Step 4: Similar to PropertyTable::PrepareCreateQuery() but instead of reading from the grid and creating the table, we are reading from the table and creating table definition
-                        // in sys_fields
-                        //THIS IS THE WRONG FUNCTION TO CALL.
-                        //NOTE, We want to create table definition in the new database or existing database if newdatabase string is empty.
-                        m_MainFrame->CreateTableDefinitions(m_NewDatabaseNameToImportInto, saTables->Item(m_saTableIndex), tableFieldItemArray);
-
-
-                        if(Settings.bImportCreateTables){
-                            //This is where we create the actual tables in the database
-                            Utility::CreateTable(m_NewDatabaseNameToImportInto, saTables->Item(m_saTableIndex), tableFieldItemArray);
-                        }
-
-                        if(Settings.bImportCreateTables && Settings.bImportData){
-                            //Now the table exist in the database, we can import all the data.
-
-                        }
-                        UpdateProgressBar();
-                        m_saTableIndex++;
-                    //}
-
-                    if(m_saTableIndex==saTables->GetCount()){
-                        m_iIdleStep++;
-                        m_saTableIndex=0;// reset it, but it will be reset when we start
-                    }
+                                        //If we going to increment the table index, we need to check that it hasn't reached the end.
+                                        m_saTableIndex++;
+                                        if (m_saTableIndex == m_saTables->GetCount()) {
+                                            m_iIdleStep = 8;
+                                            return;
+                                        } else
+                                            return;
+                                    }
+                                    //If there are not rows of data, move onto the next
+                                    if(m_Res.num_rows()<1){
+                                        m_saTableIndex++;
+                                        if (m_saTableIndex == m_saTables->GetCount()) {
+                                            m_iIdleStep = 8;
+                                            return;
+                                        } else
+                                            return;
+                                    }
+                                    if(m_Res){
+                                        m_ProgressStep = Utility::CalculateProgressStepsforImport(m_Res.num_rows());
+                                        m_MainFrame->GetProgressControlPointer()->SetValue(0);
+                                        m_MainFrame->SetProgressLabel("Import data for: " + m_saTables->Item(m_saTableIndex));
 
 
-                }
-                else if(m_iIdleStep==5){
+                                    }
 
-                    //Step 5: Place the database in the dropdown selection list and load the database tables. NOTE We need a place to store imported database for uses to select, at they moment they are just in
-                    // the ini file. Also, give an option to import in new database, maybe even renaming it, OR import all the tables into the current open database.
+                                  //  m_dataRecordIndex
 
-                    //Note: The user might import into an existing name, we don't want duplicates here.
-                    if(!Utility::DoesSelectionExistInCombobox(m_MainFrame->GetDatabaseComboBox(),m_NewDatabaseNameToImportInto))
-                        m_MainFrame->GetDatabaseComboBox()->Append(m_NewDatabaseNameToImportInto); // Append the imported database to the combo box NOTE We still need a place to save our database.
-
-
-
-                    m_iIdleStep++;
-                }
-                else if(m_iIdleStep==6){
-
-                    //Set the selected database on the toolbar combo and then refresh the grid.
-                    m_MainFrame->GetDatabaseComboBox()->SetStringSelection(m_NewDatabaseNameToImportInto);
-                    Settings.sDatabase = m_NewDatabaseNameToImportInto;
-                    m_MainFrame->Refresh();
+                                }
+                                else{
+                                    //We have a bigger problem, get out of here
+                                    m_iIdleStep = 8;
+                                    return;
+                                }
+                           }//END OF INIT EACH TABLE before we get all the records
 
 
-                    m_iIdleStep++;
-                }
-                else if(m_iIdleStep==7){
-                    delete saTables;
-                    m_iIdleStep=0;
-                    m_bImportingDatabase = false;
-                    activateRenderLoop(false);//StopAllidle process.
-                    m_MainFrame->UpdateProgressBar(100);
-                    m_MainFrame->SetProgressLabel("Import Ended");
-                    //wxLogMessage("Import Ended");
-                }
+                            //Get Each data Records and write it to the database table
+                            // Utility::LoadNextTableData(m_DatabaseToImport,m_NewDatabaseNameToImportInto, m_saTables->Item(m_saTableIndex),m_dataRecordIndex,tableFieldItemArray);
 
-        }
-        else if(m_bCheckTableDefinitions){
-            if (m_iIdleStep==1) {
-                CalculateProgressStepsforImport(m_MainFrame->GetMainGrid()->GetRows());
+                            wxString queryString;
+                            int count = m_tableFieldItemArray.GetCount();
 
-                m_iIdleStep++;
-                UpdateProgressBar();
-            }
-            else if(m_iIdleStep==2){
+                            if (count > 0 && m_Res) {
 
-                if(m_MainFrame->GetMainGrid()->GetFirstRowCellValue(m_sCellValue,2)){
-                    m_sTableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
+                                queryString = "INSERT INTO " + m_saTables->Item(m_saTableIndex) + " (";
 
-                    CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,m_sTableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
-                 //   while(m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)){
-                  //      TableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
-                  //      CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,TableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
-                  //  }
-          //        if(m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)){
-                 //       TableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
-                     //   CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,TableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
-                    //}
-                    //else
-                    m_iIdleStep++;
+                                for (int i = 0; i < count; i++) {
+                                    if (i == count - 1)
+                                        queryString = queryString + m_tableFieldItemArray[i].fieldName;
+                                    else
+                                        queryString = queryString + m_tableFieldItemArray[i].fieldName + ",";
+                                }
 
-                }
-                else{
-                    m_iIdleStep=0;
-                    m_sTableID="";
-                    m_bCheckTableDefinitions = false;
-                    activateRenderLoop(false);//StopAllidle process.
-                    m_MainFrame->UpdateProgressBar(100);
-                    m_MainFrame->SetProgressLabel("Checking Table Definitions Ended.");
-                }
+                                queryString = queryString + ") VALUES (";
 
-                UpdateProgressBar();
-            }
-            else if(m_iIdleStep==3){
+                                for (int i = 0; i < count; i++) {
 
-                if(m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)){
-                    m_sTableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
-                    CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,m_sTableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
+                                    int indexRecord=m_dataRecordIndex;
+
+                                    if(indexRecord<m_Res.num_rows()){
+                                        wxString sValue(m_Res[indexRecord][m_tableFieldItemArray[i].fieldName], wxConvUTF8);
+
+                                        sValue = Utility::Escape(sValue);
+
+                                        if (m_tableFieldItemArray[i].fieldType == "int") {
+                                            if (i == count - 1)
+                                                queryString = queryString + sValue + ")";
+                                            else
+                                                queryString = queryString + sValue + ",";
+
+                                        } else {
+                                            if (i == count - 1)
+                                                queryString = queryString + "'" + sValue + "')";
+                                            else
+                                                queryString = queryString + "'" + sValue + "',";
+                                        }
+
+                                    }
+
+
+                                }
+
+                            }
+
+                            Utility::ExecuteQuery(m_NewDatabaseNameToImportInto, queryString);
+
+
+                            m_dataRecordIndex++;
+                            m_ProgessCount+=m_ProgressStep;
+                            m_MainFrame->GetProgressControlPointer()->SetValue(m_ProgessCount);
+
+                            //Don't Update here, will do so inside funciton
+                            //UpdateProgressBar();
+                            int Rowcount=m_Res.num_rows();
+                            if(m_dataRecordIndex == Rowcount){
+
+
+                                m_saTableIndex++;
+                                m_tableFieldItemArray.Clear();
+
+                                if (m_saTableIndex < m_saTables->GetCount())
+                                    Utility::LoadFieldArrayWithTableFields(m_DatabaseToImport, m_saTables->Item(m_saTableIndex),m_tableFieldItemArray);
+
+
+
+                                m_dataRecordIndex=0;
+                            }
+
+
+                            if (m_saTableIndex == m_saTables->GetCount()) {
+                                m_iIdleStep++;
+                                m_saTableIndex = 0;// reset it, but it will be reset when we start
+                            }
+
                 }
                 else
                     m_iIdleStep++;
 
-                UpdateProgressBar();
             }
-            else if(m_iIdleStep==4){
+            else if (m_iIdleStep == 6)
+            {
+
+                //Step 5: Place the database in the dropdown selection list and load the database tables.
+                //Note: The user might import into an existing name, we don't want duplicates here.
+                if (!Utility::DoesSelectionExistInCombobox(m_MainFrame->GetDatabaseComboBox(),
+                                                           m_NewDatabaseNameToImportInto))
+                    m_MainFrame->GetDatabaseComboBox()->Append(m_NewDatabaseNameToImportInto); // Append the imported database to the combo box NOTE We still need a place to save our database.
+
+                m_iIdleStep++;
+            } else if (m_iIdleStep == 7) {
+
+                //Set the selected database on the toolbar combo and then refresh the grid.
+                m_MainFrame->GetDatabaseComboBox()->SetStringSelection(m_NewDatabaseNameToImportInto);
+                Settings.sDatabase = m_NewDatabaseNameToImportInto;
+                m_MainFrame->Refresh();
+
+
+                m_iIdleStep++;
+            } else if (m_iIdleStep == 8) {
+
+
+                if (m_saTables == nullptr) {
+                    delete m_saTables;
+                    m_saTables = nullptr;
+                }
+                m_iIdleStep = 0;
+                m_dataRecordIndex=0;
+                m_bImportingDatabase = false;
+                activateRenderLoop(false);//StopAllidle process.
+                m_MainFrame->UpdateProgressBar(100);
+                m_MainFrame->SetProgressLabel("Import Ended");
+                //wxLogMessage("Import Ended");
+            }
+
+        }
+        // CHECK DEFINITION
+        else if (m_bCheckTableDefinitions) {
+
+
+            if (m_iIdleStep == 1) {
+                m_MainFrame->SetProgressLabel("Checking Definitions");
+                m_ProgessCount=0;
+                m_ProgressStep=Utility::CalculateProgressStepsforImport(m_MainFrame->GetMainGrid()->GetRows());
 
                 m_iIdleStep++;
                 UpdateProgressBar();
-            }
-            else if(m_iIdleStep==5){
+            } else if (m_iIdleStep == 2) {
+
+                if (m_MainFrame->GetMainGrid()->GetFirstRowCellValue(m_sCellValue, 2)) {
+                    m_sTableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
+
+                    CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue, m_sTableID,
+                                                                m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
+                    //   while(m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)){
+                    //      TableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
+                    //      CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,TableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
+                    //  }
+                    //        if(m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)){
+                    //       TableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
+                    //   CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue,TableID,m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
+                    //}
+                    //else
+                    m_iIdleStep++;
+
+                } else {
+                    m_iIdleStep = 0;
+                    m_sTableID = "";
+                    m_bCheckTableDefinitions = false;
+                    activateRenderLoop(false);//StopAllidle process.
+                    m_MainFrame->UpdateProgressBar(100);
+                    //m_MainFrame->SetProgressLabel("Checking Table Definitions Ended.");
+                }
+
+                UpdateProgressBar();
+            } else if (m_iIdleStep == 3) {
+
+                if (m_MainFrame->GetMainGrid()->GetNextRowCellValue(m_sCellValue)) {
+                    m_sTableID = m_MainFrame->GetMainGrid()->GetCurrentRowValue(0);
+                    CheckCellTableDefinitionsMatchDatabaseTable(m_sCellValue, m_sTableID,
+                                                                m_MainFrame->GetMainGrid()->GetCurrentRowIndex());
+                } else
+                    m_iIdleStep++;
+
+                UpdateProgressBar();
+            } else if (m_iIdleStep == 4) {
 
                 m_iIdleStep++;
                 UpdateProgressBar();
-            }
-            else if(m_iIdleStep==6){
-                m_iIdleStep=0;
-                m_sTableID="";
+            } else if (m_iIdleStep == 5) {
+
+                m_iIdleStep++;
+                UpdateProgressBar();
+            } else if (m_iIdleStep == 6) {
+                m_iIdleStep = 0;
+                m_sTableID = "";
                 m_bCheckTableDefinitions = false;
                 activateRenderLoop(false);//StopAllidle process.
                 m_MainFrame->UpdateProgressBar(100);
@@ -495,16 +700,13 @@ void MyApp::onIdle(wxIdleEvent& evt)
             }
 
 
-
-
         }
-
-
 
 
         evt.RequestMore(); // render continuously, not only once on idle
     }
 }
+
 void MyApp::StartCheckIfTableDefinitionsMatchDatabaseTable()
 {
     m_sTableID="";
@@ -528,7 +730,7 @@ void MyApp::StopCheckIfTableDefinitionsMatchDatabaseTable()
 //If they do, then mark the grid cell text as red.
 void MyApp::CheckCellTableDefinitionsMatchDatabaseTable(const wxString& sTable, const wxString& iTableId, int iRowIndex)
 {
-    if(!Utility::DoesTableExist(sTable)) {
+    if(!Utility::DoesTableExist(Settings.sDatabase,sTable)) {
         m_MainFrame->GetMainGrid()->HighlightCell(iRowIndex, 2);
     }
     else{
@@ -547,17 +749,7 @@ void MyApp::CheckCellTableDefinitionsMatchDatabaseTable(const wxString& sTable, 
     }
 }
 
-void MyApp::CalculateProgressStepsforImport(int iCount)
-{
-    m_ProgressStep=0;
-    m_ProgessCount=0;
 
-    if(iCount > 0 && iCount <= 100 ){
-        m_ProgressStep   = 100 / (iCount);
-    }
-    else if(iCount > 100)
-        m_ProgressStep   = iCount / 100 ;
-}
 
 void MyApp::UpdateProgressBar()
 {
@@ -608,6 +800,9 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_ImportMySQLForm = nullptr;
     m_txtCltCheckTableTxt = nullptr;
     m_AutoCheckDefinitionsCheckCtl = nullptr;
+    m_ProgressGauge = nullptr;
+    m_txtCltProgressBar = nullptr;
+
 
     bool b_DatabaseDeveloper=false;
     m_sCurrentStoredWhereCondition="";
@@ -661,8 +856,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
       m_FileMenu = new wxMenu();
 
 
-
-    m_FileMenu->Append(MENU_Open,
+    if (Utility::IsSystemDatabaseDeveloper() )
+        m_FileMenu->Append(MENU_IMPORT,
                        _("&Import a MySQL Database"), _("Import an existing file"));
 /*
       m_FileMenu->Append(MENU_New,
@@ -681,6 +876,11 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
           _("Save &As"), _("Save the current document under a new file  name"));
 
       m_FileMenu->AppendSeparator();*/
+
+    m_FileMenu->Append(MENU_DELETE_DATABASE,
+                       _("&Delete Current Database"), _("Delete the current selected database."));
+        m_FileMenu->AppendSeparator();
+
       m_FileMenu->Append(MENU_Quit,
           _("&Quit"), _("Quit the editor"));
 
@@ -747,19 +947,9 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_Toolbar1->AddControl(m_DatabaseCombo);
 
 
-    wxArrayString sDatabaseSelectionItemArray;
-    wxString databasesToSelect = "SELECTION{" + Settings.sDatabase +";" + Settings.sDatbaseSelectionList + "}";
-    Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,databasesToSelect);
 
-    //Now we want to append database from the dbworks - sys_databases table
-    Utility::AppendDBWorksDatabases(sDatabaseSelectionItemArray);
 
-    //Fill the list box with the selection items.
-    for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ ){
-        if(!Utility::DoesSelectionExistInCombobox(m_DatabaseCombo,sDatabaseSelectionItemArray[index]))
-            m_DatabaseCombo->Append(sDatabaseSelectionItemArray[index]);
-    }
-
+    LoadDatabaseCombo();
 
 
 
@@ -798,24 +988,17 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
             m_Toolbar1->AddControl(m_AutoCheckDefinitionsCheckCtl);
             m_AutoCheckDefinitionsCheckCtl->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( MainFrame::OnAutoCheckDefinitions ), nullptr, this );
 
-
-
-
+            m_ProgressGauge = new myProgressControl(m_Toolbar1,wxID_ANY,100);
+            m_ProgressGauge->DoGetBestSize();
 
             if(Settings.bAutoCheckDefinitions)
                 m_AutoCheckDefinitionsCheckCtl->SetValue(true);
+
+            m_Toolbar1->AddControl(m_ProgressGauge);
+
         }
-
         //Add a checkbox to enable Refresh
-
-
-
     }
-
-    wxSize sz(150,10);
-    m_ProgressGauge = new wxGauge( m_Toolbar1, wxID_ANY, 100, wxDefaultPosition, sz, wxGA_HORIZONTAL );
-    m_Toolbar1->AddControl(m_ProgressGauge);
-
 
     //m_ProgressGauge->SetValue(50);
 
@@ -852,9 +1035,34 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     m_Menubar->Show();
 }
+void MainFrame::LoadDatabaseCombo(){
+
+    //Remove all the items
+    if(m_DatabaseCombo->GetCount()>0){
+        m_DatabaseCombo->Clear();
+    }
+
+    wxArrayString sDatabaseSelectionItemArray;
+    wxString databasesToSelect = "SELECTION{" + Settings.sDatabase +";" + Settings.sDatbaseSelectionList + "}";
+    Utility::ExtractSelectionItems(sDatabaseSelectionItemArray,databasesToSelect);
+
+    //Now we want to append database from the dbworks - sys_databases table
+    Utility::AppendDBWorksDatabases(sDatabaseSelectionItemArray);
+    //Fill the list box with the selection items.
+    for ( int index=0; index<sDatabaseSelectionItemArray.GetCount(); index++ ){
+        if(!Utility::DoesSelectionExistInCombobox(m_DatabaseCombo,sDatabaseSelectionItemArray[index]))
+            m_DatabaseCombo->Append(sDatabaseSelectionItemArray[index]);
+    }
+}
+
+
+
+
+
 void MainFrame::SetProgressLabel(wxString sLabel)
 {
-    m_ProgressGauge->SetLabel(sLabel);
+    if(m_ProgressGauge!=nullptr)
+        m_ProgressGauge->SetLabel(sLabel);
 }
 //You only need to do this on the main window, show and hide different windows.
 //NOTE, this function needs to be modified to reflect what visibility we give in the mainframe constructor.
@@ -904,6 +1112,12 @@ void MainFrame::PopulateToolbar()
 }
 
 MainFrame::~MainFrame() = default;
+
+myProgressControl * MainFrame::GetProgressControlPointer()
+{
+    return m_ProgressGauge;
+}
+
 
 void MainFrame::LoadGrid()
 {
@@ -969,6 +1183,7 @@ void MainFrame::OnDatabaseComboDropDown( wxCommandEvent& event )
     iOldComboIndex = combo->GetSelection();
     UpdateProgressBar(0);
     SetProgressLabel("");
+
 }
 
 void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
@@ -982,6 +1197,7 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
     else{
         Settings.sDatabase = sDatabase;
         LoadGrid();
+        SetUsergroupWindowVisibility();//Hide columns for none database developers
     }
 }
 
@@ -1145,6 +1361,27 @@ wxString MainFrame::GetSelectedRowTable()
     }
 
     return tableName;
+}
+
+void MainFrame::OnDeleteCurrentDatabase( wxCommandEvent& event )
+{
+    auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to delete the selected database?"), wxT("Delete Database"),  wxICON_EXCLAMATION|wxYES_NO);
+
+    if ( dlg->ShowModal() == wxID_YES ){
+        if(m_DatabaseCombo->GetCount()>0){
+            Utility::ExecuteQuery("DROP DATABASE "+Settings.sDatabase);
+            Utility::ExecuteQuery("dbworks","delete from sys_databases where databasename='"+Settings.sDatabase+"';");
+            //Get the first selection, this will be the default
+            m_DatabaseCombo->Select(0);
+            Settings.sDatabase = m_DatabaseCombo->GetStringSelection();
+            LoadDatabaseCombo();
+            m_DatabaseCombo->Select(0);
+            if(!Utility::DoesDatabaseExist(Settings.sDatabase))
+                Utility::CreateDatabase(Settings.sDatabase);
+            Refresh();
+        }
+    }
+    dlg->Destroy();
 }
 
 void MainFrame::OnbViewItem( wxCommandEvent& event )
@@ -1535,28 +1772,19 @@ void MainFrame::Refresh()
     this->Layout();
 }
 
-
-
 void MainFrame::UpdateProgressBar(int val)
 {
-    m_ProgressGauge->SetValue(val);
-
+    if(m_ProgressGauge!=nullptr)
+        m_ProgressGauge->SetValue(val);
 }
 //This is where we create a new database and fill
 void MainFrame::CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray){
 
-    if (Utility::DoesTableExist(sTableName))
-    {
-        //We want to create an error log if the table already exists, but it won't if it's a new database.
-    } else{
         //Create the table definition is sys_tables and return the table ID
-
         wxString tableId = Utility::InsertTableInSYS_TABLES(sDatabase,sTableName);
 
         for (int index=0;index < tableFieldItemArray.GetCount();index++){
             if(!tableId.IsEmpty())
                 Utility::InsertFieldInSYS_FIELDS(sDatabase,tableId,tableFieldItemArray[index]);
         }
-    }
 }
-

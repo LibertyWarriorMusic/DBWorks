@@ -115,8 +115,6 @@ void GenericItemForm::CreateFields()
 
                                itemArray[i].TitleCtl = new wxStaticText( this, wxID_ANY, itemArray[i].title, wxDefaultPosition, wxDefaultSize, 0 );
                                itemArray[i].TitleCtl->Wrap( -1 );
-
-
                                 gSizer1->Add( itemArray[i].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
                                if(Utility::HasFlag(sFlags,"MULTILINE")){
@@ -383,17 +381,18 @@ void GenericItemForm::CreateFields()
        }
 }
 
-
 //Search each text label and find the largest lable width.
 //Once found, set all labels to that maximum value.
 void GenericItemForm::ResizeTitleText()
 {
+
     int num_cols=itemArray.GetCount();
     int MaxWidth=0;
 
     // First find the maximum label width
     for(int col=0;col<num_cols;col++)
     {
+
         int WidthOfChar =itemArray[col].TitleCtl->GetCharWidth();
         wxString str = itemArray[col].TitleCtl->GetLabel();
         int numChar = str.Length();
@@ -406,7 +405,7 @@ void GenericItemForm::ResizeTitleText()
 
     for(int col=0;col<num_cols;col++) {
 
-        itemArray[col].TitleCtl->SetMinSize(wxSize(MaxWidth, CTRL_HEIGHT));
+        itemArray[col].TitleCtl->SetMinSize(wxSize(MaxWidth+5, CTRL_HEIGHT));
         // Set each label width
     }
 }

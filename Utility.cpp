@@ -6,14 +6,18 @@
 
 #include <wx/stdpaths.h>
 #include "global.h"
-#include "Utility.h"
+#include "myProgressControl.h"
 #include <mysql.h>
 #include <mysql++.h>
+
+using namespace mysqlpp;
+
+#include "Utility.h"
 
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(ArrayTableFields);
 
-using namespace mysqlpp;
+
 
 bool Utility::DoesSelectionExistInCombobox(wxComboBox *combo,   wxString sSelectionLabel)
 {
@@ -26,7 +30,19 @@ bool Utility::DoesSelectionExistInCombobox(wxComboBox *combo,   wxString sSelect
 }
 
 
+double Utility::CalculateProgressStepsforImport(int iCount)
+{
+    double ProgressStep=0;
+   // m_ProgessCount=0;
 
+    if(iCount > 0 && iCount <= 100 ){
+        ProgressStep   = 100 / (iCount);
+    }
+    else if(iCount > 100)
+        ProgressStep   = iCount / 100 ;
+
+    return ProgressStep;
+}
 
 
 wxString Utility::PassHTMLDocument(wxString sDocument)
@@ -445,6 +461,7 @@ wxString Utility::DateNow() {
     return str;
 }
 //DATABASE UTILITY FUNCTIONS:
+/*
 bool Utility::DoesTableExist(wxString sDatabase, wxString sTable)
 {
 
@@ -490,7 +507,7 @@ bool Utility::DoesTableExist(wxString sDatabase, wxString sTable)
 
     return false;
 }
-
+*/
 bool Utility::DoesDatabaseExist(wxString sDatabase)
 {
     wxString QueryString;
@@ -943,14 +960,14 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName, const wxString& s
     return false;
 }
 
-bool Utility::DoesTableExist(wxString sTableName)
+bool Utility::DoesTableExist(wxString sDatabase, wxString sTableName)
 {
-    wxString database(Settings.sDatabase);
+    wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
-    wxString queryString = "select * from " + sTableName +";";
+    wxString queryString = "SELECT * FROM " + sTableName +";";
     Connection  conn;
     try{
 
@@ -1212,7 +1229,12 @@ void Utility::LoadStringArrayWithDatabaseTableNames(wxString sDatabase, wxArrayS
 
                 try {
                     wxString strData(res[currentRow]["Tables_in_"+sDatabase], wxConvUTF8);
-                    sArray.Add(strData);
+
+                    //NOTE We don't want to load system tables, they will be in the database, however we
+                    // don't wan't the user to see them in the table definitions.
+                    // If we ever create more system tables, we need to reject them here.
+                    if(!(strData=="sys_tables" || strData=="sys_fields"))
+                        sArray.Add(strData);
                 }
                 catch (int& num) {
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);
@@ -1350,6 +1372,7 @@ bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableN
                             tableField->fieldNull=sNull;
                             tableField->fieldKey="";// Don't include the PRI here
                             tableField->fieldDefault = sDefault;
+                            m_Fields.Add(tableField);
                         }
 
                     } else{
@@ -1361,9 +1384,6 @@ bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableN
                         tableField->fieldDefault = sDefault;
                         m_Fields.Add(tableField);
                     }
-
-
-
                 }
                 catch (int& num) {
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);

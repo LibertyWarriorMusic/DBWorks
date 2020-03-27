@@ -13,7 +13,8 @@ set(SOURCE_FILES
         main.cpp
         Utility.cpp
         HtmlHelp.cpp
-        ImportMySQLDatabase.cpp)
+        ImportMySQLDatabase.cpp
+        myProgressControl.cpp)
 
 find_package(wxWidgets)
 include(${wxWidgets_USE_FILE})

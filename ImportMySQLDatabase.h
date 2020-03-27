@@ -10,14 +10,15 @@ class ImportMySQLDatabase : public wxFrame{
 
 private:
     wxBoxSizer* m_MainFormSizer;
-    wxStaticText* m_txtCltUserGroup;
-    wxComboBox * m_UserGroupCombo;
+    wxComboBox * m_AvailableDatabasesCombo;
     wxButton* m_Cancel;
     wxButton* m_Import;
     wxString m_sSelectedDatabase;
     wxString m_sNewDatabaseName;
     wxTextCtrl * m_NewDatabaseNameCtl;
     wxStaticText* titleNewDB;
+    wxCheckBox * m_CreateTablesCtl;
+    wxCheckBox * m_ImportDataCtl;
 public:
     explicit ImportMySQLDatabase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
 
@@ -30,5 +31,7 @@ public:
     void OnDatabaseComboDropDown( wxCommandEvent& event );
     void OnbCancel( wxCommandEvent& event );
     void OnbImport( wxCommandEvent& event );
+    void OnCheckCreateTables(wxCommandEvent& event);
+    void OnCheckImportData(wxCommandEvent& event);
 };
 #endif //DBWORKS_IMPORTMYSQLDATABASE_H

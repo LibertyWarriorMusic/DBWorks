@@ -50,7 +50,7 @@ class MainFrame : public wxFrame
         void SetGridWhereCondition(wxString whereToBlend="");
 
         void SetUsergroupWindowVisibility();
-
+        void LoadDatabaseCombo();
         void PopulateToolbar();
 
 
@@ -65,9 +65,11 @@ class MainFrame : public wxFrame
         wxComboBox * m_UserGroupCombo;
         wxStaticText * m_txtCltUserGroup;
         wxStaticText * m_txtCltCheckTableTxt;
+        wxStaticText * m_txtCltProgressBar;
         wxCheckBox * m_AutoCheckDefinitionsCheckCtl;
-        wxGauge * m_ProgressGauge;
+        myProgressControl * m_ProgressGauge;
     public:
+        myProgressControl *GetProgressControlPointer();
         void Refresh();
         void UpdateProgressBar(int val);
         explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
@@ -85,9 +87,9 @@ class MainFrame : public wxFrame
         void OnbViewItem( wxCommandEvent& event );
         void OnAutoCheckDefinitions(wxCommandEvent& event);
         void OnbHelp( wxCommandEvent& event );
+        void OnDeleteCurrentDatabase( wxCommandEvent& event );
         static void CreateToolBars();
         void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);
-
         wxComboBox * GetDatabaseComboBox();
 
         DBGrid* GetMainGrid();
@@ -109,7 +111,8 @@ private:
     static bool LoadAppSettings();
     static void ProcessLine(wxString line);
 
-
+    ArrayTableFields m_tableFieldItemArray;
+    StoreQueryResult m_Res;
 
     //ProgressBar
     double m_ProgressStep;
@@ -118,13 +121,16 @@ private:
     void UpdateProgressBar();
 
     int m_iIdleStep;
+    //ArrayTableFields m_tableFieldItemArray;// Store all our tables field
 
     //IMPORTING DATABASE
     bool m_bImportingDatabase;
     wxString m_DatabaseToImport;
     wxString m_NewDatabaseNameToImportInto;
     int m_saTableIndex;
-    wxArrayString *saTables;//This holds all the databases we need to import
+    int m_dataRecordIndex;
+
+    wxArrayString *m_saTables;//This holds all the databases we need to import
 
     //Checking databse definition
     bool m_bCheckTableDefinitions;
@@ -137,7 +143,7 @@ public:
     bool bProgress_loop_on;
     void activateRenderLoop(bool on);
     void StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName);
-    void CalculateProgressStepsforImport(int iCount);
+
 
     void StartCheckIfTableDefinitionsMatchDatabaseTable();
     void StopCheckIfTableDefinitionsMatchDatabaseTable();

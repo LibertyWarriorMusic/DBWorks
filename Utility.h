@@ -20,9 +20,14 @@ public:
 
 WX_DECLARE_OBJARRAY(TableFieldItem, ArrayTableFields);
 
+class myProgressControl;
+
+
 //The Utility class only holds static functions that can be used throughout the application.
 class Utility {
 public:
+
+    static double CalculateProgressStepsforImport(int iCount);
     static void ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch);
     static void ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag);
     static bool HasFlag(wxString flags, wxString flag);
@@ -56,7 +61,7 @@ public:
     static void CreateDatabase(wxString sDatabaseToCreate);
     static bool CreateSystemTables(wxString sDatabase);
     static bool DoesDatabaseExist(wxString sDatabase);
-    static bool DoesTableExist(wxString sDatabase,wxString sTable);
+    //static bool DoesTableExist(wxString sDatabase,wxString sTable);
     static wxString GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId); // Loads an array with all values from a table given TableId and ColumnNumber
     static wxString GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
     static wxString GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, long lColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
@@ -65,7 +70,7 @@ public:
     static void LoadStringArrayWithDatabaseTableNames( wxString sDatabase,  wxArrayString &sArray);
     static void ExecuteQuery(const wxString& QueryString); //Execute a query string
     static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
-    static bool DoesTableExist(wxString sTableName);
+    static bool DoesTableExist(wxString sDatabase, wxString sTableName);
     static bool DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue);// Check to see if a record with a particular value exists.
     static bool DoesFieldExitInTable(const wxString& sTableName, const wxString& sTieldName);
     static bool IsEmpty(wxString str); // This function will remove any white spaces in the string before testing if empty.
@@ -77,6 +82,7 @@ public:
     static void InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem); //Insert a new table field
     static void AppendDBWorksDatabases(wxArrayString &arrayToAppend);
     static void SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
+
 };
 
 

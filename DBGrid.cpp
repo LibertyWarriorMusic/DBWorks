@@ -9,16 +9,17 @@
 #include <wx/frame.h>
 #include <wx/filename.h>
 #include <wx/dynarray.h>
-
+#include <wx/hyperlink.h>
 #include <mysql.h>
 #include <mysql++.h>
 
 //Add my own classes here
 
-#include "DBGrid.h"
+
 #include "global.h"
 #include "MyEvent.h"
 #include "Utility.h"
+#include "DBGrid.h"
 
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(ArrayGridItem);
@@ -156,7 +157,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
                         if (!Utility::IsSystemDatabaseDeveloper()){
 
                             wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
-                            if(!Utility::DoesTableExist(tableName))
+                            if(!Utility::DoesTableExist(Settings.sDatabase,tableName))
                                 bSkip=true;
 
                         }
@@ -227,8 +228,31 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
                                     else
                                         SetCellValue(iTracRowIncaseOfSkip,index+1,strData1);
                                 }
-                                else
-                                    SetCellValue(iTracRowIncaseOfSkip,index+1,strData1); //Set the value of the cell from the table value.
+                                else {
+                                    SetCellValue(iTracRowIncaseOfSkip, index + 1, strData1); //Set the value of the cell from the table value.
+
+                                    if(Utility::HasFlag(flag,"WEBLINK")){
+                                        SetCellTextColour(iTracRowIncaseOfSkip, index+1, wxSystemSettings::GetColour(wxSYS_COLOUR_HOTLIGHT));  // hyperlink blue
+                                        SetCellFont(iTracRowIncaseOfSkip, index+1, wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT).Underlined()); // underline
+                                        Connect(wxEVT_GRID_CELL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
+                                        /*
+                                        wxGridCellAttr * at = this->GetCellAttr(iTracRowIncaseOfSkip, index + 1);
+
+
+                                        wxHyperlinkCtrl * hp = new wxHyperlinkCtrl( this, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
+                                        //itemArray[i].linkCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+
+                                        hp->SetURL(strData1);
+                                        hp->SetLabel(strData1);
+                                        */
+
+                                        //wxGridCellRenderer * renderer = GetCellRenderer(iTracRowIncaseOfSkip, index+1);
+                                        //renderer->SetClientObject()
+                                        //Attach a mouse enter event and a mouse leave event to the cell window
+
+                                    }
+
+                                }
 
 
                                 SetReadOnly(iTracRowIncaseOfSkip,index+1);//All entries on the grid are ready only, you can't change values directly via the grid.
@@ -325,7 +349,7 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                             if (!Utility::IsSystemDatabaseDeveloper()){
 
                                 wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
-                                if(!Utility::DoesTableExist(tableName))
+                                if(!Utility::DoesTableExist(Settings.sDatabase,tableName))
                                     bSkip=true;
 
                             }
@@ -960,9 +984,26 @@ void DBGrid::OnClickEdit(wxCommandEvent& event)
     GetParent()->ProcessWindowEvent( my_event );
 }
 
+//I have a grid click
 void DBGrid::OnGridClick(wxGridEvent& event )
 {
+
     //SelectRow(event.GetRow());
+    int col = event.GetCol();
+    int row = event.GetRow();
+
+    SelectRow(row);
+
+    if(col>0){
+        wxString flags = m_GridArray[col-1].flags;
+
+        if(Utility::HasFlag(flags,"WEBLINK")){
+            wxString webLink = GetCellValue(row,col);
+            //wxExecute(webLink);
+           wxLaunchDefaultBrowser(webLink);
+        }
+
+    }
 }
 
 void DBGrid::OnGridDLClick(wxGridEvent& event )

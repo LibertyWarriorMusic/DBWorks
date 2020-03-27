@@ -104,7 +104,7 @@ void PropertyTable::SetGridTableName(wxString& name)
 {
     //First we want to see if the table exists, if it does, then we need to alter the table. If the table doesn't exist, then create it.
 
-    if (Utility::DoesTableExist(m_sGridTableName))
+    if (Utility::DoesTableExist(Settings.sDatabase,m_sGridTableName))
     {
         //wxMessageBox("Table already exists.");
 
