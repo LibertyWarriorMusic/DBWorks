@@ -10,6 +10,8 @@
 #include <mysql.h>
 #include <mysql++.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-escape-sequence"
 using namespace mysqlpp;
 
 #include "Utility.h"
@@ -18,7 +20,27 @@ using namespace mysqlpp;
 WX_DEFINE_OBJARRAY(ArrayTableFields);
 
 
+wxString Utility::Replace(wxString searchString, wxString Old, wxString New, bool all)
+{
 
+    int strLen = searchString.Length();
+    int iLen = Old.Length();
+    wxString result;
+
+    int pos = searchString.Find(Old);
+    while(pos!=wxNOT_FOUND){
+        result += searchString.Left(pos) << New << searchString.Right(strLen - pos -iLen);
+        searchString = result;
+
+        pos = searchString.Find(Old);
+
+        //int d;
+        //d=1;
+
+    }
+
+    return result;
+}
 bool Utility::DoesSelectionExistInCombobox(wxComboBox *combo,   wxString sSelectionLabel)
 {
     for (int i =0 ; i< combo->GetCount() ;i++){
@@ -55,47 +77,82 @@ wxString Utility::PassHTMLDocument(wxString sDocument)
     iLength = sDocument.Length();
     wxString QueryString = "";
 
-    FindBetweenTags(QueryString,sDocument,iStartPosition,iEndPosition,"<query>");
+    while(FindBetweenTags(QueryString,sDocument,iStartPosition,iEndPosition,"<query>")) {
 
-    if (QueryString.IsEmpty()){
-        //Ok, we found our first query.
-        //Remove the query string
 
-        return sDocument; // We didn't find any query, just return
-    }
-    else { // We found a query, now we have to extract the record
+        if (QueryString.IsEmpty()) {
+            //Ok, we found our first query.
+            //Remove the query string
 
-        //Trim any white spaces from the start and end of the query.
-        QueryString = QueryString.Trim(false);
-        QueryString = QueryString.Trim(true);
-        //Now we have the query, we can remove it from the sDocumentString
-        sDocument = sDocument.Left(iStartPosition) << sDocument.Right(iLength-iEndPosition);
+            return sDocument; // We didn't find any query, just return
+        } else { // We found a query, now we have to extract the record
 
-        iStartPosition = 0;
-        iEndPosition =0;
-        iLength = sDocument.Length();
-        wxString sRecordSet;
 
-        FindBetweenTags(sRecordSet, sDocument,iStartPosition,iEndPosition,"<recordset>");
+            QueryString = QueryString.Trim(false);
+            QueryString = QueryString.Trim(true);
 
-        if(sRecordSet.IsEmpty()){
-            //At this point, we have a query and a string that contains fields that need to be replaced with database values.
-            return sDocument;
+            //This is crazy stupid but the method I used to overcome a stupid feature (or bug, can't tell) in a wxTextCtl multiline.
+            //The apostrophe character ' gets replaced with this unicode character ‘ .This is very frustrating and a stupid thing to do for the wxTextCtl
+            // MySQL doesn't understand this character and breaks. I can't even use the wxString replace because that is buggy and only replaces the first occurance of
+            // this character. By converting it to Ascii, it changes it to an underscore.
+            // I might loose other characters by converting it ToAscii(), I believe MySQL uses utf8 so we might loose other characters.
+            // Because this is only a search query for documents, we should be OK here.
+            // The only real limitation here is you are restricted to using Ascii for queries in documents.
+
+            QueryString.Replace("_", "`~!@%$#^%",
+                                true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
+            QueryString = QueryString.ToAscii(); //What this is doing is changing the character ‘ to _
+            QueryString.Replace("_", "'", true); //The end result is changing ‘ to '
+            QueryString.Replace("`~!@%$#^%", "_", true);
+
+            //Now we have the query, we can remove it from the sDocumentString
+            sDocument = sDocument.Left(iStartPosition) << sDocument.Right(iLength - iEndPosition);
+
+            iStartPosition = 0;
+            iEndPosition = 0;
+            iLength = sDocument.Length();
+            wxString sRecordSet;
+
+            FindBetweenTags(sRecordSet, sDocument, iStartPosition, iEndPosition, "<recordset>");
+
+            if (sRecordSet.IsEmpty()) {
+                //At this point, we have a query and a string that contains fields that need to be replaced with database values.
+                return sDocument;
+            } else {
+
+                //Remove the recordset tags
+
+
+                //Now we have a recordset string, we can remove it from the sDocument, it will be replaced multiple times with fields replaced with field values
+                wxString beforeRecordset = sDocument.Left(iStartPosition);
+                wxString recordsetReplacement = ReplaceFieldTagsWithValuesFromTable(sRecordSet, QueryString);
+                wxString afterRecordset = sDocument.Right(iLength - iEndPosition);
+                sDocument = beforeRecordset + recordsetReplacement + afterRecordset;
+
+                //The document length has changed, get the new length for the next search.
+                iLength = sDocument.Length();
+
+            }
         }
-        else {
+    }//End While
 
-            //Now we have a recordset string, we can remove it from the sDocument, it will be replaced multiple times with fields replaced with field values
-            wxString beforeRecordset = sDocument.Left(iStartPosition);
-            wxString recordsetReplacement = ReplaceFieldTagsWithValuesFromTable(sRecordSet,QueryString);
-            wxString afterRecordset = sDocument.Right(iLength-iEndPosition);
-            sDocument = beforeRecordset + recordsetReplacement + afterRecordset;
-        }
-    }
+
+    //I also have to do this craziness with the document because the HTML renderer doesn't unstand those characters either.
+    sDocument.Replace("_", "`~!@%$#^%",
+                        true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
+    sDocument = sDocument.ToAscii(); //What this is doing is changing the character ‘ to _
+    sDocument.Replace("_", "'", true); //The end result is changing ‘ to '
+    sDocument.Replace("`~!@%$#^%", "_", true);
+
+
+
     return sDocument;
 }
 
+//iStartPosition will return the start position just before the tag <example_tag> and iEndPosition is just after </example_tag>
 bool Utility::FindBetweenTags(wxString& ReturnString, wxString& sStringToSearch, int &iStartPosition, int &iEndPosition, wxString tag)
 {
+
     //First generate the end tag
     int tagLength = tag.Length();
     wxString endTag = "</" + tag.Mid(1,tagLength-1);
@@ -285,7 +342,7 @@ bool Utility::IsCustomUser()
 }
 
 // This function extra's SELECTION item having the format SELECTION{item1;,item2;,etc;}
-//IMPORTANT NOTE: sToSearch might contain "SELECTION{value1;value2;value3}" OR LOOKUP_SELECTION{TableID;ColumnNumber;}, these need to be extracted as a single item, not multiple items.
+//IMPORTANT NOTE: sToSearch might contain "SELECTION{value1;value2;value3}" OR SELECTION_LOOKUP_ID{TableID;ColumnNumber;}, these need to be extracted as a single item, not multiple items.
 //NOTE this only processes one line of text, there should be no returns in the passing string.
 void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch)
 {
@@ -293,6 +350,7 @@ void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSe
   int position=0;
   int countSelection=0;
   int countLookupSelection=0;
+  int countLinkedSelection=0;
     position = sToSearch.Find("SELECTION");
 
     if (position != wxNOT_FOUND){
@@ -325,20 +383,61 @@ void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSe
                 continue;
             }
 
-            //Account for one of our selections being LOOKUP_SELECTION{TableID;ColumnNumber;}
-            if(value == "LOOKUP_SELECTION{TableID")
+            //Account for one of our selections being SELECTION_LOOKUP_ID{TableID;ColumnNumber;}
+            if(value == "SELECTION_LOOKUP_ID{TableID")
                 countLookupSelection++;
-            else if(value == "ColumnNumber")
+            else if(value == "ColumnNumber" && countLookupSelection > 0)
                 countLookupSelection++;
 
             if(countLookupSelection==2) {
                 countLookupSelection=0;
-                sArray.Add("LOOKUP_SELECTION{TableID;ColumnNumber;}");//Add value to the array.
+                sArray.Add("SELECTION_LOOKUP_ID{TableID;ColumnNumber;}");//Add value to the array.
                 position = endofdata + 1;
                 continue;
             }
 
-            if(countSelection==0 && countLookupSelection==0 && value!="}")
+            //Account for one of our selections being SELECTION_LOOKUP_NAME{TableName;FieldName;}
+            if(value == "SELECTION_LOOKUP_NAME{TableName")
+                countLookupSelection++;
+            else if(value == "FieldName" && countLookupSelection > 0)
+                countLookupSelection++;
+
+            if(countLookupSelection==2) {
+                countLookupSelection=0;
+                sArray.Add("SELECTION_LOOKUP_NAME{TableName;FieldName;}");//Add value to the array.
+                position = endofdata + 1;
+                continue;
+            }
+
+            //Account for one of our selections being SELECTION_LINKED_ID{TableID;ColumnNumber;}
+            if(value == "SELECTION_LINKED_ID{TableID")
+                countLinkedSelection++;
+            else if(value == "ColumnNumber" && countLinkedSelection>0)
+                countLinkedSelection++;
+
+            if(countLinkedSelection==2) {
+                countLinkedSelection=0;
+                sArray.Add("SELECTION_LINKED_ID{TableID;ColumnNumber;}");//Add value to the array.
+                position = endofdata + 1;
+                continue;
+            }
+
+            //Account for one of our selections being SELECTION_LINKED_NAME{TableID;ColumnNumber;}
+            if(value == "SELECTION_LINKED_NAME{TableName")
+                countLinkedSelection++;
+            else if(value == "FieldName" && countLinkedSelection>0)
+                countLinkedSelection++;
+
+            if(countLinkedSelection==2) {
+                countLinkedSelection=0;
+                sArray.Add("SELECTION_LINKED_NAME{TableName;FieldName;}");//Add value to the array.
+                position = endofdata + 1;
+                continue;
+            }
+
+
+
+            if(countSelection==0 && countLookupSelection==0 && value!="}"  && countLinkedSelection==0 )
                 sArray.Add(value);//Add value to the array.
 
             position = endofdata + 1;
@@ -347,23 +446,70 @@ void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSe
     }
 }
 
-//This function will look at the sFlag, it will contain the value SELECTION_LOOKUP{tableID;ColumnNumber;}
+//This function will look at the sFlag, it will contain the value SELECTION_LOOKUP_ID{tableID;ColumnNumber;}
 // Once we extract the tableID and ColumnNumber, we load the array with values having the columnNumber
-void Utility::ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag) {
+void Utility::ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag) {
 
-    //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LOOKUP to SELECTION
+    //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LOOKUP_ID to SELECTION
     wxArrayString flagContents;
 
-    sFlag.Replace( "SELECTION_LOOKUP", "SELECTION");
+    sFlag.Replace( "SELECTION_LOOKUP_ID", "SELECTION");
     ExtractSelectionItems(flagContents,sFlag);
 
     if(flagContents.GetCount()>0){
         long TableId;
         flagContents[0].ToLong(&TableId);
 
-        long ColumnNumber;
-        flagContents[1].ToLong(&ColumnNumber);
-        LoadStringArrayFromDatabaseTable(Settings.sDatabase, sArray,TableId,ColumnNumber);
+      //  long ColumnNumber;
+       // flagContents[1].ToLong(&ColumnNumber);
+        LoadStringArrayFromDatabaseTableByID(Settings.sDatabase, sArray,TableId,flagContents[1]);
+    }
+}
+void Utility::ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag) {
+
+    //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LOOKUP_ID to SELECTION
+    wxArrayString flagContents;
+
+    sFlag.Replace( "SELECTION_LOOKUP_NAME", "SELECTION");
+    ExtractSelectionItems(flagContents,sFlag);
+
+    if(flagContents.GetCount()>0){
+        LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, sArray,flagContents[0],flagContents[1]);
+    }
+}
+
+//This function will look at the sFlag, it will contain the value SELECTION_LINKED_ID{tableID;ColumnNumber;}
+// Once we extract the tableID and ColumnNumber, we load the array with values having the columnNumber
+void Utility::ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag) {
+
+    //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LINKED_ID to SELECTION
+    wxArrayString flagContents;
+
+    sFlag.Replace( "SELECTION_LINKED_ID", "SELECTION");
+    ExtractSelectionItems(flagContents,sFlag);
+
+    if(flagContents.GetCount()>0){
+        long TableId;
+        flagContents[0].ToLong(&TableId);
+
+        //long ColumnNumber;
+       // flagContents[1].ToLong(&ColumnNumber);
+        LoadStringArrayFromDatabaseTableByID(Settings.sDatabase, sArray,TableId,flagContents[1]);
+    }
+}
+void Utility::ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag) {
+
+    //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LINKED_ID to SELECTION
+    wxArrayString flagContents;
+
+    sFlag.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+    ExtractSelectionItems(flagContents,sFlag);
+
+    wxString tableName = flagContents[0];
+    wxString fieldName = flagContents[1];
+
+    if(flagContents.GetCount()>0){
+        LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, sArray,flagContents[0],flagContents[1]);
     }
 }
 
@@ -553,7 +699,7 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
     return false;
 }
 
-wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId)
+wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, wxString sTableId)
 {
 
     wxString database(sDatabase);
@@ -574,7 +720,7 @@ wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId)
         //SetStatusText("Database Connected");
         wxString QueryString;
         QueryString << "select tablename from " << SYS_TABLES << " where sys_tablesId = ";
-        QueryString << lTableId;
+        QueryString << sTableId;
 
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
@@ -591,6 +737,66 @@ wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId)
 
                 try {
                     wxString strData1(res[currentRow]["tablename"], wxConvUTF8);
+                    return strData1;
+                }
+                catch (int& num) {
+                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+    return "";
+}
+
+
+wxString Utility::GetTableTitleFromSYS_TABLES(wxString sDatabase, wxString sTableId)
+{
+
+    if(sTableId.IsEmpty())
+        return "";
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString;
+        QueryString << "select title from " << SYS_TABLES << " where sys_tablesId = ";
+        QueryString << sTableId;
+
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            //NOTE: You should get only one row of data.
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData1(res[currentRow]["title"], wxConvUTF8);
                     return strData1;
                 }
                 catch (int& num) {
@@ -665,7 +871,64 @@ wxString Utility::GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableNa
 
 }
 
-wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, long lColumnNumber)
+wxString Utility::GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString sTableTitle)
+{
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString;
+        QueryString << "select sys_tablesId from " << SYS_TABLES << " where title= '"+sTableTitle+"'";
+
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            //NOTE: You should get only one row of data.
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData1(res[currentRow]["sys_tablesId"], wxConvUTF8);
+                    return strData1;
+                }
+                catch (int& num) {
+                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+    return "";
+
+}
+
+
+wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, wxString sColumnNumber)
 {
     wxString database(sDatabase);
     wxString server(Settings.sServer);
@@ -689,6 +952,9 @@ wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTable
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
 
+        long lColumnNumber;
+        sColumnNumber.ToLong(&lColumnNumber);
+
         //First we need to find the table name
         // Display results
         if (res) {
@@ -699,7 +965,8 @@ wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTable
             for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
 
                 try {
-                    if(currentRow==lColumnNumber-1){
+                    if(currentRow==lColumnNumber){
+                    //if(currentRow==lColumnNumber-1){//I am not sure why we did this, by this isn't correct.
                         wxString strData(res[currentRow]["COLUMN_NAME"], wxConvUTF8);
                         return strData;
                     }
@@ -724,11 +991,12 @@ wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTable
 //First we need to find the tablename from the SYS_TABLES table having lTableId.
 //Then we need to find the field name correcsponding with lcolumnNumber.
 // Once we have the tablename and field name, we can load the table.
-void Utility::LoadStringArrayFromDatabaseTable(wxString sDatabase, wxArrayString &sArray, long lTableId, long lColumnNumber){
+void Utility::LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArrayString &sArray, long lTableId, wxString sColumnNumber){
 
-
-    wxString sTableName = GetTableNameFromSYS_TABLES(sDatabase, lTableId);
-    wxString sFieldName = GetTableFieldNameFromTable(sDatabase, sTableName,lColumnNumber);
+    wxString sTableId;
+    sTableId << lTableId;
+    wxString sTableName = GetTableNameFromSYS_TABLES(sDatabase, sTableId);
+    wxString sFieldName = GetTableFieldNameFromTable(sDatabase, sTableName,sColumnNumber);
 
 
     wxString database(sDatabase);
@@ -779,7 +1047,109 @@ void Utility::LoadStringArrayFromDatabaseTable(wxString sDatabase, wxArrayString
     }
 
 }
+void Utility::LoadStringArrayFromDatabaseTableByName(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName)
+{
 
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "select " + sFieldName + " from " + sTableName;
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow][sFieldName], wxConvUTF8);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+}
+
+void Utility::GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName, wxString value)
+{
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "select " + sTableName + "Id from " + sTableName + " WHERE " + sFieldName + "='"+value+"' LIMIT 1";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow][sTableName+"Id"], wxConvUTF8);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+
+}
 void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
 
 
@@ -832,6 +1202,57 @@ void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
 
 }
 
+void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value)
+{
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "select " + sFieldToGet + " from " + sTableName + " WHERE " + sFieldName + "='"+value+"' LIMIT 1";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow][sFieldToGet], wxConvUTF8);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+
+}
 
 
 
@@ -1628,3 +2049,4 @@ bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFie
     return false;
 
 }
+#pragma clang diagnostic pop

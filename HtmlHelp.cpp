@@ -43,7 +43,7 @@ bool HtmlHelp::Destroy()
 }
 
 void HtmlHelp::SetPage(const int &DocumentID){
-    m_HtmlWin->SetPage(Utility::LoadSystemDocument(DocumentID));
+    m_HtmlWin->SetPage(Utility::PassHTMLDocument(Utility::LoadSystemDocument(DocumentID)));
     m_HtmlWin->Show();
 }
 

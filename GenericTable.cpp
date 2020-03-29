@@ -63,6 +63,9 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
     m_DrawPane = nullptr;
     m_Toolbar = nullptr;
     m_HtmlWin = nullptr;
+    m_txtFilter=nullptr;
+    m_ComboFilter=nullptr;
+
     m_sCurrentStoredWhereCondition="";
     m_iSavedRowIndex=-1;
 }
@@ -108,7 +111,10 @@ bool GenericTable::Create()
                     
                     for(int index=0;index<count;index++){
                         //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
-                         m_Grid->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue);
+                        if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
+                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue);
+                        else
+                            m_Grid->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue);
                     }
                        
                 }
@@ -210,13 +216,33 @@ bool GenericTable::Create()
     }
 
 
-        m_Toolbar->Realize();
-        SetToolBar(m_Toolbar);
-        SetSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight);
+    if(m_sTableName!="sys_fields"){ // Don't show filter on the field definitions frame
+        ///-------------
+        //ADD the query combo to the toolbar
+        m_txtFilter = new wxStaticText( m_Toolbar, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
+        m_txtFilter->SetLabel("Filter ");
+        m_ComboFilter = new wxComboBox( m_Toolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
+        m_ComboFilter->SetSize(260,-1);
+        m_ComboFilter->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( GenericTable::OnUserGroupComboChange ), nullptr, this );
 
-        this->SetBackgroundColour(wxColour(77,120,77));
-        //This is here for debugging.
-        //SetStatusText("Message = " + Settings.Message);
+        //This is the default search.
+        m_ComboFilter->Append("Show All");
+        m_ComboFilter->Append("Menu Filter");
+        m_ComboFilter->SetStringSelection("Show All");
+
+        m_Toolbar->AddControl(m_txtFilter);
+        m_Toolbar->AddControl(m_ComboFilter);
+
+    }
+
+
+    m_Toolbar->Realize();
+    SetToolBar(m_Toolbar);
+    SetSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight);
+
+    this->SetBackgroundColour(wxColour(77,120,77));
+    //This is here for debugging.
+    //SetStatusText("Message = " + Settings.Message);
 
     if (Utility::IsSystemDatabaseDeveloper())
         SetIDTitleName(m_sTableName+"Id *");
@@ -225,6 +251,21 @@ bool GenericTable::Create()
 
     return true;
     
+}
+
+void GenericTable::OnUserGroupComboChange(wxCommandEvent& event)
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    wxString selection = combo->GetStringSelection();
+
+    if(selection=="Show All"){
+        MyEvent eEvent;
+        eEvent.m_bRefreshDatabase=true;
+        eEvent.m_bShowAll=true;
+
+        //We allready have
+        OnMyEvent(eEvent);
+    }
 }
 
 void GenericTable::HideIDColumn()
@@ -434,6 +475,8 @@ void GenericTable::OnMyEvent(MyEvent& event )
         if(!event.m_sWhereCondition.IsEmpty()){
             SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
             SetGridWhereCondition(event.m_sWhereCondition);
+            if(m_ComboFilter!=nullptr)
+                m_ComboFilter->SetStringSelection("Menu Filter");
             Refresh();
 
         }else{
@@ -442,6 +485,8 @@ void GenericTable::OnMyEvent(MyEvent& event )
                 SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
             }
             SetGridWhereCondition(GetCurrentStoredWhereCondition());
+            if(m_ComboFilter!=nullptr)
+                m_ComboFilter->SetStringSelection("Show All");
             Refresh();
         }
     }

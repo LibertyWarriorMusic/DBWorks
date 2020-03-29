@@ -140,14 +140,98 @@ void GenericItemForm::CreateFields()
                                    m_mainFormSizer->Add( gSizer1, ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
 
-                               }else if(Utility::HasFlag(sFlags,"LOOKUP_SELECTION") && m_sTableName!=SYS_FIELDS){ //SELECTION
+                               }else if(Utility::HasFlag(sFlags,"SELECTION_LOOKUP_ID")   && m_sTableName!=SYS_FIELDS){ //SELECTION
 
                                    // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
                                    //Create a wxComboCtrl. We need to fill it with the values extracted from
 
                                    //Extract all the selection items.
                                    wxArrayString sSelectionItemArray;
-                                   Utility::ExtractSelectionLookupItems(sSelectionItemArray,sFlags);
+                                   Utility::ExtractSelectionLookupItemsID(sSelectionItemArray,sFlags);
+
+
+                                   long style = 0;
+
+                                   // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+                                   // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+                                   //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                       style |= wxCB_READONLY;
+
+                                   itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+
+                                   if(m_sUse=="VIEW" )
+                                       itemArray[i].comCtl->Disable();
+
+                                   gSizer1->Add( itemArray[i].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+                                   // gSizer1->Add( itemArray[i].comCtl, 0 , wxEXPAND, BORDER_WIDTH);
+
+
+                                   //Fill the list box with the selection items.
+                                   for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
+                                       itemArray[i].comCtl->Append(sSelectionItemArray[index]);
+
+                                   if(!itemArray[i].defaultValue.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+
+                                   // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
+                                   //itemArray[i].comCtl->SetMaxSize(size);
+
+
+                                   calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+                                   m_mainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
+
+                               }else if(Utility::HasFlag(sFlags,"SELECTION_LOOKUP_NAME") && m_sTableName!=SYS_FIELDS){ //SELECTION
+
+                                   // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
+                                   //Create a wxComboCtrl. We need to fill it with the values extracted from
+
+                                   //Extract all the selection items.
+                                   wxArrayString sSelectionItemArray;
+                                   Utility::ExtractSelectionLookupItemsName(sSelectionItemArray,sFlags);
+
+
+                                   long style = 0;
+
+                                   // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+                                   // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+                                   //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                       style |= wxCB_READONLY;
+
+                                   itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+
+                                   if(m_sUse=="VIEW" )
+                                       itemArray[i].comCtl->Disable();
+
+                                   gSizer1->Add( itemArray[i].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+                                   // gSizer1->Add( itemArray[i].comCtl, 0 , wxEXPAND, BORDER_WIDTH);
+
+
+                                   //Fill the list box with the selection items.
+                                   for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
+                                       itemArray[i].comCtl->Append(sSelectionItemArray[index]);
+
+                                   if(!itemArray[i].defaultValue.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+
+                                   // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
+                                   //itemArray[i].comCtl->SetMaxSize(size);
+
+
+                                   calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+                                   m_mainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
+
+                               }else if( Utility::HasFlag(sFlags,"SELECTION_LINKED_ID")  && m_sTableName!=SYS_FIELDS){ //SELECTION
+
+                                   // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
+                                   //Create a wxComboCtrl. We need to fill it with the values extracted from
+
+                                   //Extract all the selection items.
+                                   wxArrayString sSelectionItemArray;
+                                   Utility::ExtractSelectionLinkedItemsID(sSelectionItemArray,sFlags);
 
                                    long style = 0;
 
@@ -174,6 +258,47 @@ void GenericItemForm::CreateFields()
                                        itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
 
                                   // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
+                                   //itemArray[i].comCtl->SetMaxSize(size);
+
+
+                                   calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+                                   m_mainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
+
+                               }else if( Utility::HasFlag(sFlags,"SELECTION_LINKED_NAME") && m_sTableName!=SYS_FIELDS){ //SELECTION
+
+                                   // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
+                                   //Create a wxComboCtrl. We need to fill it with the values extracted from
+
+                                   //Extract all the selection items.
+                                   wxArrayString sSelectionItemArray;
+                                   Utility::ExtractSelectionLinkedItemsName(sSelectionItemArray,sFlags);
+
+                                   long style = 0;
+
+                                   // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+                                   // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+                                   //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                       style |= wxCB_READONLY;
+
+                                   itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+
+                                   if(m_sUse=="VIEW" )
+                                       itemArray[i].comCtl->Disable();
+
+                                   gSizer1->Add( itemArray[i].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+                                   // gSizer1->Add( itemArray[i].comCtl, 0 , wxEXPAND, BORDER_WIDTH);
+
+
+                                   //Fill the list box with the selection items.
+                                   for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
+                                       itemArray[i].comCtl->Append(sSelectionItemArray[index]);
+
+                                   if(!itemArray[i].defaultValue.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+
+                                   // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
                                    //itemArray[i].comCtl->SetMaxSize(size);
 
 
@@ -556,13 +681,60 @@ void GenericItemForm::InsertItem(){
                     wxString sValue;
                     if(itemArray[i].textCtl != nullptr)
                         sValue = itemArray[i].textCtl->GetValue();
-                    else if(itemArray[i].comCtl != nullptr)
-                        sValue = itemArray[i].comCtl->GetValue();
+                    else if(itemArray[i].comCtl != nullptr){
+
+                        if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_ID")) {
+                            sValue = itemArray[i].comCtl->GetValue();
+
+                            wxArrayString sArray;
+                            wxString flags = itemArray[i].flag;
+                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+
+                            wxString tableId = sArray[0];
+                            wxString column = sArray[1];
+                            wxArrayString sTableResult;
+                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
+                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+
+                            Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
+                            sValue = sTableResult[0];
+
+                        }else if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_NAME")) {
+
+                            sValue = itemArray[i].comCtl->GetValue();
+
+                            wxArrayString sArray;
+                            wxString flags = itemArray[i].flag;
+                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+
+                            wxString tableName = sArray[0];
+                            wxString fieldName = sArray[1];
+
+                            if(tableName==SYS_TABLES){
+                                sValue =  Utility::GetTableIdFromSYS_TABLESByTitle(m_sDatabase,sValue);
+
+                            } else{
+                                wxArrayString sArray;
+                                Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
+                                sValue = sArray[0];
+                            }
+                        }
+                        else
+                            sValue = itemArray[i].comCtl->GetValue();
+
+
+                    }
                     else if(itemArray[i].datePickerCtl != nullptr)
                         sValue = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
                     else if(itemArray[i].linkCtl != nullptr)
                         sValue = itemArray[i].linkCtl->GetURL();
 
+
+                    //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
+                    // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
+                    // These are important when we fill our combo with choices.
                     if(itemArray[i].type=="int"){
                         if (i == count-1)
                             queryString = queryString +  sValue+ ")";
@@ -576,12 +748,8 @@ void GenericItemForm::InsertItem(){
                         else
                             queryString = queryString + "'" + sValue + "',";
                     }
-                    
-
                 }
-
             }
-
             
             Query query = conn.query(queryString);
             query.execute();
@@ -636,14 +804,61 @@ void GenericItemForm::UpdateItem(){
                     wxString sValue;
                     if(itemArray[i].textCtl != nullptr)
                         sValue = itemArray[i].textCtl->GetValue();
-                    else if(itemArray[i].comCtl != nullptr)
-                        sValue = itemArray[i].comCtl->GetValue();
+                    else if(itemArray[i].comCtl != nullptr){
+
+                        if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_ID")) {
+                            sValue = itemArray[i].comCtl->GetValue();
+
+                            wxArrayString sArray;
+                            wxString flags = itemArray[i].flag;
+                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+
+                            wxString tableId = sArray[0];
+                            wxString column = sArray[1];
+                            wxArrayString sTableResult;
+                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
+                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+
+                            Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
+                            sValue = sTableResult[0];
+
+                        }else if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_NAME")) {
+
+                            sValue = itemArray[i].comCtl->GetValue();
+
+                            wxArrayString sArray;
+                            wxString flags = itemArray[i].flag;
+                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+
+                            wxString tableName = sArray[0];
+                            wxString fieldName = sArray[1];
+
+                            if(tableName==SYS_TABLES){
+                                sValue =  Utility::GetTableIdFromSYS_TABLESByTitle(m_sDatabase,sValue);
+
+                            } else{
+                                wxArrayString sArray;
+                                Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
+                                sValue = sArray[0];
+                            }
+                        }
+                        else
+                            sValue = itemArray[i].comCtl->GetValue();
+
+
+                    }
+
                     else if(itemArray[i].datePickerCtl != nullptr)
                         sValue = Utility::DateToString(itemArray[i].datePickerCtl->GetValue());
                     else if(itemArray[i].linkCtl != nullptr)
                         sValue = itemArray[i].linkCtl->GetURL();
 
-         
+
+                    //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
+                    // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
+                    // These are important when we fill our combo with choices.
                     if(itemArray[i].type=="int"){
                         if (i == count-1)
                             queryString = queryString + itemArray[i].field + " = " + sValue;
@@ -762,8 +977,53 @@ void GenericItemForm::LoadFields()
 
                                     if(itemArray[index].textCtl != nullptr)
                                         itemArray[index].textCtl->SetValue(strData1);
-                                    else if(itemArray[index].comCtl != nullptr)
-                                        itemArray[index].comCtl->SetValue(strData1);
+                                    else if(itemArray[index].comCtl != nullptr){
+
+                                        //If we have a linked ID, we want to show the table name, not the ID
+                                         if(Utility::HasFlag(itemArray[index].flag,"SELECTION_LINKED_NAME")){
+                                             // save the linking tableID
+                                             //itemArray[index].comCtl->SetValue("");
+
+                                             wxArrayString sArray;
+                                             wxString flags = itemArray[index].flag;
+                                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                                             Utility::ExtractSelectionItems(sArray,itemArray[index].flag);
+
+
+                                             wxArrayString sTableResult;
+                                             wxString tableName = sArray[0];
+                                             wxString fieldName = sArray[1];
+
+
+                                             strData1.Trim();
+                                             if(!strData1.IsEmpty()){
+                                                 Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
+                                                 itemArray[index].comCtl->SetValue(sTableResult[0]);
+                                             }
+
+                                         }else if(Utility::HasFlag(itemArray[index].flag,"SELECTION_LINKED_ID") ){
+
+                                            wxArrayString sArray;
+                                            wxString flags = itemArray[index].flag;
+                                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                                            Utility::ExtractSelectionItems(sArray,itemArray[index].flag);
+
+                                            wxString tableId = sArray[0];
+                                            wxString column = sArray[1];
+                                            wxArrayString sTableResult;
+                                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
+                                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+
+                                            if(!strData1.IsEmpty()){
+                                                Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
+                                                itemArray[index].comCtl->SetValue(sTableResult[0]);
+                                            }
+
+                                        }else{
+
+                                             itemArray[index].comCtl->SetValue(strData1);
+                                         }
+                                    }
                                     else if(itemArray[index].datePickerCtl != nullptr)
                                         itemArray[index].datePickerCtl->SetValue(Utility::StringToDate(strData1));
                                     else if(itemArray[index].linkCtl != nullptr){

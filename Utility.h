@@ -26,10 +26,13 @@ class myProgressControl;
 //The Utility class only holds static functions that can be used throughout the application.
 class Utility {
 public:
-
+    static wxString Replace(wxString searchString, wxString Old, wxString New, bool all=true);
     static double CalculateProgressStepsforImport(int iCount);
     static void ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch);
-    static void ExtractSelectionLookupItems(wxArrayString &sArray, wxString sFlag);
+    static void ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag);
+    static void ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag);
+    static void ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag);
+    static void ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag);
     static bool HasFlag(wxString flags, wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
     static bool IsReservedMySQLWord(wxString wordToFind);
@@ -62,10 +65,15 @@ public:
     static bool CreateSystemTables(wxString sDatabase);
     static bool DoesDatabaseExist(wxString sDatabase);
     //static bool DoesTableExist(wxString sDatabase,wxString sTable);
-    static wxString GetTableNameFromSYS_TABLES(wxString sDatabase, long lTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableNameFromSYS_TABLES(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableTitleFromSYS_TABLES(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString sTableTitle);
     static wxString GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
-    static wxString GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, long lColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
-    static void LoadStringArrayFromDatabaseTable(wxString sDatabase, wxArrayString &sArray, long lTableId, long lColumnNumber);// Load an StringArray with from a table given the tableId and Column number
+    static wxString GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+    static void GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName, wxString value);
+    static void GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value);
+    static void LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArrayString &sArray, long lTableId, wxString sColumnNumber);// Load an StringArray with from a table given the tableId and Column number
+    static void LoadStringArrayFromDatabaseTableByName(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName);
     static void LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray);
     static void LoadStringArrayWithDatabaseTableNames( wxString sDatabase,  wxArrayString &sArray);
     static void ExecuteQuery(const wxString& QueryString); //Execute a query string

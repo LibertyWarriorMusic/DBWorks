@@ -35,6 +35,8 @@ class GenericTable : public wxFrame
         wxString m_sTableName;
         //Pointers
         HtmlHelp *m_HtmlWin;
+        wxStaticText *m_txtFilter;
+        wxComboBox *m_ComboFilter;
 
         wxString GetCurrentStoredWhereCondition();
         void SetCurrentStoredWhereCondition(wxString sWhereCondition);
@@ -69,6 +71,7 @@ class GenericTable : public wxFrame
         void  EditItem(long rowID);
         void ViewItem(long rowID);
 
+        void OnUserGroupComboChange(wxCommandEvent& event);
         void OnbViewItem( wxCommandEvent& event );
         void OnbExitApp(wxCommandEvent& event);
         virtual void OnbHelp( wxCommandEvent& event );

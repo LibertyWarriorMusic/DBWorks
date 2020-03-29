@@ -257,6 +257,15 @@ void MyApp::ProcessLine(wxString line)
         else if (value=="YES")
             Settings.bAutoCheckDefinitions=true;
     }
+    else if (setting=="GRID_COLUMN_HEADING"){
+        if(value=="TITLE")
+            Settings.bShowGridColumnFields=false;
+        else if (value=="FIELD")
+            Settings.bShowGridColumnFields=true;
+    }
+
+
+
 }
 
 void MyApp::StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName) {
@@ -839,6 +848,12 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     }
 
+    /*
+    wxMenuBar * m_FrameMenuBar = new wxMenuBar;
+    wxMenu* m_FrameMenu = new wxMenu();
+    m_FrameMenu->Append(1, ("E&xit"));
+    m_FrameMenuBar->Append(m_FrameMenu,"&Edit");
+    SetMenuBar(m_FrameMenuBar);*/
 
     //Let's check if the information database exists, if not, create it.
     if(!CheckCreateDatabase(Settings.sDatabase)){
@@ -1275,21 +1290,19 @@ void MainFrame::OnbAddItem( wxCommandEvent& event ) {
         wxLogMessage(MSG_ONLY_DATABASE_DEVELOPERS);
     } else {
 
-        m_FormItem = new GenericItemForm((wxFrame *) this, -1, "Add Table", wxDefaultPosition, wxDefaultSize,
-                                         (unsigned) wxCAPTION | (unsigned) wxSTAY_ON_TOP);
+        m_FormItem = new GenericItemForm((wxFrame *) this, -1, "Add Table", wxDefaultPosition, wxDefaultSize,(unsigned) wxCAPTION | (unsigned) wxSTAY_ON_TOP);
 
         //m_FormItem->SetDatabaseSettings(Settings.Database, Settings.Server, Settings.User, Settings.Password);
         //Define the database
         //Define the database
         m_FormItem->AddItem("Title", "title", "", "", "");
         m_FormItem->AddItem("Tablename", "tablename", "", "", "");
-        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;}", "VARCHAR(255)", "user");
+        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;development;}", "VARCHAR(255)", "user");
         m_FormItem->AddItem("Comments", "comments", "MULTILINE", "", "");
         m_FormItem->SetUse("ADD");
         m_FormItem->CreateFields();
 
-        m_FormItem->SetSettings(Settings.sDatabase, Settings.sServer, Settings.sDatabaseUser, Settings.sPassword,
-                                SYS_TABLES, "sys_tablesId");
+        m_FormItem->SetSettings(Settings.sDatabase, Settings.sServer, Settings.sDatabaseUser, Settings.sPassword, SYS_TABLES, "sys_tablesId");
 
         m_FormItem->Show(true);
         SetStatusText("Add Table.");
@@ -1297,6 +1310,34 @@ void MainFrame::OnbAddItem( wxCommandEvent& event ) {
 
 
 }
+void MainFrame::OpenEditForm(int sRow) {
+
+    // wxPoint(100,100),
+    // wxSize(500,410),
+
+    m_FormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
+
+    //Define the database
+    m_FormItem->AddItem("Title","title","","","");
+    m_FormItem->AddItem("Tablename","tablename","","","");
+    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user");
+    m_FormItem->AddItem("Comments","comments","MULTILINE","","");
+
+    m_FormItem->SetUse("UPDATE");
+    m_FormItem->CreateFields();
+    m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
+
+
+
+    wxString spasswordId = m_MainGrid->GetCellValue(sRow,0);
+    SetStatusText(spasswordId);
+
+    m_FormItem->SetID(spasswordId);
+    m_FormItem->Show(true);
+    m_FormItem->LoadFields();
+    SetStatusText("Edit Item");
+}
+
 
 
 
@@ -1315,34 +1356,6 @@ void MainFrame::OnbEditItem( wxCommandEvent& event )
             OpenEditForm(row);
         }
     }
-}
-
-void MainFrame::OpenEditForm(int sRow) {
-
-    // wxPoint(100,100),
-    // wxSize(500,410),
-
-    m_FormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
-
-    //Define the database
-    m_FormItem->AddItem("Title","title","","","");
-    m_FormItem->AddItem("Tablename","tablename","","","");
-    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;}","VARCHAR(255)","user");
-    m_FormItem->AddItem("Comments","comments","MULTILINE","","");
-
-    m_FormItem->SetUse("UPDATE");
-    m_FormItem->CreateFields();
-    m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
-
-
-
-    wxString spasswordId = m_MainGrid->GetCellValue(sRow,0);
-    SetStatusText(spasswordId);
-
-    m_FormItem->SetID(spasswordId);
-    m_FormItem->Show(true);
-    m_FormItem->LoadFields();
-    SetStatusText("Edit Item");
 }
 
 
