@@ -60,6 +60,7 @@ enum {
     ID_TOOL_EDIT,
     ID_TOOL_DELETE,
     ID_TOOL_VIEW,
+    ID_TOOL_FILTER,
     ID_HELP,
     ID_AUTO_CHECK_DEFINITION
 };
@@ -77,6 +78,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TOOL(ID_TOOL_EDIT, MainFrame::OnbEditItem)
     EVT_TOOL(ID_TOOL_DELETE, MainFrame::OnbDeleteItem)
     EVT_TOOL(ID_TOOL_VIEW, MainFrame::OnbViewItem)
+    EVT_TOOL(ID_TOOL_FILTER, MainFrame::OnbFilter)
     EVT_TOOL(ID_HELP, MainFrame::OnbHelp)
     EVT_TOOL(ID_AUTO_CHECK_DEFINITION, MainFrame::OnAutoCheckDefinitions)
     EVT_MYEVENT(MainFrame::OnMyEvent)
@@ -745,19 +747,19 @@ void MyApp::CheckCellTableDefinitionsMatchDatabaseTable(const wxString& sTable, 
     else{
 
         m_MainFrame->GetMainGrid()->UnHighlightCell(iRowIndex, 2);
-        wxArrayString fieldList;
+        ArrayTableFields fieldList;// We need to get the field array.
         if(Utility::GetFieldList(fieldList,iTableId)){ // This is all the fields for that table from sys_fields
 
             //Now we have a list of all the table field names, we can check the database for the list
-            for(int index=0;index<fieldList.GetCount();index++){
+            //for(int index=0;index<fieldList.GetCount();index++){
 
-                if(!Utility::DoesFieldExitInTable(sTable,fieldList[index]))
+                //This will match the field name, type null, key, default and extra values to see if they match the mySQL database
+                if(!Utility::DoesFieldExitInTable(sTable,fieldList))
                     m_MainFrame->GetMainGrid()->HighlightCell(iRowIndex, 2);
-            }
+            //}
         }
     }
 }
-
 
 
 void MyApp::UpdateProgressBar()
@@ -799,6 +801,7 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 {
     m_TableForm = nullptr;
     m_HtmlWin = nullptr;
+    m_pFilters = nullptr;
     m_MainGrid = nullptr;
     m_StatusBar = nullptr;
     m_Menubar= nullptr;
@@ -992,6 +995,9 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
         m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
 
+        Utility::LoadBitmap(BitMap,"filter.png");
+        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define filters for your tables."));
+
         //Create the checkbox for auto check definitions to tables
         if(Utility::IsSystemDatabaseDeveloper()){
 
@@ -1015,7 +1021,7 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         //Add a checkbox to enable Refresh
     }
 
-    //m_ProgressGauge->SetValue(50);
+
 
 
 
@@ -1148,10 +1154,10 @@ void MainFrame::LoadGrid()
 
     //Create the spread sheet grid
     m_MainGrid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
-    m_MainGrid->AddItem("Title","title","","");
-    m_MainGrid->AddItem("Tablename","tablename","","");
-    m_MainGrid->AddItem("Type of Table","tabletype","","");
-    m_MainGrid->AddItem("Comments","comments","","");
+    m_MainGrid->AddItem("Title","title","","","","","","");
+    m_MainGrid->AddItem("Tablename","tablename","","","","","","");
+    m_MainGrid->AddItem("Type of Table","tabletype","","","","","","");
+    m_MainGrid->AddItem("Comments","comments","","","","","","");
     m_MainGrid->CreateFields();
 
     m_MainGrid->SetEventType(myEVT_MYEVENT);
@@ -1295,10 +1301,10 @@ void MainFrame::OnbAddItem( wxCommandEvent& event ) {
         //m_FormItem->SetDatabaseSettings(Settings.Database, Settings.Server, Settings.User, Settings.Password);
         //Define the database
         //Define the database
-        m_FormItem->AddItem("Title", "title", "", "", "");
-        m_FormItem->AddItem("Tablename", "tablename", "", "", "");
-        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;development;}", "VARCHAR(255)", "user");
-        m_FormItem->AddItem("Comments", "comments", "MULTILINE", "", "");
+        m_FormItem->AddItem("Title", "title", "", "", "","","","");
+        m_FormItem->AddItem("Tablename", "tablename", "", "", "","","","");
+        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;development;}", "VARCHAR(255)", "user","","","");
+        m_FormItem->AddItem("Comments", "comments", "MULTILINE", "", "","","","");
         m_FormItem->SetUse("ADD");
         m_FormItem->CreateFields();
 
@@ -1318,10 +1324,10 @@ void MainFrame::OpenEditForm(int sRow) {
     m_FormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
 
     //Define the database
-    m_FormItem->AddItem("Title","title","","","");
-    m_FormItem->AddItem("Tablename","tablename","","","");
-    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user");
-    m_FormItem->AddItem("Comments","comments","MULTILINE","","");
+    m_FormItem->AddItem("Title","title","","","","","","");
+    m_FormItem->AddItem("Tablename","tablename","","","","","","");
+    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user","","","");
+    m_FormItem->AddItem("Comments","comments","MULTILINE","","","","","");
 
     m_FormItem->SetUse("UPDATE");
     m_FormItem->CreateFields();
@@ -1415,7 +1421,7 @@ void MainFrame::OnbViewItem( wxCommandEvent& event )
 
 }
 
-void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
+    void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
 {
 
     // We don't want the user to have more than one properties window open at once, it becomes very confusing if you do.
@@ -1452,6 +1458,7 @@ void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
         << SYS_FIELDS << ".flags, "
         << SYS_FIELDS << ".valdefault, "
         << SYS_FIELDS << ".valextra, "
+        << SYS_FIELDS << ".valnull, "
         << SYS_FIELDS << ".valkey, "
         << SYS_FIELDS << ".valfield, "
         << SYS_TABLES << ".title as FormName from " << SYS_FIELDS << " INNER JOIN "
@@ -1481,11 +1488,12 @@ void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
                     wxString valtype(res[i]["valtype"], wxConvUTF8);
                     wxString valDefault(res[i]["valdefault"], wxConvUTF8);
                     wxString valKey(res[i]["valkey"], wxConvUTF8);
+                    wxString valNull(res[i]["valnull"], wxConvUTF8);
                     wxString valExtra(res[i]["valextra"], wxConvUTF8);
 
                     wxString fn(res[i]["FormName"], wxConvUTF8);
                     FormName = fn;
-                    m_TableForm->AddField(title,valfield,valtype,flags,valDefault,valKey,valExtra);
+                    m_TableForm->AddField(title,valfield,valtype,flags,valDefault,valKey,valExtra,valNull);
                 }
                 catch (int num) {
 
@@ -1642,15 +1650,15 @@ void MainFrame::OnMyEvent(MyEvent& event)
             //Add the field items
             m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
 
-            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"",""); // This is the linking ID
-            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","");
-            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","");
-            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","");
-            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","");
-            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","");
-            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","");
-            m_TableForm->AddField("Title","title","varchar(100)","","","","");
-            m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","",""); // FLAG_OPTIONS are in global.h
+            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"","",""); // This is the linking ID
+            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
+            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
+            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
+            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
+            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
+            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
+            m_TableForm->AddField("Title","title","varchar(100)","","","","","");
+            m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
             m_TableForm->Create();// Create the table.
             //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
             m_TableForm->HideIDColumn();
@@ -1674,6 +1682,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
         m_TableForm = nullptr;
         m_ImportMySQLForm = nullptr;
+        m_pFilters = nullptr;
         if(Settings.bAutoCheckDefinitions)
             wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
     }
@@ -1701,6 +1710,41 @@ void MainFrame::OnMyEvent(MyEvent& event)
 
     }
 }
+
+//Create the filter table.
+void MainFrame::OnbFilter( wxCommandEvent& event ) {
+
+
+    m_pFilters = new GenericTable((wxFrame*) this, -1,"Table Filter Definitions",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+    m_pFilters->SetTableDefinition("usr_filters", "User Filters", "","");// We will grab this from our form.
+
+    if (m_pFilters != nullptr){
+
+        //m_pFilters->SetGridTableName("usr_filters");
+
+       // wxString linkID;
+       // linkID << event.m_lTableID;
+
+        m_pFilters->SetTableDefinition("usr_filters", "User Filters", "Select a filter","");
+        //Add the field items
+        m_pFilters->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_pFilters->AddField("ID","usr_filtersId","int","HIDE-READONLY","","","",""); // This is the linking ID
+        m_pFilters->AddField("Filter Name *","filterName","varchar(255)","","","","","");
+        m_pFilters->AddField("Query Definition","queryDefinition","text","MULTILINE","","","","");
+        m_pFilters->AddField("Associated TableId","associatedTableId","int","SELECTION_LINKED_NAME{sys_tables;Title;} - READONLY","","","","");
+        m_pFilters->AddField("Description","description","text","","MULTILINE","","","");
+
+        m_pFilters->Create();// Create the table.
+        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+        m_pFilters->HideIDColumn();
+        m_pFilters->Show(true);
+
+
+    }
+}
+
+
 wxString MainFrame::GetCurrentStoredWhereCondition()
 {
     return m_sCurrentStoredWhereCondition;
@@ -1763,6 +1807,8 @@ bool MainFrame::Destroy()
     if (m_HtmlWin != nullptr)
         m_HtmlWin->Destroy();
 
+    if(m_pFilters != nullptr)
+        m_pFilters->Destroy();
 
     //Always do this last
     bool bResult = wxFrame::Destroy();
@@ -1801,3 +1847,4 @@ void MainFrame::CreateTableDefinitions(wxString sDatabase, wxString sTableName, 
                 Utility::InsertFieldInSYS_FIELDS(sDatabase,tableId,tableFieldItemArray[index]);
         }
 }
+

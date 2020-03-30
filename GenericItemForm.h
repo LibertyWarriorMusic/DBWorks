@@ -21,6 +21,9 @@ public:
     wxString title;
     wxString flag;
     wxString type;
+    wxString keyVal;
+    wxString ExtraVal;
+    wxString nullVal;
     wxString defaultValue;
     wxStaticText *TitleCtl;
     wxTextCtrl *textCtl;
@@ -77,7 +80,7 @@ class GenericItemForm : public wxFrame
 
 	public:
         void CreateFields();
-        void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal);
+        void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal, const wxString& keyVal, const wxString& extraVal, const wxString& nullVal);
         void SetUse(const wxString& sUse);
         void SetID(const wxString& pID);
         void LoadFields();

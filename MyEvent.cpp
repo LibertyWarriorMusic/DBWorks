@@ -24,6 +24,7 @@ MyEvent::MyEvent( wxWindow* win )
     m_cellValue=""; // The value of the current clicked cell.
     m_cellFieldName=""; // The field name for that cell
     m_sWhereCondition="";
+    m_sQueryToApply="";
     SetEventType( myEVT_MYEVENT );
     SetEventObject( win );
 }

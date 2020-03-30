@@ -17,6 +17,9 @@ class MainFrame : public wxFrame
         HtmlHelp *m_HtmlWin;
         ImportMySQLDatabase *m_ImportMySQLForm;
 
+        //System and Usr tables;
+        GenericTable * m_pFilters;
+
         bool m_bSettingsLoaded=false;
 
         wxString GetCurrentStoredWhereCondition();
@@ -85,6 +88,7 @@ class MainFrame : public wxFrame
         void OnbEditItem( wxCommandEvent& event );
         void OnbDeleteItem( wxCommandEvent& event );
         void OnbViewItem( wxCommandEvent& event );
+        void OnbFilter( wxCommandEvent& event );
         void OnAutoCheckDefinitions(wxCommandEvent& event);
         void OnbHelp( wxCommandEvent& event );
         void OnDeleteCurrentDatabase( wxCommandEvent& event );

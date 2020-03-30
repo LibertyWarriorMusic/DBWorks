@@ -15,6 +15,7 @@ public:
     wxString flag;
     wxString key;
     wxString extra;
+    wxString nullval;
     wxString defaultValue;
 };
 
@@ -42,7 +43,8 @@ class GenericTable : public wxFrame
         void SetCurrentStoredWhereCondition(wxString sWhereCondition);
         wxString m_sCurrentStoredWhereCondition;
 
-        int m_iSavedRowIndex; // This is the row index that needs to be updatad when add or edit a field.
+        int m_iTempRowIndex; // This is the row index that needs to be updatad when add or edit a field.
+        wxString m_sTempQuery; // Used to store the query to pass onto the grid.
 
         void Refresh();
 
@@ -81,10 +83,10 @@ class GenericTable : public wxFrame
     public:
 
         virtual void OnbDeleteItem( wxCommandEvent& event );
-        void SetTableDefinition(const wxString& tableName, const wxString& title, const wxString& comments, const wxString& whereCondition);
+        void SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition);
         GenericItemForm *formItem{};
     
-        void AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag,const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal);
+        void AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag,const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal);
         explicit GenericTable( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
     
         virtual bool Create();

@@ -88,9 +88,9 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
             auto *item = new GridItem();
 
             item->title = m_GridArray[index].title;
-            item->field = m_GridArray[index].field;
+            item->fieldName = m_GridArray[index].fieldName;
             item->flags = m_GridArray[index].flags;
-            item->defaultValue = m_GridArray[index].defaultValue;
+            item->fieldDefault = m_GridArray[index].fieldDefault;
 
             GridItemList.Add(item);
 
@@ -102,7 +102,7 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
     return false;
 }
 
-bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
+bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
 {
 
     //auto *f = dynamic_cast<wxFrame*>(this->GetParent());
@@ -112,10 +112,8 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
-
     // Connect to the sample database.
     Connection conn(false);
-
 
     if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
                      (const_cast<char*>((const char*)server.mb_str())),
@@ -123,11 +121,15 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
                      (const_cast<char*>((const char*)pass.mb_str())))) {
 
         //SetStatusText("Database Connected");
-        wxString QueryString = "select * from " + m_sTableName + m_sWhereCondition;
+        wxString QueryString;
+
+        if(!queryToApply.IsEmpty())
+            QueryString = queryToApply;
+        else
+            QueryString = "select * from " + m_sTableName + m_sWhereCondition;
+
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
-
-
 
         // Display results
         if (res) {
@@ -140,10 +142,8 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
                 return false;
             }
 
-
             //Remove all the rows from the grid and repopulate them.
             DeleteGridRows();
-
 
             int iTracRowIncaseOfSkip = 0;
             // Get each row in result set, and print its contents
@@ -153,13 +153,11 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
                     if(bCheckTableExists){
 
-
                         if (!Utility::IsSystemDatabaseDeveloper()){
 
-                            wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
+                            wxString tableName(res[indexRow][m_GridArray[1].fieldName], wxConvUTF8);
                             if(!Utility::DoesTableExist(Settings.sDatabase,tableName))
                                 bSkip=true;
-
                         }
                     }
 
@@ -179,8 +177,8 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists)
 
                             for(int index=0;index<count;index++){
 
-                                wxString fieldName = m_GridArray[index].field;
-                                wxString defaultValue = m_GridArray[index].defaultValue;
+                                wxString fieldName = m_GridArray[index].fieldName;
+                                wxString defaultValue = m_GridArray[index].fieldDefault;
                                 wxString flag = m_GridArray[index].flags;
                                 //wsString strData1 = "";
                                 //strData1 =  res[i][fieldName];
@@ -384,7 +382,7 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 
                             if (!Utility::IsSystemDatabaseDeveloper()){
 
-                                wxString tableName(res[indexRow][m_GridArray[1].field], wxConvUTF8);
+                                wxString tableName(res[indexRow][m_GridArray[1].fieldName], wxConvUTF8);
                                 if(!Utility::DoesTableExist(Settings.sDatabase,tableName))
                                     bSkip=true;
 
@@ -405,8 +403,8 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 
                                 for(int index=0;index<count;index++){
 
-                                    wxString fieldName = m_GridArray[index].field;
-                                    wxString defaultValue = m_GridArray[index].defaultValue;
+                                    wxString fieldName = m_GridArray[index].fieldName;
+                                    wxString defaultValue = m_GridArray[index].fieldDefault;
                                     wxString flag = m_GridArray[index].flags;
                                     //wsString strData1 = "";
                                     //strData1 =  res[i][fieldName];
@@ -733,13 +731,16 @@ void DBGrid::CreateFields()
              SetColLabelValue(i+1, m_GridArray[i].title);
     }
 }
-void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal="")
+void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra )
 {
     auto *item = new GridItem();
     item->title = fieldTitle;
-    item->field = field;
+    item->fieldName = field;
     item->flags = flags;
-    item->defaultValue = defaultVal;
+    item->fieldType = fieldType;
+    item->fieldExtra = fieldExtra;
+    item->fieldNull = fieldNull;
+    item->fieldDefault = defaultVal;
     m_GridArray.Add(item);
 
 }
@@ -768,7 +769,7 @@ wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
             for(int index=0;index<count;index++){
                
                 //Make sure we don't have an empty field because of a bug that cause field left to overwright the right field
-                if(m_GridArray[index].field==fieldname)
+                if(m_GridArray[index].fieldName==fieldname)
                     return GetCellValue(row,index+1);
             }
         }
@@ -951,30 +952,134 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
     my_event.m_bRefreshDatabase=true;
 
     my_event.m_cellValue=GetCellValue(m_iRow,m_iCol); // The value of the current clicked cell.
-
+    wxString sValue = my_event.m_cellValue;
 
     //Accounting for the fact that m_GridArray doesn't store the ID because that can be generated from the table name ie. tablenameId
     if(m_iCol==0)
         my_event.m_cellFieldName=m_sTableName+"Id";
 
     if(m_iCol>0)
-        my_event.m_cellFieldName=m_GridArray[m_iCol-1].field; // The field name for that cell
+        my_event.m_cellFieldName=m_GridArray[m_iCol-1].fieldName; // The field name for that cell
 
 
-    wxString str = GetCellValue(m_iRow,0);
-    long val;
-    str.ToLong(&val);
-    my_event.m_lTableID=val;
+    //We need to determine if we have a linked ID field Utility::HasFlag(sFlags,"SELECTION_LINKED_ID" and Utility::HasFlag(sFlags,"SELECTION_LINKED_NAME"
+    //Both of these will have ID's stored in the table and not the cell values.
+    wxString flags;
+    if(m_iCol>0) {
+        flags = m_GridArray[m_iCol - 1].flags;
 
-    wxString sWhereCondition = "";
-    sWhereCondition<< my_event.m_cellFieldName << "='" << my_event.m_cellValue + "'";
-    my_event.m_sWhereCondition = sWhereCondition;
+        if (Utility::HasFlag(flags, "SELECTION_LINKED_ID")) {
+            //sValue = itemArray[i].comCtl->GetValue();
 
-    //my_event.SetRow(event.GetRow());
-    my_event.SetEventType(m_eventType);
-    GetParent()->ProcessWindowEvent( my_event );
+            wxArrayString sArray;
+            //wxString flags = itemArray[i].flag;
+            flags.Replace("SELECTION_LINKED_NAME", "SELECTION");
+            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].flags);
+
+            wxString tableId = sArray[0]; //Table ID to the table we need to lookup
+            wxString column = sArray[1];
+            wxArrayString sTableResult;
+            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase, tableId);
+            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase, tableName, column);
+
+            // wxString ID;
+            Utility::GetTableIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+            sValue = sTableResult[0];
+
+            wxString TableID = sValue;
+
+            long val;
+            TableID.ToLong(&val);
+            my_event.m_lTableID = val;
+
+            wxString sWhereCondition = "";
+            wxString type  = m_GridArray[m_iCol - 1].fieldType;
+            type=type.Lower();
+            if(type=="int")
+                sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "=" << TableID;
+            else
+                sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "='" << TableID << "'";
+            my_event.m_sWhereCondition = sWhereCondition;
+
+        } else if (Utility::HasFlag(flags, "SELECTION_LINKED_NAME")) {
+
+            wxArrayString sArray;
+            //wxString flags = m_GridArray[m_iCol-1].flag;
+            flags.Replace("SELECTION_LINKED_NAME", "SELECTION");
+            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].flags);
+
+            wxString tableName = sArray[0];
+            wxString fieldName = sArray[1];
+
+            if (tableName == SYS_TABLES) {
+                wxString sTableId = Utility::GetTableIdFromSYS_TABLESByTitle(Settings.sDatabase, sValue);
+
+                long val;
+                sTableId.ToLong(&val);
+                my_event.m_lTableID = val;
+
+                wxString sWhereCondition = "";
+
+                //We need to find the type because we don't need ' ' for number values.
+                wxString type  = m_GridArray[m_iCol - 1].fieldType;
+                type=type.Lower();
+                if(type=="int")
+                    sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "=" << sTableId;
+                else
+                    sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "='" << sTableId << "'";
 
 
+                my_event.m_sWhereCondition = sWhereCondition;
+
+            } else {
+                wxArrayString sArray;
+                Utility::GetTableIDFromTableWhereFieldEquals(Settings.sDatabase, sArray, tableName, fieldName,sValue);
+                sValue = sArray[0];
+                wxString sTableId = sValue;
+                long val;
+                sTableId.ToLong(&val);
+                my_event.m_lTableID = val;
+
+                wxString sWhereCondition = "";
+
+                //We need to find the type
+                wxString type  = m_GridArray[m_iCol - 1].fieldType;
+                type=type.Lower();
+                if(type=="int")
+                    sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "=" << sTableId;
+                else
+                    sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "='" << sTableId << "'";
+                my_event.m_sWhereCondition = sWhereCondition;
+            }
+
+
+        }else{
+
+            wxString str = GetCellValue(m_iRow, 0);
+            long val;
+            str.ToLong(&val);
+            my_event.m_lTableID = val;
+
+            wxString sWhereCondition = "";
+            wxString type  = m_GridArray[m_iCol - 1].fieldType;
+            type=type.Lower();
+            if(type=="int")
+                sWhereCondition << my_event.m_cellFieldName << "=" << my_event.m_cellValue;
+            else
+                sWhereCondition << my_event.m_cellFieldName << "='" << my_event.m_cellValue + "'";
+            my_event.m_sWhereCondition = sWhereCondition;
+
+
+        }
+
+
+
+
+        //my_event.SetRow(event.GetRow());
+        my_event.SetEventType(m_eventType);
+        GetParent()->ProcessWindowEvent(my_event);
+
+    }
 }
 void DBGrid::OnClickMenuFilterShowAll(wxCommandEvent& event)
 {

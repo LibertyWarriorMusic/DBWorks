@@ -20,6 +20,16 @@ using namespace mysqlpp;
 WX_DEFINE_OBJARRAY(ArrayTableFields);
 
 
+// Th
+void Utility::EscapeAscii(wxString& QueryString)
+{
+    QueryString.Replace("_", "`~!@%$#^%",true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
+    QueryString = QueryString.ToAscii(); //What this is doing is changing the character ‘ to _
+    QueryString.Replace("_", "'", true); //The end result is changing ‘ to '
+    QueryString.Replace("`~!@%$#^%", "_", true);
+
+}
+
 wxString Utility::Replace(wxString searchString, wxString Old, wxString New, bool all)
 {
 
@@ -99,11 +109,8 @@ wxString Utility::PassHTMLDocument(wxString sDocument)
             // Because this is only a search query for documents, we should be OK here.
             // The only real limitation here is you are restricted to using Ascii for queries in documents.
 
-            QueryString.Replace("_", "`~!@%$#^%",
-                                true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
-            QueryString = QueryString.ToAscii(); //What this is doing is changing the character ‘ to _
-            QueryString.Replace("_", "'", true); //The end result is changing ‘ to '
-            QueryString.Replace("`~!@%$#^%", "_", true);
+            Utility::EscapeAscii(QueryString);
+
 
             //Now we have the query, we can remove it from the sDocumentString
             sDocument = sDocument.Left(iStartPosition) << sDocument.Right(iLength - iEndPosition);
@@ -136,15 +143,7 @@ wxString Utility::PassHTMLDocument(wxString sDocument)
         }
     }//End While
 
-
-    //I also have to do this craziness with the document because the HTML renderer doesn't unstand those characters either.
-    sDocument.Replace("_", "`~!@%$#^%",
-                        true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
-    sDocument = sDocument.ToAscii(); //What this is doing is changing the character ‘ to _
-    sDocument.Replace("_", "'", true); //The end result is changing ‘ to '
-    sDocument.Replace("`~!@%$#^%", "_", true);
-
-
+    Utility::EscapeAscii(sDocument);
 
     return sDocument;
 }
@@ -1150,6 +1149,8 @@ void Utility::GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayStr
 
 
 }
+
+
 void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
 
 
@@ -1256,8 +1257,8 @@ void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayStrin
 
 
 
-// Gets a list of all the fields from a given table from the sys_fields table given a table ID.
-bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
+// Gets a list of TableFieldItems given table from the sys_fields table given a table ID.
+bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
@@ -1276,7 +1277,7 @@ bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
 
         //SetStatusText("Database Connected");
         wxString QueryString =   "";
-        QueryString << "SELECT valfield FROM  sys_fields where sys_tablesId=" << TableId;
+        QueryString << "SELECT * FROM  sys_fields where sys_tablesId=" << TableId;
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
 
@@ -1286,14 +1287,29 @@ bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
 
 
             // Get each row in result set, and print its contents
-            for (size_t i = 0; i < res.num_rows(); ++i) {
+            for (size_t currentRow = 0; currentRow < res.num_rows(); ++currentRow) {
 
                 try {
                     //Add a new row to the grid control.
-                    mysqlpp::Row row = res[i];
 
-                    wxString field(row[0], wxConvUTF8);
-                    fieldList.Add(field);
+
+                    TableFieldItem * fieldItem = new TableFieldItem();
+
+                    wxString valfield(res[currentRow]["valfield"], wxConvUTF8);
+                    wxString valtype(res[currentRow]["valtype"], wxConvUTF8);
+                    wxString valnull(res[currentRow]["valnull"], wxConvUTF8);
+                    wxString valkey(res[currentRow]["valkey"], wxConvUTF8);
+                    wxString valdefault(res[currentRow]["valdefault"], wxConvUTF8);
+                    wxString valextra(res[currentRow]["valextra"], wxConvUTF8);
+
+                    fieldItem->fieldName=valfield;
+                    fieldItem->fieldType=valtype;
+                    fieldItem->fieldNull=valnull;
+                    fieldItem->fieldKey=valkey;
+                    fieldItem->fieldDefault=valdefault;
+                    fieldItem->fieldExtra=valextra;
+
+                    fieldList.Add(fieldItem);
                     bFoundRecord = true;
 
                 }
@@ -1318,6 +1334,121 @@ bool Utility::GetFieldList(wxArrayString &fieldList, wxString TableId)
 
 }
 
+
+
+/* //NOT SURE YET
+void Utility::DestroyFieldItemList(ArrayTableFields &fieldList) // Runs through the list and destroys all the items.
+{
+    for (int index=0; index<fieldList.Count();index++){
+        TableFieldItem  item;
+        item = fieldList[index];
+
+
+
+    }
+
+}*/
+//Test to see if this field definition exists in our table: name, type, null, key, default, extra
+bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTableFields& fieldItemList){
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    //bool bEverythingMatches = true;// We are looking for a false
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+
+       // Query query = conn.query("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema='"+database+"' AND table_name='"+sTableName+"'; ");
+
+        wxString QueryString = "DESCRIBE "+sTableName+";";
+        Query query = conn.query( QueryString);
+
+
+        StoreQueryResult res = query.store();
+
+
+        // Display results
+        if (res) {
+
+                int RowsInTable = res.num_rows();
+
+                // Get each row in result set, and print its contents
+                for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                    if( currentRow > 0 ) {
+
+                        //Get the Field Item
+                        TableFieldItem fieldItem = fieldItemList[currentRow-1];
+
+
+                        //We don't need to test the primary key as it's set automatically and we don't save it in the fields item list.
+                        try {
+                            wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                            wxString sType(res[currentRow]["Type"], wxConvUTF8);
+                            wxString sNull(res[currentRow]["Null"], wxConvUTF8);
+                            wxString sKey(res[currentRow]["Key"], wxConvUTF8);
+                            wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
+                            wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
+
+                            //A default value of NULL means nothing
+                            if (sDefault=="NULL")
+                                sDefault="";
+
+                            fieldItem.fieldType = fieldItem.fieldType.Lower();
+                            sType = sType.Lower();
+
+
+                            //NOTE: You only need to say NOT NULL in the query, so any YES (can be NULL) is the default
+                            // and doesn't need to be in the statement.
+                            sNull=sNull.Lower();
+                            fieldItem.fieldNull = fieldItem.fieldNull.Lower();
+
+
+                            if(sNull=="yes")
+                                sNull="";
+
+                            if(fieldItem.fieldNull=="yes")
+                                fieldItem.fieldNull="";
+
+                            if (sField != fieldItem.fieldName ||
+                                 sType != fieldItem.fieldType ||
+                                 sNull != fieldItem.fieldNull ||
+                                 sKey != fieldItem.fieldKey ||
+                                 sDefault != fieldItem.fieldDefault ||
+                                 sExtra != fieldItem.fieldExtra)
+                                    return false;
+                        }
+                        catch (int &num) {
+                            wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                        }
+                    }
+
+                }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            return false;
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        return false;
+    }
+
+    return true;
+}
 
 //Test to see if this field definition exists in our table
 bool Utility::DoesFieldExitInTable(const wxString& sTableName, const wxString& sFieldName){
@@ -1919,6 +2050,27 @@ bool Utility::CreateSystemTables(wxString sDatabase)
 
         }
 
+        if(!DoesTableExist(sDatabase,"usr_filters")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `usr_filters` ("
+                    "`usr_filtersId` int NOT NULL AUTO_INCREMENT,"
+                    "`filterName` varchar(255) NOT NULL,"
+                    "`queryDefinition` text NOT NULL,"
+                    "`associatedTableId` int,"
+                    "`description` text NOT NULL,"
+                    "PRIMARY KEY (`usr_filtersId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
     }
     else{
         return false;
@@ -2049,4 +2201,81 @@ bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFie
     return false;
 
 }
-#pragma clang diagnostic pop
+//We are going to use this to load all the queries in sys_filters but try and make it generic
+// select * from usr_filters
+void Utility::LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId)
+{
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        wxString QueryString =   "";
+        QueryString << "SELECT * FROM  usr_filters where associatedTableID=" + associatedTableId;
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // Get each row in result set, and print its contents
+            for (size_t i = 0; i < res.num_rows(); ++i) {
+
+                try {
+
+                    wxString filterName(res[i]["filterName"], wxConvUTF8);
+                    wxString queryDefinition(res[i]["queryDefinition"], wxConvUTF8);
+                    wxString description(res[i]["description"], wxConvUTF8);
+
+                    ComboDataItem* comboItem = new ComboDataItem;
+                    Utility::EscapeAscii(queryDefinition); // Convert from unicode to '
+                    comboItem->queryDefinition = queryDefinition;
+                    comboItem->linkedTableID = associatedTableId;
+                    comboItem->title=filterName;
+                    comboItem->description=description;
+
+
+
+                    //wxClientData * cd = new wxClientData;
+
+                    pCombo.Append(filterName,(ComboDataItem*)comboItem);
+
+                    //arrayToAppend.Add(strData1);
+
+                }
+                catch (int num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+
+    }
+}
+
+//Used to destroy all the objects in the combo box because
+void Utility::DestroyComboDataObjects(wxComboBox *pCombo)
+{
+    int len = pCombo->GetCount();
+
+    for(int index=0;index<len;index++){
+
+        ComboDataItem* comboItem = (ComboDataItem*) pCombo->GetClientData(index);
+        delete comboItem;
+    }
+}

@@ -5,7 +5,7 @@
 #ifndef DBWORKS_UTILITY_H
 #define DBWORKS_UTILITY_H
 
-
+//This class is used to completely define a field in a MySQL table. It corresponds directly to the mySql fields.
 class TableFieldItem
 {
 public:
@@ -15,6 +15,17 @@ public:
     wxString fieldKey;
     wxString fieldDefault;
     wxString fieldExtra;
+};
+
+//This class is used to store associated data into a combo control
+class ComboDataItem : public wxClientData
+{
+public:
+    wxString title;
+    wxString tableID;
+    wxString linkedTableID;
+    wxString queryDefinition;
+    wxString description;
 };
 
 
@@ -36,6 +47,13 @@ public:
     static bool HasFlag(wxString flags, wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
     static bool IsReservedMySQLWord(wxString wordToFind);
+
+    //Unicode
+    static void EscapeAscii(wxString& QueryString);
+
+    //Combo loading functions
+    static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
+    static void DestroyComboDataObjects(wxComboBox *pCombo);
 
     //Parsers
     static wxString PassHTMLDocument(wxString sDocument);
@@ -80,9 +98,10 @@ public:
     static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
     static bool DoesTableExist(wxString sDatabase, wxString sTableName);
     static bool DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue);// Check to see if a record with a particular value exists.
-    static bool DoesFieldExitInTable(const wxString& sTableName, const wxString& sTieldName);
+    static bool DoesFieldExitInTable(const wxString& sTableName, const ArrayTableFields& fieldItemList); //Checks all the mysql field data, name, type , null ,key, default, extra
+    static bool DoesFieldExitInTable(const wxString& sTableName, const wxString& sFieldName);// Only checks the fieldname
     static bool IsEmpty(wxString str); // This function will remove any white spaces in the string before testing if empty.
-    static bool GetFieldList(wxArrayString &fieldList, wxString TableId); // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
+    static bool GetFieldList(ArrayTableFields &fieldList, wxString TableId); // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
     static wxString LoadSystemDocument(int documentId);
     static wxString CreateTable(wxString sDatabase, wxString sTableName, ArrayTableFields m_Fields );
     static bool LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableName, ArrayTableFields &m_Fields );
@@ -90,6 +109,7 @@ public:
     static void InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem); //Insert a new table field
     static void AppendDBWorksDatabases(wxArrayString &arrayToAppend);
     static void SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
+   // static void DestroyFieldItemList(ArrayTableFields &fieldList); // Runs through the list and destroys all the items.
 
 };
 

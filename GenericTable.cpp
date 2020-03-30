@@ -67,11 +67,11 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
     m_ComboFilter=nullptr;
 
     m_sCurrentStoredWhereCondition="";
-    m_iSavedRowIndex=-1;
+    m_iTempRowIndex=-1;
 }
 
 
-void GenericTable::AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag, const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal)
+void GenericTable::AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag, const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal)
 {
     
     auto * tableField = new TableField();
@@ -81,6 +81,7 @@ void GenericTable::AddField(const wxString& title, const wxString& field, const 
     tableField->flag = flag;
     tableField->extra = ExtraVal;
     tableField->key = KeyVal;
+    tableField->nullval=nullVal;
     tableField->defaultValue = defaultVal;
     
     m_FieldArray.Add(tableField);
@@ -112,9 +113,9 @@ bool GenericTable::Create()
                     for(int index=0;index<count;index++){
                         //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
                         if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
-                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue);
+                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue, m_FieldArray[index].type, m_FieldArray[index].nullval,m_FieldArray[index].key,m_FieldArray[index].extra );
                         else
-                            m_Grid->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue);
+                            m_Grid->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue, m_FieldArray[index].type, m_FieldArray[index].nullval,m_FieldArray[index].key,m_FieldArray[index].extra);
                     }
                        
                 }
@@ -220,7 +221,7 @@ bool GenericTable::Create()
         ///-------------
         //ADD the query combo to the toolbar
         m_txtFilter = new wxStaticText( m_Toolbar, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
-        m_txtFilter->SetLabel("Filter ");
+        m_txtFilter->SetLabel("Filters ");
         m_ComboFilter = new wxComboBox( m_Toolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
         m_ComboFilter->SetSize(260,-1);
         m_ComboFilter->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( GenericTable::OnUserGroupComboChange ), nullptr, this );
@@ -228,6 +229,9 @@ bool GenericTable::Create()
         //This is the default search.
         m_ComboFilter->Append("Show All");
         m_ComboFilter->Append("Menu Filter");
+
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,m_sTableName);
+        Utility::LoadComboUsrFilters(Settings.sDatabase, *m_ComboFilter, sTableId);
         m_ComboFilter->SetStringSelection("Show All");
 
         m_Toolbar->AddControl(m_txtFilter);
@@ -257,11 +261,25 @@ void GenericTable::OnUserGroupComboChange(wxCommandEvent& event)
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
     wxString selection = combo->GetStringSelection();
+    ComboDataItem *comboItem = nullptr;
+
+    int index =  combo->GetSelection();
+    if(index > 1) //NOTE: The first two entries in the combo don't have client object, but default they are SHOW ALL and FILTER MENU,
+        comboItem = (ComboDataItem*)combo->GetClientObject(index);
 
     if(selection=="Show All"){
         MyEvent eEvent;
         eEvent.m_bRefreshDatabase=true;
         eEvent.m_bShowAll=true;
+
+        //We allready have
+        OnMyEvent(eEvent);
+    }
+    else if(comboItem!= nullptr){
+
+        MyEvent eEvent;
+        eEvent.m_bRefreshDatabase=true;
+        eEvent.m_sQueryToApply = comboItem->queryDefinition;
 
         //We allready have
         OnMyEvent(eEvent);
@@ -315,7 +333,7 @@ void GenericTable::AddItem(long rowID)
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue);
+            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval);
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
@@ -344,7 +362,7 @@ void GenericTable::OnbEditItem( wxCommandEvent& event )
 void GenericTable::EditItem(long rowID)
 {
 
-    m_iSavedRowIndex = rowID; // Save the row so we now what to refresh.
+    m_iTempRowIndex = rowID; // Save the row so we now what to refresh.
 
     formItem = new GenericItemForm((wxFrame*) this, -1,"Edit Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
     int count = m_FieldArray.GetCount();
@@ -352,7 +370,7 @@ void GenericTable::EditItem(long rowID)
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue);
+            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval );
     }
 
 
@@ -402,7 +420,7 @@ void GenericTable::ViewItem(long rowID)
         if (count>0){
 
             for(int index=0;index<count;index++)
-                formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue);
+                formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval);
         }
 
         formItem->SetUse("VIEW");
@@ -439,7 +457,7 @@ void GenericTable::OnbDeleteItem( wxCommandEvent& event )
 
 }
 
-void GenericTable::SetTableDefinition(const wxString& tableName, const wxString& title, const wxString& comments, const wxString& whereCondition)
+void GenericTable::SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition)
 {
     m_sTableName = tableName;
     m_sTitle=title;
@@ -479,6 +497,12 @@ void GenericTable::OnMyEvent(MyEvent& event )
                 m_ComboFilter->SetStringSelection("Menu Filter");
             Refresh();
 
+        }
+        else if(!event.m_sQueryToApply.IsEmpty()){
+
+            m_sTempQuery=event.m_sQueryToApply;
+            Refresh();
+
         }else{
             //If the events where condition is empty, then see if we have a stored where condition.
             if(event.m_bShowAll){
@@ -496,15 +520,17 @@ void GenericTable::OnMyEvent(MyEvent& event )
 void GenericTable::Refresh()
 {
 
-    if(m_iSavedRowIndex>-1)
-        m_Grid->LoadGridRowFromDatabase(m_iSavedRowIndex);
+    //If we are just updating a row, then we don't need to reload the entire grid, just update the single row.
+    if(m_iTempRowIndex>-1)
+        m_Grid->LoadGridRowFromDatabase(m_iTempRowIndex);
     else
-        m_Grid->LoadGridFromDatabase();
+        m_Grid->LoadGridFromDatabase(false,m_sTempQuery);
 
-    this->Layout(); // This is the key, you need to relayout the form.
+    this->Layout(); // This is the key, you need to re-layout the form.
 
     //After the row has been updated, we need to put this back to -1 so the entire grid can be refreshed.
-    m_iSavedRowIndex = -1;
+    m_iTempRowIndex = -1;
+    m_sTempQuery="";
 
 }
 

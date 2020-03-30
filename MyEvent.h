@@ -27,6 +27,7 @@ class MyEvent : public wxEvent
     wxString m_cellValue; // The value of the current clicked cell.
     wxString m_cellFieldName; // The field name for that cell
     wxString m_sWhereCondition;
+    wxString m_sQueryToApply;
 
     explicit MyEvent( wxWindow* win = (wxWindow*) nullptr );
     wxEvent* Clone() const override {return new MyEvent(*this);}

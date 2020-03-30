@@ -568,14 +568,17 @@ GenericItemForm::~GenericItemForm()
     
 }
 
-void GenericItemForm::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal)
+void GenericItemForm::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal, const wxString& keyVal, const wxString& extraVal, const wxString& nullVal)
 {
     auto *item = new FieldItem();
     item->title = fieldTitle;
     item->field = field;
     item->flag = flag;
     item->type = type;
+    item->keyVal = keyVal;
+    item->ExtraVal = extraVal;
     item->defaultValue = defaultVal;
+    item->nullVal = nullVal;
     itemArray.Add(item);
 
 }
@@ -750,7 +753,7 @@ void GenericItemForm::InsertItem(){
                     }
                 }
             }
-            
+
             Query query = conn.query(queryString);
             query.execute();
 

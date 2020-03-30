@@ -3,10 +3,14 @@
 class GridItem
 {
 public:
-    wxString field;
+    wxString fieldName;
+    wxString fieldType;
+    wxString fieldNull;
+    wxString fieldKey;
+    wxString fieldExtra;
+    wxString fieldDefault;
     wxString title;
     wxString flags;
-    wxString defaultValue;
 };
 
 
@@ -51,6 +55,9 @@ public:
     DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _style);
     ~DBGrid() override;
 
+    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra );
+
+
     bool GetGridItemArray(ArrayGridItem &GridItemList); //Loads an Array of GridItem class. Does a copy can creates all new row items.
     bool GetFirstRowCellValue(wxString& sCellValue,int  ColumnNumber);
     bool GetNextRowCellValue(wxString& sCellValue);
@@ -62,7 +69,7 @@ public:
     bool IsCellHighlighted(int iRow, int iCol);
 
     void SetGridWhereCondition(wxString sWhere);
-    bool LoadGridFromDatabase(bool bCheckTableExists=false); //Loads the grid with data from the m_sTableName table;
+    bool LoadGridFromDatabase(bool bCheckTableExists=false, wxString queryToApply=""); //Loads the grid with data from the m_sTableName table;
     bool LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists=false); //Loads the grid with data from the m_sTableName table;
     void ResizeSpreadSheet(); //Resises the fields to the text with respect to max and min size limits.
 
@@ -76,7 +83,7 @@ public:
     void DeleteEntryFromDatabase(const wxString& contactId);
     void CreateFields(); // Creates the fields of the grid, used in initalising.
     
-    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal);
+
     wxString getSelectedFieldValue(const wxString& fieldname);
     void SetEventType(long type);
     // We are going to do this with every frame class so we can send messages to parents that this window may of been destroyed internally.
