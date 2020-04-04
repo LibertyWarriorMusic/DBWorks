@@ -10,11 +10,11 @@
 #pragma clang diagnostic ignored "-Wunused-variable"
 
 clear
-Files="myProgressControl.cpp ObTable.cpp ObTablePanel.cpp DBGrid.cpp GenericItemForm.cpp ImagePanel.cpp MyEvent.cpp GenericTable.cpp PropertyTable.cpp main.cpp Utility.cpp HtmlHelp.cpp ImportMySQLDatabase.cpp DialogBaseClass.cpp"
-
-
-
-
+Files="myProgressControl.cpp ObTable.cpp
+ObTablePanel.cpp DBGrid.cpp
+GenericItemForm.cpp ImagePanel.cpp MyEvent.cpp
+GenericTable.cpp PropertyTable.cpp main.cpp Utility.cpp HtmlHelp.cpp
+ImportMySQLDatabase.cpp DialogBaseClass.cpp DialogTemplate.cpp DlgTableSelect.cpp"
 
 
 echo Making Database Works, please wait.....

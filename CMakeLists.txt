@@ -17,7 +17,9 @@ set(SOURCE_FILES
         ObTable.cpp DiagramFrame.cpp
         TableDiagramFrame.cpp
         DialogBaseClass.cpp
-        ImportMySQLDatabase.cpp)
+        ImportMySQLDatabase.cpp
+        DialogTemplate.cpp
+        DlgTableSelect.cpp)
 
 
 

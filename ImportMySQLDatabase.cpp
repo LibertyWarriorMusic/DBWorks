@@ -41,7 +41,7 @@ ImportMySQLDatabase::ImportMySQLDatabase( wxWindow* parent, wxWindowID id, const
 
     //------------------------------------------------
     // AVAILABLE DATABASES COMBO
-    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Tables *", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
+    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Databases", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
     SetFlags("ID_SELECT_TABLE","SQL_DATABASES");
     wxComboBox *pCom = (wxComboBox*)GetControl("ID_SELECT_TABLE");
     pCom->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( ImportMySQLDatabase::OnDatabaseComboChange ), nullptr, this );
@@ -72,9 +72,6 @@ ImportMySQLDatabase::ImportMySQLDatabase( wxWindow* parent, wxWindowID id, const
 
     //Render all the controls to the mainframe sizer.
     RenderAllControls();
-
-    //Create the buttons to the dialog
-    this->Create();
 
 }
 

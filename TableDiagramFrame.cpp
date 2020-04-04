@@ -8,6 +8,7 @@
 
 #include "MyEvent.h"
 #include "global.h"
+#include "DlgTableSelect.h"
 #include "Utility.h"
 //#include "DiagramFrame.h"
 
@@ -20,7 +21,8 @@
 
 enum {
     ID_HELP = wxID_HIGHEST + 1100,
-    ID_TOOL_ADD
+    ID_TOOL_ADD,
+    ID_Menu_RCLICK
 };
 
 wxBEGIN_EVENT_TABLE(TableDiagramFrame, wxFrame)
@@ -87,7 +89,21 @@ bool TableDiagramFrame::Destroy()
     return bResult;
 }
 void TableDiagramFrame::OnbPasteTable( wxCommandEvent& event ) {
-    wxLogMessage("Paste table");
+
+    DlgTableSelect * pDlg = new DlgTableSelect(this, -1, "Import MySQL Database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+
+    if(pDlg->ShowModal()==wxOK){
+
+        wxString sTableName = pDlg->GetDataValue("ID_SELECT_TABLE");
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,sTableName);
+
+        //wxMessageBox("The you selected was: " + sTable);
+        AddDrawObject(sTableId,sTableName);
+
+    }
+
+
+    pDlg->Destroy();
 }
 
 void TableDiagramFrame::OnbHelp( wxCommandEvent& event )
@@ -100,7 +116,6 @@ void TableDiagramFrame::OnbHelp( wxCommandEvent& event )
     m_HtmlWin = new HtmlHelp((wxFrame*) this, -1, "Help", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
     m_HtmlWin->SetPage(2); //
     m_HtmlWin->Show(true);
-
 }
 
 
@@ -112,7 +127,6 @@ void TableDiagramFrame::LoadTableObjects(const wxString& sDatabase)
 void TableDiagramFrame::AddDrawObject( const wxString& sTableID, const wxString& sTableName)
 {
     m_TableDiagramPanel->AddDrawObject( sTableID, sTableName);
-
 }
 
 
@@ -121,8 +135,51 @@ void TableDiagramFrame::OnMyEvent(MyEvent& event) {
     if(event.m_bStatusMessage){
         SetStatusText(event.m_sData);
     }
+    else if(event.m_bAddTableObject){
+        m_TableDiagramPanel->AddDrawObject( event.m_sTableId, event.m_sTableName);
+    }
+    else if(event.m_bTableFieldDefinitions){
+        GetParent()->ProcessWindowEvent( event );
+    }
     else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
 
     }
 }
+/*
+void TableDiagramFrame::OpenTableDefinitions(wxString sTableName)
+{
+    PropertyTable * m_TableForm;
+
+
+    wxString sTabldId= Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,sTableName);
+    // Instead of opening contacts, we are going to open the generic form table.
+    m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
+
+    if (m_TableForm != nullptr){
+
+        m_TableForm->SetGridTableName(sTableName);
+
+        m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+sTabldId);// We will grab this from our form.
+        //Add the field items
+        m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",sTabldId,"","",""); // This is the linking ID
+        m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
+        m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
+        m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
+        m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
+        m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
+        m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
+        m_TableForm->AddField("Title","title","varchar(100)","","","","","");
+        m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
+        m_TableForm->Create();// Create the table.
+        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+        m_TableForm->HideIDColumn();
+        m_TableForm->Show(true);
+
+
+    }
+
+
+}*/

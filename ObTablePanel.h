@@ -13,6 +13,7 @@
 class ObTable;
 class TableField;
 class ArrayTableField;
+//class PropertyTable;
 
 //Declare an array of drawing objects. This respresents all our defined tables as an object that will be drawn on the screen.
 WX_DECLARE_OBJARRAY(ObTable, ArrayDrawObjects);
@@ -22,6 +23,7 @@ class ObTablePanel : public wxPanel
 private:
 
     wxPoint m_MousePos;
+    ObTable* m_pObCurrentTable;
     ArrayDrawObjects m_ObTableList; // Holds a list of all our objects
     ObTable * GetObjectHitByMouse(wxPoint mousePt);
 
@@ -29,11 +31,26 @@ private:
 
     wxSize m_MouseMoveOffset; // When you click on an object, you don't want the top left corner of the object to snap to the mouse point when you drag it. You want it to remain relative to where you clicked on the object
 
+
+    void mouseMoved(wxMouseEvent& event);
+    void mouseDown(wxMouseEvent& event);
+    void mouseWheelMoved(wxMouseEvent& event);
+    void mouseReleased(wxMouseEvent& event);
+    void rightClick(wxMouseEvent& event);
+    void mouseLeftWindow(wxMouseEvent& event);
+    void keyPressed(wxKeyEvent& event);
+    void keyReleased(wxKeyEvent& event);
+    void OnMenuAddTable(wxCommandEvent& event);
+    void OnMenuEditTable(wxCommandEvent& event);
+    void OnMenuRemoveTable(wxCommandEvent& event);
+
 public:
     ObTablePanel(wxFrame* parent);
     ~ObTablePanel();
 
     void Refresh();
+
+    void RemoveObjectFromDiagramByTableName(wxString sTableName);
 
     void AddDrawObject( const wxString& sTableID, const wxString& sTableName);
     ObTable* AddNewTableObject();
@@ -53,14 +70,6 @@ public:
     
     // some useful events
 
-     void mouseMoved(wxMouseEvent& event);
-     void mouseDown(wxMouseEvent& event);
-     void mouseWheelMoved(wxMouseEvent& event);
-     void mouseReleased(wxMouseEvent& event);
-     void rightClick(wxMouseEvent& event);
-     void mouseLeftWindow(wxMouseEvent& event);
-     void keyPressed(wxKeyEvent& event);
-     void keyReleased(wxKeyEvent& event);
 
     bool Destroy() override;
     DECLARE_EVENT_TABLE()

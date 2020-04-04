@@ -134,7 +134,6 @@ public:
 
     static void LoadStringArrayWithTableNamesFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
     static void LoadStringArrayWithTableIdsFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
-
 };
 
 

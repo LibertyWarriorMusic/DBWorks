@@ -74,7 +74,7 @@ enum {
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_MENU(ID_ButtonAction, MainFrame::OnButtonAction)
     EVT_MENU(MENU_New, MainFrame::NewFile)
-    EVT_MENU(MENU_IMPORT, MainFrame::OpenFile)
+    EVT_MENU(MENU_IMPORT, MainFrame::OnImportDatabase)
     EVT_MENU(MENU_Close, MainFrame::CloseFile)
     EVT_MENU(MENU_Save, MainFrame::SaveFile)
     EVT_MENU(MENU_SaveAs, MainFrame::SaveFileAs)
@@ -1048,9 +1048,19 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     this->SetBackgroundColour(wxColour(70,70,130));
 
+
+
+
+    //
+
+
     // Connect Events
     //m_buttonCalculate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( MainFrame::OnButtonAction ), NULL, this );
-    this->SetMenuBar( m_Menubar );
+  SetMenuBar( m_Menubar );
+
+  //  wxMenuBar* pMenuBar = GetMenuBar();
+  //  pMenuBar->SetParent(this);
+  //  pMenuBar->SetFocus();
 
     //Load the grid
     LoadGrid();
@@ -1755,8 +1765,6 @@ void MainFrame::SetGridWhereCondition(wxString whereToBlend)
     else
         m_MainGrid->SetGridWhereCondition(""); // Make sure we clear it or once we select a filter, it will remain that way even after you show all.
 
-
-
 }
 
 
@@ -1770,7 +1778,6 @@ void MainFrame::OnbHelp( wxCommandEvent& event )
     m_HtmlWin = new HtmlHelp((wxFrame*) this, -1, "Help", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
     m_HtmlWin->SetPage(2); //
     m_HtmlWin->Show(true);
-
 }
 
 
@@ -1847,15 +1854,63 @@ void MainFrame::OnOpenTableDiagram(wxCommandEvent& event)
 
 }
 
-void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
+void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event)) {
+
+}
+
+void MainFrame::OnImportDatabase(wxCommandEvent& WXUNUSED(event))
 {
     ImportMySQLDatabase * pImportMySQLForm = new ImportMySQLDatabase(this, -1, "Import MySQL Database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
 
-    if(pImportMySQLForm->ShowModal()==wxOK)
-        wxGetApp().StartImportDatabase(pImportMySQLForm->GetDatabaseToCopy(),pImportMySQLForm->GetNewDatabaseToCopyInto() );
+    if(pImportMySQLForm->ShowModal()==wxOK){
+        wxString sDatabase = pImportMySQLForm->GetDatabaseToCopy();
+        if(sDatabase.IsEmpty())
+            wxLogMessage("You need to select a database, please try again");
+        else
+            wxGetApp().StartImportDatabase(pImportMySQLForm->GetDatabaseToCopy(),pImportMySQLForm->GetNewDatabaseToCopyInto() );
+
+    }
+
 
     pImportMySQLForm->Destroy();
-    pImportMySQLForm= nullptr;
+
+}
+void MainFrame::OpenTableDefinitions(wxString sTableName)
+{
+    if (m_TableForm!= nullptr){
+        m_TableForm->Destroy();
+        m_TableForm = nullptr;
+    }
+
+    wxString sTabldId= Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,sTableName);
+    // Instead of opening contacts, we are going to open the generic form table.
+    m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
+
+    if (m_TableForm != nullptr){
+
+        m_TableForm->SetGridTableName(sTableName);
+
+        m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+sTabldId);// We will grab this from our form.
+        //Add the field items
+        m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",sTabldId,"","",""); // This is the linking ID
+        m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
+        m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
+        m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
+        m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
+        m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
+        m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
+        m_TableForm->AddField("Title","title","varchar(100)","","","","","");
+        m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
+        m_TableForm->Create();// Create the table.
+        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+        m_TableForm->HideIDColumn();
+        m_TableForm->Show(true);
+
+
+    }
+
 
 }
 
@@ -1863,47 +1918,10 @@ void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
 //We created an event to refresh the grid so we can call it from any frame class.
 void MainFrame::OnMyEvent(MyEvent& event)
 {
-
     if(event.m_bTableFieldDefinitions){
         //We are going to show the field types for this table
         m_MainGrid->SetGridCursor(event.m_iRow,event.m_iCol);
-
-        if (m_TableForm!= nullptr){
-            m_TableForm->Destroy();
-            m_TableForm = nullptr;
-        }
-
-        // Instead of opening contacts, we are going to open the generic form table.
-        m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+event.m_sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
-
-        if (m_TableForm != nullptr){
-
-            m_TableForm->SetGridTableName(event.m_sTableName);
-
-            wxString linkID;
-            linkID << event.m_lTableID;
-
-            m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+linkID);// We will grab this from our form.
-            //Add the field items
-            m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
-
-            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"","",""); // This is the linking ID
-            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
-            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
-            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
-            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
-            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
-            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
-            m_TableForm->AddField("Title","title","varchar(100)","","","","","");
-            m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
-            m_TableForm->Create();// Create the table.
-            //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
-            m_TableForm->HideIDColumn();
-            m_TableForm->Show(true);
-
-
-        }
-
+        OpenTableDefinitions(event.m_sTableName);
     }
     else if(event.m_bOpen){
         wxString TableID;

@@ -12,13 +12,16 @@ private:
     wxDECLARE_EVENT_TABLE();
     wxBoxSizer* m_MainFormSizer;
     wxButton* m_Cancel;
-    wxButton* m_Import;
+    wxButton* m_bOk;
+
+    wxPoint m_Winpos;
     FieldCtlItem* NewFieldDataCtrl();// Creates a new FieldCtlItem in the list and returns a point to that control
     ArrayFieldDataCtls m_CtrlDataItem; // Used to store information about each control
     int m_CalculatedHeightWindow;
     wxString m_sOldSelectionText; //Remember the selectiontext
-    void ResizeTitleText();
+    wxString m_OkLabel;
 
+    void ResizeTitleText();
     void OnbCancel( wxCommandEvent& event );
     void OnbOk( wxCommandEvent& event );
     void OnComboDropDown( wxCommandEvent& event );
@@ -33,6 +36,7 @@ public:
     void Create();
     ~DialogBaseClass() override;
 
+    void SetOkLabel(wxString label);
 
     void* GetControl(wxString sIdentifier);
     wxString GetDataValue(wxString sIdentifier); //Used to get the data for this control

@@ -106,29 +106,17 @@ void PropertyTable::SetGridTableName(wxString& name)
 
     if (Utility::DoesTableExist(Settings.sDatabase,m_sGridTableName))
     {
-        //wxMessageBox("Table already exists.");
-
         UpdateDatabaseTableDefinitionsToDefinitions();
         return;
     }
 
+    wxString queryString = PrepareCreateQuery();
 
-    auto *dlg = new wxMessageDialog(nullptr, wxT("About to create this table, do you want to continue?"), wxT("Create Table"), wxYES_NO | wxICON_EXCLAMATION);
+    auto *dlg = new wxMessageDialog(nullptr, "You are about the execute the following command, continue? \n\n"+queryString, wxT("Create Table"), wxYES_NO | wxICON_EXCLAMATION);
 
-    if ( dlg->ShowModal() == wxID_YES ){
-        
-        wxString queryString = PrepareCreateQuery();
-        
-            auto *dlg2 = new wxMessageDialog(nullptr, "You are about the execute the following command, continue? \n\n"+queryString, wxT("Create Table"), wxYES_NO | wxICON_EXCLAMATION);
+    if ( dlg->ShowModal() == wxID_YES )
+        Utility::ExecuteQuery(queryString);
 
-        if ( dlg2->ShowModal() == wxID_YES ){
-            
-            //wxMessageBox(queryString);
-            Utility::ExecuteQuery(queryString);
-            
-        }
-            dlg2->Destroy();
-    }        
     dlg->Destroy();
 
 }

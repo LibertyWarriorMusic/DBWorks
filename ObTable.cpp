@@ -6,6 +6,7 @@
 #include "global.h"
 #include "MyEvent.h"
 #include "Utility.h"
+#include "GenericTable.h"
 #include "ObTable.h"
 
 

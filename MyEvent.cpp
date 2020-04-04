@@ -23,7 +23,6 @@ MyEvent::MyEvent( wxWindow* win )
     m_bTableDiagramFrameWasDestroyed=false;
     m_bHelpFrameWasDestroyed=false;
 
-
     m_sTableName="";
     m_sDatabaseName="";
     m_sNewDatabaseName="";

@@ -86,6 +86,7 @@ class MainFrame : public wxFrame
         void UpdateProgressBar(int val);
         explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
         void SetProgressLabel(wxString sLabel);
+        void OpenTableDefinitions(wxString sTableName);
         //Event functions
         void Quit( wxCommandEvent& event );
         void NewFile( wxCommandEvent& event );
@@ -108,6 +109,8 @@ class MainFrame : public wxFrame
         void SetStateOfAutoCheckDefinitions(bool bOnIsTrue = true);
         DBGrid* GetMainGrid();
         void SetSettingsLoaded(bool bSettingsLoadedFlag);
+        void OnImportDatabase( wxCommandEvent& event );
+
 
         bool Destroy() override;
 

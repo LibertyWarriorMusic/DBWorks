@@ -18,10 +18,11 @@ public:
     void LoadTableObjects(const wxString& sDatabase); //Reload all the drawing objects
     void AddDrawObject( const wxString& sTableID, const wxString& sTableName);
     bool Destroy() override;
-
+   // void OpenTableDefinitions(wxString sTableName);
 private:
 
 
+    //PropertyTable * m_TableForm;
 
 
     wxDECLARE_EVENT_TABLE();

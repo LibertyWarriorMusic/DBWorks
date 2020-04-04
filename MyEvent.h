@@ -10,9 +10,10 @@ class MyEvent : public wxEvent
     int m_iCol;
 
     wxString m_sTableName;
+    wxString m_sTableId;
     wxString m_sDatabaseName;
     wxString m_sNewDatabaseName;
-    long m_lTableID;
+    long m_lTableID;//Remove this one
 
     //These flags indicate which context menu we came from
     bool m_bTableFieldDefinitions;

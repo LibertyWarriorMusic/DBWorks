@@ -32,18 +32,25 @@ WX_DEFINE_OBJARRAY(ArrayFieldDataCtls);
 DialogBaseClass::DialogBaseClass( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style)
 {
     m_CalculatedHeightWindow=0;
+    m_OkLabel = "OK";
     //The is the sizer we are going to attach control to.
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
     this->SetLabel(title);
     this->SetSizer( m_MainFormSizer );
 
+    m_Winpos=pos;
 }
 wxBoxSizer* DialogBaseClass::GetMainSizer()
 {
     return m_MainFormSizer;
-
 }
 
+void DialogBaseClass::SetOkLabel(wxString label)
+{
+    m_OkLabel = label;
+
+
+}
 
 void DialogBaseClass::Create()
 {
@@ -52,10 +59,10 @@ void DialogBaseClass::Create()
 
     wxBoxSizer *btSizer = new wxBoxSizer( wxHORIZONTAL );
 
-    m_Import = new wxButton( this, wxID_ANY , wxT("Import Database"), wxDefaultPosition, wxSize(120,20), 0 );
-
-    m_Import->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogBaseClass::OnbOk ), nullptr, this );
-    btSizer->Add( m_Import, 0, wxALL, BORDERWIDTH );
+    m_bOk = new wxButton( this, wxID_ANY , wxT("Import Database"), wxDefaultPosition, wxSize(120,20), 0 );
+    m_bOk->SetLabel(m_OkLabel);
+    m_bOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogBaseClass::OnbOk ), nullptr, this );
+    btSizer->Add( m_bOk, 0, wxALL, BORDERWIDTH );
 
 
     m_Cancel = new wxButton( this, wxID_ANY , wxT("Cancel"), wxDefaultPosition, wxSize(120,20), 0 );
@@ -66,11 +73,13 @@ void DialogBaseClass::Create()
 
     m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
     m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH + 10;
+
+    //this->SetPosition(m_Winpos);
     this->SetSize(WINDOW_WIDTH,m_CalculatedHeightWindow);
 
 
-
     this->Layout();
+
 
 
 }
@@ -337,6 +346,8 @@ void DialogBaseClass::RenderAllControls()
                 //We can add other type of flags here
                 if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SQL_DATABASES"))
                     Utility::LoadStringArrayWidthMySQLDatabaseNames(sSelectionItemArray);
+                else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_TABLES"))
+                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, sSelectionItemArray);
                 else
                     Utility::ExtractSelectionLookupItemsName(sSelectionItemArray,sFlags);
 
@@ -521,6 +532,8 @@ void DialogBaseClass::RenderAllControls()
     ResizeTitleText(); //Find the maximum width of the title fields and set all controls to that width.
     this->Layout();
     this->Centre( wxBOTH );
+    //Create the buttons to the dialog
+    Create();
 }
 
 void DialogBaseClass::SetDataValue(wxString sIdentifier,wxString sData)

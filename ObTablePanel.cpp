@@ -26,13 +26,13 @@
 
 
 #include "global.h"
-#include "MyEvent.h"
-
 #include "Utility.h"
+#include "MyEvent.h"
+#include "DlgTableSelect.h"
+
 #include "ObTable.h"
 #include "mysql.h"
 #include "mysql++.h"
-
 
 #include "ObTablePanel.h"
 #include <cmath>
@@ -42,29 +42,36 @@ WX_DEFINE_OBJARRAY(ArrayDrawObjects);
 
 using namespace mysqlpp;
 
-
+enum {
+    ID_MENU_ADD_TABLE = wxID_HIGHEST + 600,
+    ID_MENU_EDIT_TABLE,
+    ID_MENU_REMOVE_TABLE
+};
 
 BEGIN_EVENT_TABLE(ObTablePanel, wxPanel)
 // some useful events
 
- EVT_MOTION(ObTablePanel::mouseMoved)
- EVT_LEFT_DOWN(ObTablePanel::mouseDown)
- EVT_LEFT_UP(ObTablePanel::mouseReleased)
- EVT_RIGHT_DOWN(ObTablePanel::rightClick)
- EVT_LEAVE_WINDOW(ObTablePanel::mouseLeftWindow)
- EVT_KEY_DOWN(ObTablePanel::keyPressed)
- EVT_KEY_UP(ObTablePanel::keyReleased)
- EVT_MOUSEWHEEL(ObTablePanel::mouseWheelMoved)
-
+    EVT_MOTION(ObTablePanel::mouseMoved)
+    EVT_LEFT_DOWN(ObTablePanel::mouseDown)
+    EVT_LEFT_UP(ObTablePanel::mouseReleased)
+    EVT_RIGHT_DOWN(ObTablePanel::rightClick)
+    EVT_LEAVE_WINDOW(ObTablePanel::mouseLeftWindow)
+    EVT_KEY_DOWN(ObTablePanel::keyPressed)
+    EVT_KEY_UP(ObTablePanel::keyReleased)
+    EVT_MOUSEWHEEL(ObTablePanel::mouseWheelMoved)
+    EVT_MENU(ID_MENU_ADD_TABLE, ObTablePanel::OnMenuAddTable)
+    EVT_MENU(ID_MENU_REMOVE_TABLE, ObTablePanel::OnMenuRemoveTable)
+    EVT_MENU(ID_MENU_EDIT_TABLE, ObTablePanel::OnMenuEditTable)
 
 // catch paint events
-EVT_PAINT(ObTablePanel::paintEvent)
+    EVT_PAINT(ObTablePanel::paintEvent)
 
 END_EVENT_TABLE()
 
 ObTablePanel::ObTablePanel(wxFrame* parent) : wxPanel(parent)
 {
     m_pObjectToDraw = nullptr;
+    m_pObCurrentTable = nullptr;
     m_MouseMoveOffset.x=0;
     m_MouseMoveOffset.y=0;
 }
@@ -73,6 +80,51 @@ ObTablePanel::~ObTablePanel()
 {
 
 }
+
+void ObTablePanel::rightClick(wxMouseEvent& event)
+{
+    m_pObCurrentTable= nullptr;
+
+    m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
+
+    ObTable* pObTable = GetObjectHitByMouse(m_MousePos);
+    //Diagram menus
+    //Create a context menu to do stuff here.
+    auto *menu = new wxMenu;
+
+    if(pObTable!= nullptr)
+    {
+        m_pObCurrentTable = pObTable;
+        //Object menus
+       // m_MouseMoveOffset=Utility::CalcPtInRectOffset(m_MousePos,pObTable->GetObjectRect());
+       // m_pObjectToDraw = pObTable;
+        //m_pObjectToDraw->TurnSnapOff();
+        menu->Append(ID_MENU_EDIT_TABLE, wxT("Edit table definitions"), wxT("Edit table definitions."));
+        menu->Append(ID_MENU_REMOVE_TABLE, wxT("Remove this table from the database"), wxT("Edit table definitions."));
+
+    }
+    else{
+
+        menu->Append(ID_MENU_ADD_TABLE, wxT("Add table"), wxT("At table at current position."));
+        // menu->AppendSeparator();
+
+    }
+
+
+    PopupMenu( menu, m_MousePos);
+
+
+    //Tell the parent to add a table to the drawing at the mouse point.
+    MyEvent my_event( this );
+    my_event.m_bStatusMessage=true;
+//    my_event.m_sData = "Current mouse position: x="+m_MousePos.x" + " y="+m_MousePos.y;
+    my_event.m_pMousePoint=m_MousePos;
+    GetParent()->ProcessWindowEvent( my_event );
+
+}
+
+
+
 // some useful events
 
  void ObTablePanel::mouseMoved(wxMouseEvent& event)
@@ -102,7 +154,7 @@ ObTablePanel::~ObTablePanel()
     m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
 
 
-    ObTable* pObTable = GetObjectHitByMouse(event.GetPosition());
+    ObTable* pObTable = GetObjectHitByMouse(m_MousePos);
     if(pObTable!= nullptr)
     {
         m_MouseMoveOffset=Utility::CalcPtInRectOffset(m_MousePos,pObTable->GetObjectRect());
@@ -115,19 +167,6 @@ ObTablePanel::~ObTablePanel()
     MyEvent my_event( this );
     my_event.m_bStatusMessage=true;
     my_event.m_sData="mouseDown";
-    GetParent()->ProcessWindowEvent( my_event );
-
-}
-
-void ObTablePanel::rightClick(wxMouseEvent& event)
-{
-
-    m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
-
-    //Tell the parent to add a table to the drawing at the mouse point.
-    MyEvent my_event( this );
-    my_event.m_bAddTableObject = true;
-    my_event.m_pMousePoint=m_MousePos;
     GetParent()->ProcessWindowEvent( my_event );
 
 }
@@ -268,6 +307,29 @@ void ObTablePanel::render(wxDC&  dc)
 
 }
 
+void ObTablePanel::RemoveObjectFromDiagramByTableName(wxString sTableName)
+{
+    //Draw all the object to the screen.
+    for (int index=0; index<m_ObTableList.GetCount();index++) {
+
+
+        ObTable* pObTable = &m_ObTableList[index];
+
+        if(pObTable->GetTableName()==sTableName){
+            if(pObTable!= nullptr){
+
+                m_ObTableList.RemoveAt(index);
+
+                break;
+            }
+
+
+        }
+
+    }
+    Refresh();
+
+}
 ObTable * ObTablePanel::GetObjectHitByMouse(wxPoint mousePt)
 {
 
@@ -496,4 +558,45 @@ void ObTablePanel::GetSelectedFieldItemListDB(ArrayTableField& fieldItemList, wx
     }
 }
 
+
+//===================
+//MENU EVENT FUNCTIONS
+void ObTablePanel::OnMenuAddTable(wxCommandEvent& event)
+{
+    //Bring up the
+    DlgTableSelect * pDlg = new DlgTableSelect(this, -1, "Import MySQL Database", m_MousePos, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+
+    if(pDlg->ShowModal()==wxOK){
+
+        wxString sTableName = pDlg->GetDataValue("ID_SELECT_TABLE");
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,sTableName);
+
+        //wxMessageBox("The you selected was: " + sTable);
+        AddDrawObject(sTableId,sTableName);
+
+    }
+
+
+    pDlg->Destroy();
+
+}
+
+void ObTablePanel::OnMenuRemoveTable(wxCommandEvent& event)
+{
+    if(m_pObCurrentTable!= nullptr){
+        Utility::SaveTableData(Settings.sDatabase,m_pObCurrentTable->GetTableName(),"ObTableShow","no");
+        RemoveObjectFromDiagramByTableName(m_pObCurrentTable->GetTableName());
+    }
+}
+
+void ObTablePanel::OnMenuEditTable(wxCommandEvent& event)
+{
+
+    if(m_pObCurrentTable!= nullptr){
+        MyEvent my_event( this );
+        my_event.m_bTableFieldDefinitions=true;
+        my_event.m_sTableName=m_pObCurrentTable->GetTableName();
+        GetParent()->ProcessWindowEvent( my_event );
+    }
+}
 

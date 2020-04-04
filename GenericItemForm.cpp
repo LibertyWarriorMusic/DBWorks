@@ -79,7 +79,7 @@ void GenericItemForm::CreateFields()
     int count = itemArray.GetCount();
     int calculatedHeightWindow=0;
     wxString sFlags="";
-    int style = 0;
+    long style = 0;
 
        if (count>0){
            
@@ -99,7 +99,7 @@ void GenericItemForm::CreateFields()
                                 gSizer1->Add( itemArray[i].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
                                if(Utility::HasFlag(sFlags,"MULTILINE")){
-
+                                   style = 0;
                                     //Don't do rich text right now because you copy and past into the field, some special characters might be present that you can't see.
                                     //I still need to implement parsing for special characters, then we might be able to use this style again.
                                    //unsigned long style =  wxTE_WORDWRAP | wxTE_RIGHT| wxTE_DONTWRAP | wxTE_MULTILINE | wxTE_RICH | wxHSCROLL;
@@ -122,7 +122,7 @@ void GenericItemForm::CreateFields()
 
 
                                }else if(Utility::HasFlag(sFlags,"SELECTION_LOOKUP_ID")   && m_sTableName!=SYS_FIELDS){ //SELECTION
-
+                                   style = 0;
                                    // NOTE: We don't want to come in here if we are in the property table, flag section, so we need to indicate this with a flag.
                                    //Create a wxComboCtrl. We need to fill it with the values extracted from
 
@@ -131,7 +131,6 @@ void GenericItemForm::CreateFields()
                                    Utility::ExtractSelectionLookupItemsID(sSelectionItemArray,sFlags);
 
 
-                                   long style = 0;
 
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -173,7 +172,7 @@ void GenericItemForm::CreateFields()
                                    Utility::ExtractSelectionLookupItemsName(sSelectionItemArray,sFlags);
 
 
-                                   long style = 0;
+                                   style = 0;
 
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -214,7 +213,7 @@ void GenericItemForm::CreateFields()
                                    wxArrayString sSelectionItemArray;
                                    Utility::ExtractSelectionLinkedItemsID(sSelectionItemArray,sFlags);
 
-                                   long style = 0;
+                                   style = 0;
 
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -255,7 +254,7 @@ void GenericItemForm::CreateFields()
                                    wxArrayString sSelectionItemArray;
                                    Utility::ExtractSelectionLinkedItemsName(sSelectionItemArray,sFlags);
 
-                                   long style = 0;
+                                   style = 0;
 
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -295,7 +294,7 @@ void GenericItemForm::CreateFields()
                                    wxArrayString sSelectionItemArray;
                                    Utility::ExtractSelectionItems(sSelectionItemArray,sFlags);
 
-                                   long style = 0;
+                                   style = 0;
 
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -367,7 +366,7 @@ void GenericItemForm::CreateFields()
                                    {
 
                                    bool bWebLink = false;
-                                   style = 0;
+                                       style = 0;
 
                                    if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].Flags,"READONLY")){
                                        style = wxTE_READONLY;
@@ -402,20 +401,11 @@ void GenericItemForm::CreateFields()
 
                                     }
 
-
-
-
-
                                    calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-
                                    m_mainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
                                }
                                else{
-
-
-
-
+                                   style = 0;
                                    if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style = wxTE_READONLY;
 
@@ -439,31 +429,31 @@ void GenericItemForm::CreateFields()
                                }
                    }
        
-                   wxString sOKLabel = "";
-                   if (m_sUse=="ADD")
-                       sOKLabel = "Add Item";
-                   else if (m_sUse=="UPDATE")
-                       sOKLabel = "Update Item";
-                   else if (m_sUse=="VIEW")
-                       sOKLabel = "Close";
+           wxString sOKLabel = "";
+           if (m_sUse=="ADD")
+               sOKLabel = "Add Item";
+           else if (m_sUse=="UPDATE")
+               sOKLabel = "Update Item";
+           else if (m_sUse=="VIEW")
+               sOKLabel = "Close";
            
-                            m_ButtonSizer = new wxBoxSizer( wxHORIZONTAL );
-           
-                            m_OK = new wxButton( this, wxID_ANY, sOKLabel, wxDefaultPosition, wxDefaultSize, 0 );
-                            m_OK->SetMaxSize( wxSize( BUTTON_WIDTH,CTRL_HEIGHT ) );
-                            m_ButtonSizer->Add( m_OK, DONT_ALLOW_TO_GROW, wxALL, BORDER_WIDTH );
+            m_ButtonSizer = new wxBoxSizer( wxHORIZONTAL );
 
-                            calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-                            
-                            if(m_sUse!="VIEW"){
-               
-                                m_Cancel = new wxButton( this, wxID_ANY , wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
-                                m_Cancel->SetMaxSize( wxSize( BUTTON_WIDTH,CTRL_HEIGHT ) );
-                                m_ButtonSizer->Add( m_Cancel, DONT_ALLOW_TO_GROW, wxALL, BORDER_WIDTH );
+            m_OK = new wxButton( this, wxID_ANY, sOKLabel, wxDefaultPosition, wxDefaultSize, 0 );
+            m_OK->SetMaxSize( wxSize( BUTTON_WIDTH,CTRL_HEIGHT ) );
+            m_ButtonSizer->Add( m_OK, DONT_ALLOW_TO_GROW, wxALL, BORDER_WIDTH );
+
+            calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            if(m_sUse!="VIEW"){
+
+                m_Cancel = new wxButton( this, wxID_ANY , wxT("Cancel"), wxDefaultPosition, wxDefaultSize, 0 );
+                m_Cancel->SetMaxSize( wxSize( BUTTON_WIDTH,CTRL_HEIGHT ) );
+                m_ButtonSizer->Add( m_Cancel, DONT_ALLOW_TO_GROW, wxALL, BORDER_WIDTH );
 
 
-                            }
-                            calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+            }
+            calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
 
            //Add the spread sheet directly to the main form box grid..
            m_mainFormSizer->Add( m_ButtonSizer, DONT_ALLOW_TO_GROW, wxALIGN_CENTER, BORDER_WIDTH);
