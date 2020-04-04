@@ -23,11 +23,22 @@ class MyEvent : public wxEvent
     bool m_bParseDocument;
     bool m_bShowAll;
     bool m_bImportDatabase;
+    bool m_bStatusMessage;
+
+    bool m_bTableDiagramFrameWasDestroyed;
+    bool m_bHelpFrameWasDestroyed;
+
+    wxString m_sData;//Generic data that can be used for anything
 
     wxString m_cellValue; // The value of the current clicked cell.
     wxString m_cellFieldName; // The field name for that cell
     wxString m_sWhereCondition;
     wxString m_sQueryToApply;
+
+    //DRAWING
+    bool m_bRedraw = false;
+    bool m_bAddTableObject = false;
+    wxPoint m_pMousePoint;
 
     explicit MyEvent( wxWindow* win = (wxWindow*) nullptr );
     wxEvent* Clone() const override {return new MyEvent(*this);}

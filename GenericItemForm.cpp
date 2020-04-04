@@ -4,15 +4,7 @@
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
-#define TITLE_WIDTH 100
-#define BUTTON_WIDTH 100
-#define TEXTCTL_WIDTH 500
-#define CTRL_HEIGHT 20
-#define TEXTCTLMULTI_HEIGHT 60
-#define BORDER_WIDTH 2
-#define ALLOW_TO_GROW 1 // 1, the control will grow with the sizer
-#define DONT_ALLOW_TO_GROW 0
-#define WINDOW_WIDTH 600
+
 
 
 
@@ -22,6 +14,7 @@
 //
 // PLEASE DO *NOT* EDIT THIS FILE!
 ///////////////////////////////////////////////////////////////////////////
+
 #include <wx/string.h>
 #include <wx/stattext.h>
 #include <wx/gdicmn.h>
@@ -34,7 +27,7 @@
 #include <wx/frame.h>
 #include <wx/dynarray.h>
 
-#include "GenericItemForm.h"
+
 #include "MyEvent.h"
 
 #include <mysql.h>
@@ -42,25 +35,12 @@
 #include "global.h"
 #include "Utility.h"
 
+
+#include "GenericItemForm.h"
+
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(ArrayFieldItem);
 //using namespace mysqlpp;
-
-
-FieldItem::~FieldItem()
-= default;
-
-FieldItem::FieldItem(){
-    field="";
-    title="";
-    flag="";
-    type="";
-    defaultValue="";
-    textCtl=nullptr;
-    comCtl=nullptr;
-    datePickerCtl=nullptr;
-    linkCtl=nullptr;
-}
 
 //EVT_COMBOBOX_CLOSEUP
 
@@ -99,7 +79,8 @@ void GenericItemForm::CreateFields()
     int count = itemArray.GetCount();
     int calculatedHeightWindow=0;
     wxString sFlags="";
-       
+    int style = 0;
+
        if (count>0){
            
                    //Create the main form sizer to fit all the controls
@@ -111,9 +92,9 @@ void GenericItemForm::CreateFields()
                                wxBoxSizer* gSizer1;
                                
                                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                               sFlags =  itemArray[i].flag;
+                               sFlags =  itemArray[i].Flags;
 
-                               itemArray[i].TitleCtl = new wxStaticText( this, wxID_ANY, itemArray[i].title, wxDefaultPosition, wxDefaultSize, 0 );
+                               itemArray[i].TitleCtl = new wxStaticText( this, wxID_ANY, itemArray[i].Title, wxDefaultPosition, wxDefaultSize, 0 );
                                itemArray[i].TitleCtl->Wrap( -1 );
                                 gSizer1->Add( itemArray[i].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
@@ -132,8 +113,8 @@ void GenericItemForm::CreateFields()
                                     itemArray[i].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,TEXTCTLMULTI_HEIGHT ) );
                                     gSizer1->Add( itemArray[i].textCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].textCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].textCtl->SetValue(itemArray[i].fieldDefault);
 
                                    calculatedHeightWindow += TEXTCTLMULTI_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
 
@@ -155,7 +136,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                    itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -171,8 +152,8 @@ void GenericItemForm::CreateFields()
                                    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
                                        itemArray[i].comCtl->Append(sSelectionItemArray[index]);
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].fieldDefault);
 
                                    // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
                                    //itemArray[i].comCtl->SetMaxSize(size);
@@ -197,7 +178,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                    itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -213,8 +194,8 @@ void GenericItemForm::CreateFields()
                                    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
                                        itemArray[i].comCtl->Append(sSelectionItemArray[index]);
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].fieldDefault);
 
                                    // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
                                    //itemArray[i].comCtl->SetMaxSize(size);
@@ -238,7 +219,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                    itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -254,8 +235,8 @@ void GenericItemForm::CreateFields()
                                    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
                                        itemArray[i].comCtl->Append(sSelectionItemArray[index]);
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].fieldDefault);
 
                                   // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
                                    //itemArray[i].comCtl->SetMaxSize(size);
@@ -279,7 +260,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                    itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -295,8 +276,8 @@ void GenericItemForm::CreateFields()
                                    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
                                        itemArray[i].comCtl->Append(sSelectionItemArray[index]);
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].fieldDefault);
 
                                    // wxSize size(-1,30); //The reason we have -1 is because we want the width to grow when sizing the window.
                                    //itemArray[i].comCtl->SetMaxSize(size);
@@ -319,7 +300,7 @@ void GenericItemForm::CreateFields()
                                    // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
                                    // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
                                    //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                                   if (Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style |= wxCB_READONLY;
 
                                   itemArray[i].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
@@ -335,8 +316,8 @@ void GenericItemForm::CreateFields()
                                        itemArray[i].comCtl->Append(sSelectionItemArray[index]);
 
                                    //Make sure you set the default value after you append selection items.
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].comCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].comCtl->SetValue(itemArray[i].fieldDefault);
 
 
                                    calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
@@ -357,8 +338,8 @@ void GenericItemForm::CreateFields()
 
 
                                }
-                               else if(itemArray[i].type == "DATE"){ // You can also create different controls for different types.
-                                   int style = 0;
+                               else if(itemArray[i].fieldType == "DATE"){ // You can also create different controls for different types.
+                                   style = 0;
 
                                    style = wxDP_DEFAULT | wxDP_DROPDOWN | wxDP_SHOWCENTURY;
 
@@ -367,13 +348,13 @@ void GenericItemForm::CreateFields()
                                    gSizer1->Add( itemArray[i].datePickerCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
                                    //gSizer1->Add( itemArray[i].textCtl, 0, 0, BORDER_WIDTH );
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].datePickerCtl->SetValue(Utility::StringToDate(itemArray[i].defaultValue));
-                                   else if(itemArray[i].type == "DATE") { //Check to see if the type is date, then set with current date.
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].datePickerCtl->SetValue(Utility::StringToDate(itemArray[i].fieldDefault));
+                                   else if(itemArray[i].fieldType == "DATE") { //Check to see if the type is date, then set with current date.
                                        itemArray[i].datePickerCtl->SetValue(wxDateTime::Now());
                                    }
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY"))
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        itemArray[i].datePickerCtl->Disable();
 
 
@@ -386,15 +367,15 @@ void GenericItemForm::CreateFields()
                                    {
 
                                    bool bWebLink = false;
-                                   int style = 0;
+                                   style = 0;
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY")){
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].Flags,"READONLY")){
                                        style = wxTE_READONLY;
                                        bWebLink=true;
                                    }
 
                                    //The only place we actually want to see the password is when we view the table.
-                                   if(Utility::HasFlag(itemArray[i].flag,"PASSWORD") && m_sUse!="VIEW" && !bWebLink)
+                                   if(Utility::HasFlag(itemArray[i].Flags,"PASSWORD") && m_sUse!="VIEW" && !bWebLink)
                                        style = wxTE_PASSWORD;
 
                                     if(bWebLink){
@@ -405,9 +386,9 @@ void GenericItemForm::CreateFields()
                                         itemArray[i].linkCtl->SetURL("");
                                         itemArray[i].linkCtl->SetLabel("");
 
-                                        if(!itemArray[i].defaultValue.IsEmpty()){
-                                            itemArray[i].linkCtl->SetURL(itemArray[i].defaultValue);
-                                            itemArray[i].linkCtl->SetLabel(itemArray[i].defaultValue);
+                                        if(!itemArray[i].fieldDefault.IsEmpty()){
+                                            itemArray[i].linkCtl->SetURL(itemArray[i].fieldDefault);
+                                            itemArray[i].linkCtl->SetLabel(itemArray[i].fieldDefault);
                                         }
                                     }else{
 
@@ -416,8 +397,8 @@ void GenericItemForm::CreateFields()
                                         gSizer1->Add( itemArray[i].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
 
-                                        if(!itemArray[i].defaultValue.IsEmpty())
-                                            itemArray[i].textCtl->SetValue(itemArray[i].defaultValue);
+                                        if(!itemArray[i].fieldDefault.IsEmpty())
+                                            itemArray[i].textCtl->SetValue(itemArray[i].fieldDefault);
 
                                     }
 
@@ -433,13 +414,13 @@ void GenericItemForm::CreateFields()
                                else{
 
 
-                                   int style = 0;
 
-                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].flag,"READONLY"))
+
+                                   if (m_sUse=="VIEW" || Utility::HasFlag(itemArray[i].Flags,"READONLY"))
                                        style = wxTE_READONLY;
 
                                    //The only place we actually want to see the password is when we view the table.
-                                   if(Utility::HasFlag(itemArray[i].flag,"PASSWORD") && m_sUse!="VIEW")
+                                   if(Utility::HasFlag(itemArray[i].Flags,"PASSWORD") && m_sUse!="VIEW")
                                        style = wxTE_PASSWORD;
 
                                    itemArray[i].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
@@ -447,8 +428,8 @@ void GenericItemForm::CreateFields()
                                    gSizer1->Add( itemArray[i].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
 
-                                   if(!itemArray[i].defaultValue.IsEmpty())
-                                       itemArray[i].textCtl->SetValue(itemArray[i].defaultValue);
+                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                       itemArray[i].textCtl->SetValue(itemArray[i].fieldDefault);
 
 
                                    calculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
@@ -570,15 +551,15 @@ GenericItemForm::~GenericItemForm()
 
 void GenericItemForm::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal, const wxString& keyVal, const wxString& extraVal, const wxString& nullVal)
 {
-    auto *item = new FieldItem();
-    item->title = fieldTitle;
-    item->field = field;
-    item->flag = flag;
-    item->type = type;
-    item->keyVal = keyVal;
-    item->ExtraVal = extraVal;
-    item->defaultValue = defaultVal;
-    item->nullVal = nullVal;
+    auto *item = new FieldCtlItem();
+    item->Title = fieldTitle;
+    item->fieldName = field;
+    item->Flags = flag;
+    item->fieldType = type;
+    item->fieldKey = keyVal;
+    item->fieldExtra = extraVal;
+    item->fieldDefault = defaultVal;
+    item->fieldNull = nullVal;
     itemArray.Add(item);
 
 }
@@ -672,9 +653,9 @@ void GenericItemForm::InsertItem(){
                 
                 for(int i=0;i<count;i++){
                     if (i == count-1)
-                        queryString = queryString + itemArray[i].field;
+                        queryString = queryString + itemArray[i].fieldName;
                     else
-                        queryString = queryString + itemArray[i].field + ",";
+                        queryString = queryString + itemArray[i].fieldName + ",";
                 }
                     
                 queryString = queryString + ") VALUES (";
@@ -686,31 +667,31 @@ void GenericItemForm::InsertItem(){
                         sValue = itemArray[i].textCtl->GetValue();
                     else if(itemArray[i].comCtl != nullptr){
 
-                        if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_ID")) {
+                        if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_ID")) {
                             sValue = itemArray[i].comCtl->GetValue();
 
                             wxArrayString sArray;
-                            wxString flags = itemArray[i].flag;
+                            wxString flags = itemArray[i].Flags;
                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableId = sArray[0];
                             wxString column = sArray[1];
                             wxArrayString sTableResult;
-                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
-                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+                            wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
+                            wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
                             Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
                             sValue = sTableResult[0];
 
-                        }else if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_NAME")) {
+                        }else if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_NAME")) {
 
                             sValue = itemArray[i].comCtl->GetValue();
 
                             wxArrayString sArray;
-                            wxString flags = itemArray[i].flag;
+                            wxString flags = itemArray[i].Flags;
                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableName = sArray[0];
                             wxString fieldName = sArray[1];
@@ -738,7 +719,7 @@ void GenericItemForm::InsertItem(){
                     //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
                     // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
                     // These are important when we fill our combo with choices.
-                    if(itemArray[i].type=="int"){
+                    if(itemArray[i].fieldType=="int"){
                         if (i == count-1)
                             queryString = queryString +  sValue+ ")";
                         else
@@ -809,31 +790,31 @@ void GenericItemForm::UpdateItem(){
                         sValue = itemArray[i].textCtl->GetValue();
                     else if(itemArray[i].comCtl != nullptr){
 
-                        if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_ID")) {
+                        if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_ID")) {
                             sValue = itemArray[i].comCtl->GetValue();
 
                             wxArrayString sArray;
-                            wxString flags = itemArray[i].flag;
+                            wxString flags = itemArray[i].Flags;
                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableId = sArray[0];
                             wxString column = sArray[1];
                             wxArrayString sTableResult;
-                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
-                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+                            wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
+                            wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
                             Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
                             sValue = sTableResult[0];
 
-                        }else if(Utility::HasFlag(itemArray[i].flag,"SELECTION_LINKED_NAME")) {
+                        }else if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_NAME")) {
 
                             sValue = itemArray[i].comCtl->GetValue();
 
                             wxArrayString sArray;
-                            wxString flags = itemArray[i].flag;
+                            wxString flags = itemArray[i].Flags;
                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                            Utility::ExtractSelectionItems(sArray,itemArray[i].flag);
+                            Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableName = sArray[0];
                             wxString fieldName = sArray[1];
@@ -862,18 +843,18 @@ void GenericItemForm::UpdateItem(){
                     //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
                     // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
                     // These are important when we fill our combo with choices.
-                    if(itemArray[i].type=="int"){
+                    if(itemArray[i].fieldType=="int"){
                         if (i == count-1)
-                            queryString = queryString + itemArray[i].field + " = " + sValue;
+                            queryString = queryString + itemArray[i].fieldName + " = " + sValue;
                         else
-                            queryString = queryString + itemArray[i].field + " = " + sValue + " ,";
+                            queryString = queryString + itemArray[i].fieldName + " = " + sValue + " ,";
                         
                     }
                     else{
                         if (i == count-1)
-                            queryString = queryString + itemArray[i].field + " = '" + sValue + "' ";
+                            queryString = queryString + itemArray[i].fieldName + " = '" + sValue + "' ";
                         else
-                            queryString = queryString + itemArray[i].field + " = '" + sValue + "' ,";
+                            queryString = queryString + itemArray[i].fieldName + " = '" + sValue + "' ,";
                     }
                 }
                     
@@ -948,32 +929,32 @@ void GenericItemForm::LoadFields()
                             if (count>0){
                                 
                                 for(int index=0;index<count;index++){
-                                    wxString strData1(res[i][itemArray[index].field], wxConvUTF8);
+                                    wxString strData1(res[i][itemArray[index].fieldName], wxConvUTF8);
 
-                                    wxString defaultValue = itemArray[index].defaultValue;
+                                    wxString defaultValue = itemArray[index].fieldDefault;
 
                                     //Make sure we don't have an empty field because of a bug that cause field left to overwright the right field
                                     if(strData1.IsEmpty()){
                                         //This is where we can place a default value only if there is no value in the database.
                                         if (!defaultValue.IsEmpty())
                                             strData1 = defaultValue;
-                                        else if(itemArray[index].type == "DATE") { //Check to see if the type is date, then set with current date.
+                                        else if(itemArray[index].fieldType == "DATE") { //Check to see if the type is date, then set with current date.
                                             wxDateTime now = wxDateTime::Now();
                                             wxString dt = now.FormatDate();
                                             strData1 = dt;
                                         }
-                                        else if(itemArray[index].type == "TIME") { //Check to see if the type is date, then set with current date.
+                                        else if(itemArray[index].fieldType == "TIME") { //Check to see if the type is date, then set with current date.
                                             wxDateTime now = wxDateTime::Now();
                                             wxString dt = now.FormatTime();
                                             strData1 = dt;
                                         }
-                                        else if(itemArray[index].type == "DATETIME") { //Check to see if the type is date, then set with current date.
+                                        else if(itemArray[index].fieldType == "DATETIME") { //Check to see if the type is date, then set with current date.
 
                                         }
-                                        else if(itemArray[index].type == "TIMESTAMP") { //Check to see if the type is date, then set with current date.
+                                        else if(itemArray[index].fieldType == "TIMESTAMP") { //Check to see if the type is date, then set with current date.
 
                                         }
-                                        else if(itemArray[index].type == "YEAR") { //Check to see if the type is date, then set with current date.
+                                        else if(itemArray[index].fieldType == "YEAR") { //Check to see if the type is date, then set with current date.
 
                                         }
                                     }
@@ -983,14 +964,14 @@ void GenericItemForm::LoadFields()
                                     else if(itemArray[index].comCtl != nullptr){
 
                                         //If we have a linked ID, we want to show the table name, not the ID
-                                         if(Utility::HasFlag(itemArray[index].flag,"SELECTION_LINKED_NAME")){
+                                         if(Utility::HasFlag(itemArray[index].Flags,"SELECTION_LINKED_NAME")){
                                              // save the linking tableID
                                              //itemArray[index].comCtl->SetValue("");
 
                                              wxArrayString sArray;
-                                             wxString flags = itemArray[index].flag;
+                                             wxString flags = itemArray[index].Flags;
                                              flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                             Utility::ExtractSelectionItems(sArray,itemArray[index].flag);
+                                             Utility::ExtractSelectionItems(sArray,itemArray[index].Flags);
 
 
                                              wxArrayString sTableResult;
@@ -1004,18 +985,18 @@ void GenericItemForm::LoadFields()
                                                  itemArray[index].comCtl->SetValue(sTableResult[0]);
                                              }
 
-                                         }else if(Utility::HasFlag(itemArray[index].flag,"SELECTION_LINKED_ID") ){
+                                         }else if(Utility::HasFlag(itemArray[index].Flags,"SELECTION_LINKED_ID") ){
 
                                             wxArrayString sArray;
-                                            wxString flags = itemArray[index].flag;
+                                            wxString flags = itemArray[index].Flags;
                                             flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                            Utility::ExtractSelectionItems(sArray,itemArray[index].flag);
+                                            Utility::ExtractSelectionItems(sArray,itemArray[index].Flags);
 
                                             wxString tableId = sArray[0];
                                             wxString column = sArray[1];
                                             wxArrayString sTableResult;
-                                            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
-                                            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+                                            wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
+                                            wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
                                             if(!strData1.IsEmpty()){
                                                 Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);

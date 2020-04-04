@@ -6,21 +6,9 @@ class GenericItemForm;
 class MyEvent;
 class HtmlHelp;
 
-class TableField
-{
-public:
-    wxString fieldName;
-    wxString title;
-    wxString type;
-    wxString flag;
-    wxString key;
-    wxString extra;
-    wxString nullval;
-    wxString defaultValue;
-};
 
 
-WX_DECLARE_OBJARRAY(TableField, ArrayTableField);
+//WX_DECLARE_OBJARRAY(TableField, ArrayTableField);
 
 //This is a generic table form that will allow you to add - edit - delete entries in a user table
 

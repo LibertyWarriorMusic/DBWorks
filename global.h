@@ -1,3 +1,5 @@
+class wxDatePickerCtrl;
+class wxHyperlinkCtrl;
 
 #define FLAG_OPTIONS "SELECTION{MULTILINE;READONLY;HIDE;PASSWORD;WEBLINK;DOCUMENT;SELECTION_ADDITIVE;SELECTION{val1;val2;etc;};SELECTION_LOOKUP_ID{TableID;ColumnNumber;};SELECTION_LOOKUP_NAME{TableName;FieldName;};SELECTION_LINKED_ID{TableID;ColumnNumber;};SELECTION_LINKED_NAME{TableName;FieldName;}}" //The different type of flags you can create with this database.
 #define MYSQL_TYPE_OPTIONS "SELECTION{VARCHAR(255)     [String(0-255 Variable String)];CHAR(255)            [String(0-255) Padded String];TINYTEXT              [String(0-255)];TEXT                      [String(0-65535)];MEDIUMTEXT        [String(0-16777215)];LONGTEXT             [String(0-4294967295)];BINARY                  [0-255];TINYBLOB              [0-255];BLOB                     [0-65535];MEDIUMBLOB         [0-16777215];LONGBLOB          [0-4294967295];TINYINT           [-128 to 127];SMALLINT     [-32768 to 32767];MEDIUMINT     [-8388608 to 8388607];INT                  [-2147483648 to 2147483647];BIGINT            [-9223372036854775808 to 9223372036854775807];FLOAT(p)         [Where p is the precision];DOUBLE(m,d)     [m:total digits d:digits after the decimal];DECIMAL;DATE;TIME;DATETIME;TIMESTAMP;YEAR;ENUM;BOOLEAN;}"
@@ -46,3 +48,122 @@ extern GlobalSettings Settings;
 #define MSG_ONLY_DATABASE_DEVELOPERS "Only database developers are allowed access to this feature."
 #define MSG_NEED_TO_SELECT_ROW "You need to select a single row first."
 #define MSG_FAILED_TO_CREATE_DATABASE "Failed to create the database, check that you have MySQL running."
+
+
+#define TITLE_WIDTH 100
+#define BUTTON_WIDTH 100
+#define TEXTCTL_WIDTH 500
+#define CTRL_HEIGHT 20
+#define TEXTCTLMULTI_HEIGHT 60
+#define BORDER_WIDTH 2
+#define ALLOW_TO_GROW 1 // 1, the control will grow with the sizer
+#define DONT_ALLOW_TO_GROW 0
+#define WINDOW_WIDTH 600
+
+//Used to store the field definitions
+class TableField
+{
+public:
+    wxString fieldName;
+    wxString fieldType;
+    wxString fieldKey;
+    wxString fieldExtra;
+    wxString fieldNull;
+    wxString fieldDefault;
+    wxString Flags;
+    wxString Title;
+
+    TableField& operator=(const TableField& field) // compound assignment (does not need to be a member,
+    {                           // but often is, to modify the private members)
+        fieldName = field.fieldName;
+        fieldType = field.fieldType;
+        fieldKey = field.fieldKey;
+        fieldExtra = field.fieldExtra;
+        fieldNull = field.fieldNull;
+        fieldDefault = field.fieldDefault;
+        Flags = field.Flags;
+        Title = field.Title;
+
+
+        return *this; // return the result by reference
+    }
+
+    TableField& operator=(const wxString& str) // compound assignment (does not need to be a member,
+    {                           // but often is, to modify the private members)
+        fieldName = str;
+        fieldType = str;
+        fieldKey = str;
+        fieldExtra = str;
+        fieldNull = str;
+        fieldDefault = str;
+        Flags = str;
+        Title = str;
+
+        return *this; // return the result by reference
+    }
+};
+
+
+enum {
+    CTL_STATIC = wxID_HIGHEST + 1700,
+    CTL_TEXT,
+    CTL_MULTI_TEXT,
+    CTL_COMBO_LOOKUP_NAME,
+    CTL_COMBO_ADDITIVE,
+    CTL_COMBO,
+    CTL_CHECKBOX,
+    CTL_DATE,
+    CTL_WEBLINK
+};
+
+
+//This class is used to generate fields for either database forms or dialog based forms
+class FieldCtlItem  : public TableField
+{
+public:
+    //Pointers to controls used in our forms. One of these will be active at any one time this this class represents only one single field of information.
+
+    //Add more control pointers here when you need to use them in the forms.
+    wxStaticText *TitleCtl;
+    wxTextCtrl *textCtl;
+    wxComboBox *comCtl;
+    wxHyperlinkCtrl *linkCtl;
+    wxDatePickerCtrl *datePickerCtl;
+    wxCheckBox *pCheckBox;
+
+    int iTypeOfControl; //Used to identify the type of control we have, combo - checkbox. Identified by the enum above
+    wxBoxSizer *pSizer; // The controls will be stored in a box sizer
+    wxString sIdentifier; // Used to identify this control in the list when we retrieve or set data
+    wxString sData;//Used to store generic data for this field item.
+    wxString sDescription; // A description associated with this control
+
+    ~FieldCtlItem()
+    = default;
+
+    FieldCtlItem(){
+        fieldName="";
+        fieldNull="";
+        fieldExtra="";
+        fieldKey="";
+        fieldType="";
+        fieldDefault="";
+        Title="";
+        Flags="";
+        sData="";
+        sDescription="";
+        sIdentifier="";
+        textCtl=nullptr;
+        comCtl=nullptr;
+        datePickerCtl=nullptr;
+        linkCtl=nullptr;
+        pSizer= nullptr;
+        pCheckBox= nullptr;
+        iTypeOfControl=CTL_STATIC; //Set the control type as a simple text as default
+    };
+};
+
+
+WX_DECLARE_OBJARRAY(FieldCtlItem, ArrayFieldItem); //Used in GenericItemForm class
+WX_DECLARE_OBJARRAY(TableField, ArrayTableField); //Used in GenericTable class
+WX_DECLARE_OBJARRAY(TableField, ArrayGridItem); //Used in DBGrid class
+WX_DECLARE_OBJARRAY(FieldCtlItem,ArrayFieldDataCtls); // Used in DialogbaseClass

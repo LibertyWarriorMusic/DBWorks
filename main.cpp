@@ -21,7 +21,7 @@
 #include <wx/filename.h>
 #include <wx/toolbar.h>
 #include <wx/checkbox.h>
-#include <wx/gauge.h>
+
 
 #include "Utility.h"
 #include "global.h"
@@ -31,6 +31,11 @@
 #include "GenericTable.h"
 #include "PropertyTable.h"
 #include "myProgressControl.h"
+#include "ImportMySQLDatabase.h"
+#include "TableDiagramFrame.h"
+
+
+//#include "ObTableDiagram.h"
 
 #include <mysql.h>
 #include <mysql++.h>
@@ -62,7 +67,8 @@ enum {
     ID_TOOL_VIEW,
     ID_TOOL_FILTER,
     ID_HELP,
-    ID_AUTO_CHECK_DEFINITION
+    ID_AUTO_CHECK_DEFINITION,
+    ID_OPEN_TABLE_DIAGRAM
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -81,6 +87,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TOOL(ID_TOOL_FILTER, MainFrame::OnbFilter)
     EVT_TOOL(ID_HELP, MainFrame::OnbHelp)
     EVT_TOOL(ID_AUTO_CHECK_DEFINITION, MainFrame::OnAutoCheckDefinitions)
+    EVT_TOOL(ID_OPEN_TABLE_DIAGRAM, MainFrame::OnOpenTableDiagram)
     EVT_MYEVENT(MainFrame::OnMyEvent)
 wxEND_EVENT_TABLE()
 
@@ -96,7 +103,7 @@ bool MyApp::OnInit()
     m_bImportingDatabase = false;
     m_bCheckTableDefinitions= false;
     m_iIdleStep=0;
-    m_saTableIndex=0;
+    m_saTableIndex=wxNOT_FOUND;
     m_ProgressStep=0;
     m_ProgessCount=0;
     m_dataRecordIndex=0;
@@ -139,16 +146,18 @@ void MyApp::activateRenderLoop(bool on)
 bool MyApp::LoadAppSettings()
 {
     wxString        str;
-    wxString strExe = wxStandardPaths::Get().GetExecutablePath();
-    
-    //This should work fine for windows - linus and mac.
-    strExe.Replace( "DBWorks", "settings.ini"); //For mac and linux
-    strExe.Replace( "dbworks", "settings.ini"); //For mac and linux
-    strExe.Replace( "dbworks.exe", "settings.ini"); // For windows.
-    //Settings.Message = strExe;
+    wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+    //wxLogMessage(strExe);
+    strExe.Replace("DBWorks", "settings.ini"); //For mac and linux
+    strExe.Replace("dbworks", "settings.ini"); //For mac and linux
+    strExe.Replace("dbworks.exe", "settings.ini"); // For windows.
 
+
+
+    //wxString strExe = "/Applications/DatabaseWorks/settings.ini";
+    //wxString strExe = "settings.ini";
     // open the file
-    wxTextFile      tfile;
+    wxTextFile tfile;
     if(tfile.Open(strExe)){
         // read the first line
         str = tfile.GetFirstLine();
@@ -273,7 +282,7 @@ void MyApp::ProcessLine(wxString line)
 void MyApp::StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName) {
     m_DatabaseToImport=sDatabase;
     m_NewDatabaseNameToImportInto=sNewDatabaseName;
-    m_saTableIndex=0;
+    m_saTableIndex=wxNOT_FOUND;
 
 
     m_iIdleStep=1;
@@ -291,6 +300,12 @@ void MyApp::onIdle(wxIdleEvent& evt)
 
 
             if (m_iIdleStep == 1) {
+
+
+                //Turn off other processes running in this loop
+                SetStateOfAutoCheckDefinitions(false);
+                m_MainFrame->SetStateOfAutoCheckDefinitions(false);
+
 
                 //Step 1: We need to read all the tables in the database and place them in a string array.
                 // SHOW TABLES;
@@ -314,17 +329,11 @@ void MyApp::onIdle(wxIdleEvent& evt)
                     activateRenderLoop(false);//StopAllidle process.
                 }
 
-
                 dlg->Close(true);
-
 
             }
             else if (m_iIdleStep == 2)
             {
-
-
-
-
 
                 //If we have a database name supplied, it will create a new database
                 if (!m_NewDatabaseNameToImportInto.IsEmpty()) {
@@ -372,8 +381,18 @@ void MyApp::onIdle(wxIdleEvent& evt)
             {
 
                 //We only read all the table names here with the SHOW TABLES mysql command.
-                Utility::LoadStringArrayWithDatabaseTableNames(m_DatabaseToImport, *m_saTables);
-                m_saTableIndex = 0;
+                Utility::LoadStringArrayWithMySQLTableNames(m_DatabaseToImport, *m_saTables);
+                if(m_saTables->GetCount()==0){
+                    wxLogMessage("There are no tables in this database, exiting.");
+                    m_iIdleStep=8;
+                    return;
+
+                } else
+                    m_saTableIndex = 0;
+
+
+
+
                 m_iIdleStep++;
 
             } else if (m_iIdleStep == 4)
@@ -424,16 +443,13 @@ void MyApp::onIdle(wxIdleEvent& evt)
                 m_MainFrame->CreateTableDefinitions(m_NewDatabaseNameToImportInto, m_saTables->Item(m_saTableIndex),
                                                     tableFieldItemArray);
 
-
                 if (Settings.bImportCreateTables) {
 
                     m_MainFrame->SetProgressLabel("Creating Table: " + m_saTables->Item(m_saTableIndex));
                     //This is where we create the actual tables in the database
                     Utility::CreateTable(m_NewDatabaseNameToImportInto, m_saTables->Item(m_saTableIndex),
                                          tableFieldItemArray);
-
                 }
-
                 //if(Settings.bImportCreateTables && Settings.bImportData){
                 //Now the table exist in the database, we can import all the data.
 
@@ -564,16 +580,11 @@ void MyApp::onIdle(wxIdleEvent& evt)
                                             else
                                                 queryString = queryString + "'" + sValue + "',";
                                         }
-
                                     }
-
-
                                 }
-
                             }
 
                             Utility::ExecuteQuery(m_NewDatabaseNameToImportInto, queryString);
-
 
                             m_dataRecordIndex++;
                             m_ProgessCount+=m_ProgressStep;
@@ -622,7 +633,7 @@ void MyApp::onIdle(wxIdleEvent& evt)
                 //Set the selected database on the toolbar combo and then refresh the grid.
                 m_MainFrame->GetDatabaseComboBox()->SetStringSelection(m_NewDatabaseNameToImportInto);
                 Settings.sDatabase = m_NewDatabaseNameToImportInto;
-                m_MainFrame->Refresh();
+                m_MainFrame->Refresh(true);
 
 
                 m_iIdleStep++;
@@ -801,6 +812,7 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 {
     m_TableForm = nullptr;
     m_HtmlWin = nullptr;
+    m_pTableDiagaram = nullptr;
     m_pFilters = nullptr;
     m_MainGrid = nullptr;
     m_StatusBar = nullptr;
@@ -809,11 +821,12 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_DatabaseCombo= nullptr;
     m_UserGroupCombo= nullptr;
     m_txtCltUserGroup = nullptr;
-    m_ImportMySQLForm = nullptr;
+    //m_ImportMySQLForm = nullptr;
     m_txtCltCheckTableTxt = nullptr;
     m_AutoCheckDefinitionsCheckCtl = nullptr;
     m_ProgressGauge = nullptr;
     m_txtCltProgressBar = nullptr;
+    //m_TableDiagramPanel = nullptr;
 
 
     bool b_DatabaseDeveloper=false;
@@ -1001,6 +1014,9 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         //Create the checkbox for auto check definitions to tables
         if(Utility::IsSystemDatabaseDeveloper()){
 
+            Utility::LoadBitmap(BitMap,"tableDiagram.png");
+            m_Toolbar1->AddTool(ID_OPEN_TABLE_DIAGRAM, wxT("Open table definitions diagram."), BitMap, wxT("Open table definitions diagram."));
+
             m_txtCltCheckTableTxt = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
             m_txtCltCheckTableTxt->SetLabel("Auto check definitions");
             m_Toolbar1->AddControl(m_txtCltCheckTableTxt);
@@ -1039,6 +1055,9 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     //Load the grid
     LoadGrid();
 
+    //Loads all the DrawTableObjects and draws them to the screen.
+    LoadTableObjects();
+
     if(!b_DatabaseDeveloper){
 
         // For standard users, we don't want to see ID and Table name
@@ -1056,6 +1075,15 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
 
     m_Menubar->Show();
 }
+
+
+//Loads all the DrawTable Objects and draws them to the screen.
+void MainFrame::LoadTableObjects()
+{
+    if(m_pTableDiagaram!= nullptr)
+        m_pTableDiagaram->LoadTableObjects(Settings.sDatabase);
+}
+
 void MainFrame::LoadDatabaseCombo(){
 
     //Remove all the items
@@ -1144,13 +1172,23 @@ void MainFrame::LoadGrid()
 {
     bool bDeleteOldSizer = false;
 
+//    if(m_TableDiagramPanel!= nullptr){
+
+   //     m_TableDiagramPanel->Destroy();
+  //      m_TableDiagramPanel= nullptr;
+ //   }
+
     if(m_MainGrid != nullptr){
 
         //mainFormSizerForGrid->Remove(3);
 
         bDeleteOldSizer = true;
         m_MainGrid->Destroy();
+        m_MainGrid = nullptr;
     }
+
+
+
 
     //Create the spread sheet grid
     m_MainGrid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
@@ -1166,6 +1204,12 @@ void MainFrame::LoadGrid()
 
     //Add the spread sheet directly to the main form box grid..
     mainFormSizerForGrid->Add( m_MainGrid, 0, wxGROW, 0);
+
+    //Create a drawing pane under the grid.
+//    m_TableDiagramPanel = new ObTableDiagram(this); //This are our drawing functions.
+//    mainFormSizerForGrid->Add( m_TableDiagramPanel, 1, wxGROW, 0);
+
+
     //Set the sizer to be attached to the main form
     this->SetSizer( mainFormSizerForGrid , bDeleteOldSizer);
 
@@ -1218,6 +1262,8 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
     else{
         Settings.sDatabase = sDatabase;
         LoadGrid();
+        //Loads all the DrawTableObjects and draws them to the screen.
+        LoadTableObjects();
         SetUsergroupWindowVisibility();//Hide columns for none database developers
     }
 }
@@ -1241,7 +1287,15 @@ void MainFrame::NewFile(wxCommandEvent& WXUNUSED(event))
 {
 
 }
+void MyApp::SetStateOfAutoCheckDefinitions(bool bOnIsTrue){
+    Settings.bAutoCheckDefinitions=bOnIsTrue;
+    m_bCheckTableDefinitions=bOnIsTrue;
+}
+void MainFrame::SetStateOfAutoCheckDefinitions(bool bOnIsTrue){
 
+    m_AutoCheckDefinitionsCheckCtl->SetValue(bOnIsTrue);
+    Settings.bAutoCheckDefinitions=bOnIsTrue;
+}
 void MainFrame::OnAutoCheckDefinitions(wxCommandEvent& event)
 {
     if(m_AutoCheckDefinitionsCheckCtl->GetValue()){
@@ -1259,16 +1313,6 @@ void MainFrame::OnAutoCheckDefinitions(wxCommandEvent& event)
 
 
 
-void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
-{
-    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
-    // be pointing to garbage memory and the program will crash if you try and call Destroy().
-    if(m_ImportMySQLForm != nullptr)
-        m_ImportMySQLForm->Destroy();
-
-    m_ImportMySQLForm = new ImportMySQLDatabase((wxFrame*) this, -1, "Import MySQL Database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
-    m_ImportMySQLForm->Show(true);
-}
 
 void MainFrame::CloseFile(wxCommandEvent& WXUNUSED(event))
 {
@@ -1397,7 +1441,7 @@ void MainFrame::OnDeleteCurrentDatabase( wxCommandEvent& event )
             m_DatabaseCombo->Select(0);
             if(!Utility::DoesDatabaseExist(Settings.sDatabase))
                 Utility::CreateDatabase(Settings.sDatabase);
-            Refresh();
+            Refresh(true);
         }
     }
     dlg->Destroy();
@@ -1622,94 +1666,30 @@ void MainFrame::ExecuteQuery(const wxString& queryString)
     }
 }
 
-//CONTEXT MENU EVENT and REFRESH EVENTS
-//We created an event to refresh the grid so we can call it from any frame class.
-void MainFrame::OnMyEvent(MyEvent& event)
+
+
+void MainFrame::AddTableObject()
 {
+    wxArrayInt rowsSelected = m_MainGrid->GetSelectedRows();
+    int size = rowsSelected.size();
 
-    if(event.m_bTableFieldDefinitions){
-        //We are going to show the field types for this table
-        m_MainGrid->SetGridCursor(event.m_iRow,event.m_iCol);
+    if (size == 1) {
+       // int row = rowsSelected[0];
 
-        if (m_TableForm!= nullptr){
-            m_TableForm->Destroy();
-            m_TableForm = nullptr;
-        }
+        wxString tableName ="";
+        wxString tableId = "";
+        int row = rowsSelected[0];
 
-        // Instead of opening contacts, we are going to open the generic form table.
-        m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+event.m_sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
+        tableId = m_MainGrid->GetCellValue(row,0);
+        tableName = m_MainGrid->GetCellValue(row,2);
 
-        if (m_TableForm != nullptr){
-
-            m_TableForm->SetGridTableName(event.m_sTableName);
-
-            wxString linkID;
-            linkID << event.m_lTableID;
-
-            m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+linkID);// We will grab this from our form.
-            //Add the field items
-            m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
-
-            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"","",""); // This is the linking ID
-            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
-            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
-            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
-            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
-            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
-            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
-            m_TableForm->AddField("Title","title","varchar(100)","","","","","");
-            m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
-            m_TableForm->Create();// Create the table.
-            //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
-            m_TableForm->HideIDColumn();
-            m_TableForm->Show(true);
-
-
-        }
+       // m_TableDiagramPanel->AddDrawObject( tableId, tableName);
+        m_pTableDiagaram->AddDrawObject( tableId, tableName);
 
     }
-    else if(event.m_bOpen){
-        wxString TableID;
-        TableID<< event.m_lTableID;
-        OpenForm(event.m_sTableName,TableID);
-    }
-    else if(event.m_bEdit){
-        wxString TableID;
-        TableID<< event.m_lTableID;
-        OpenEditForm(event.m_iRow);
-    }
-    else if(event.m_bDestroyed){
-        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
-        m_TableForm = nullptr;
-        m_ImportMySQLForm = nullptr;
-        m_pFilters = nullptr;
-        if(Settings.bAutoCheckDefinitions)
-            wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
-    }
-    else if(event.m_bImportDatabase){
-        wxGetApp().StartImportDatabase(event.m_sDatabaseName, event.m_sNewDatabaseName);
-    }
-    else{
-        // We are showing everything
-        //This is where we need to remember the current where conditon
 
-        //If this is not empty, then we have a new where condition so we can override the stored where condition in the mainframe.
-        if(!event.m_sWhereCondition.IsEmpty()){
-            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
-            SetGridWhereCondition(event.m_sWhereCondition);
-            Refresh();
-
-        }else{
-            //If the events where condition is empty, then see if we have a stored where condition.
-            if(event.m_bShowAll){
-                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
-            }
-            SetGridWhereCondition(GetCurrentStoredWhereCondition());
-            Refresh();
-        }
-
-    }
 }
+
 
 //Create the filter table.
 void MainFrame::OnbFilter( wxCommandEvent& event ) {
@@ -1780,7 +1760,6 @@ void MainFrame::SetGridWhereCondition(wxString whereToBlend)
 }
 
 
-
 void MainFrame::OnbHelp( wxCommandEvent& event )
 {
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
@@ -1815,7 +1794,7 @@ bool MainFrame::Destroy()
     return bResult;
 }
 
-void MainFrame::Refresh()
+void MainFrame::Refresh(bool bReloadTableDiagram)
 {
     if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest())
         m_MainGrid->LoadGridFromDatabase(true);//Check if the table exists before you load it
@@ -1826,7 +1805,8 @@ void MainFrame::Refresh()
     if(Settings.bAutoCheckDefinitions)
         wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable();
 
-
+    if(bReloadTableDiagram)
+        LoadTableObjects();
 
     this->Layout();
 }
@@ -1848,3 +1828,135 @@ void MainFrame::CreateTableDefinitions(wxString sDatabase, wxString sTableName, 
         }
 }
 
+void MainFrame::OnOpenTableDiagram(wxCommandEvent& event)
+{
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+ //   if(m_pTableDiagaram != nullptr)
+  //      m_pTableDiagaram->Destroy();
+
+    if(m_pTableDiagaram != nullptr)
+        m_pTableDiagaram->Destroy();
+
+
+    m_pTableDiagaram = new TableDiagramFrame((TableDiagramFrame*) this, -1, "Table Diagram Definitions", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
+   // m_pTableDiagaram->AttachPanel(m_TableDiagramPanel);
+    LoadTableObjects();
+    m_pTableDiagaram->Show(true);
+
+
+}
+
+void MainFrame::OpenFile(wxCommandEvent& WXUNUSED(event))
+{
+    ImportMySQLDatabase * pImportMySQLForm = new ImportMySQLDatabase(this, -1, "Import MySQL Database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+
+    if(pImportMySQLForm->ShowModal()==wxOK)
+        wxGetApp().StartImportDatabase(pImportMySQLForm->GetDatabaseToCopy(),pImportMySQLForm->GetNewDatabaseToCopyInto() );
+
+    pImportMySQLForm->Destroy();
+    pImportMySQLForm= nullptr;
+
+}
+
+//CONTEXT MENU EVENT and REFRESH EVENTS
+//We created an event to refresh the grid so we can call it from any frame class.
+void MainFrame::OnMyEvent(MyEvent& event)
+{
+
+    if(event.m_bTableFieldDefinitions){
+        //We are going to show the field types for this table
+        m_MainGrid->SetGridCursor(event.m_iRow,event.m_iCol);
+
+        if (m_TableForm!= nullptr){
+            m_TableForm->Destroy();
+            m_TableForm = nullptr;
+        }
+
+        // Instead of opening contacts, we are going to open the generic form table.
+        m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+event.m_sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
+
+        if (m_TableForm != nullptr){
+
+            m_TableForm->SetGridTableName(event.m_sTableName);
+
+            wxString linkID;
+            linkID << event.m_lTableID;
+
+            m_TableForm->SetTableDefinition(SYS_FIELDS, SYS_FIELDS, "All the fields of this table"," WHERE sys_tablesId="+linkID);// We will grab this from our form.
+            //Add the field items
+            m_TableForm->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+            m_TableForm->AddField("Linking ID *","sys_tablesId","int","HIDE-READONLY",linkID,"","",""); // This is the linking ID
+            m_TableForm->AddField("Field Name *","valfield","varchar(100)","","","","","");
+            m_TableForm->AddField("Type *","valtype","varchar(100)",MYSQL_TYPE_OPTIONS,"VARCHAR(255)","","","");
+            m_TableForm->AddField("Can be Null *","valnull","varchar(3)","READONLY - SELECTION{YES;NO;}","YES","","","");
+            m_TableForm->AddField("Key *","valkey","varchar(10)","","","","","");
+            m_TableForm->AddField("Default *","valdefault","varchar(255)","","","","","");
+            m_TableForm->AddField("Extra *","valextra","varchar(255)","","","","","");
+            m_TableForm->AddField("Title","title","varchar(100)","","","","","");
+            m_TableForm->AddField("Flags","flags","varchar(200)",FLAG_OPTIONS,"","","",""); // FLAG_OPTIONS are in global.h
+            m_TableForm->Create();// Create the table.
+            //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+            m_TableForm->HideIDColumn();
+            m_TableForm->Show(true);
+
+
+        }
+
+    }
+    else if(event.m_bOpen){
+        wxString TableID;
+        TableID<< event.m_lTableID;
+        OpenForm(event.m_sTableName,TableID);
+    }
+    else if(event.m_bEdit){
+        wxString TableID;
+        TableID<< event.m_lTableID;
+        OpenEditForm(event.m_iRow);
+    }
+    else if(event.m_bDestroyed){
+
+        //This needs to be changed because you might have two or more windows open, a help, table definitions, a table diagram and you don't want to null all of them.
+        //What you need is extra flags in the event to identify which pointers you need to null.
+        m_TableForm = nullptr;
+        //m_ImportMySQLForm = nullptr; // This if fine here, you don't want to keep this window open after you import it.
+        m_pFilters = nullptr;
+        
+        if(Settings.bAutoCheckDefinitions)
+            wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
+    }
+    else if(event.m_bTableDiagramFrameWasDestroyed){
+        m_pTableDiagaram = nullptr; //NOT SURE YET, you might want to keep it open
+    }
+    else if(event.m_bHelpFrameWasDestroyed){
+        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
+    }
+   // else if(event.m_bImportDatabase){
+
+
+   // }
+    else if(event.m_bStatusMessage){
+        SetStatusText(event.m_sData);
+    }
+    else{
+        // We are showing everything
+        //This is where we need to remember the current where conditon
+
+        //If this is not empty, then we have a new where condition so we can override the stored where condition in the mainframe.
+        if(!event.m_sWhereCondition.IsEmpty()){
+            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
+            SetGridWhereCondition(event.m_sWhereCondition);
+            Refresh();
+
+        }else{
+            //If the events where condition is empty, then see if we have a stored where condition.
+            if(event.m_bShowAll){
+                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
+            }
+            SetGridWhereCondition(GetCurrentStoredWhereCondition());
+            Refresh();
+        }
+
+    }
+}

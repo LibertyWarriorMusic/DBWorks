@@ -13,30 +13,6 @@
 class wxHyperlinkCtrl;
 class wxDatePickerCtrl;
 
-
-class FieldItem
-{
-public:
-    wxString field;
-    wxString title;
-    wxString flag;
-    wxString type;
-    wxString keyVal;
-    wxString ExtraVal;
-    wxString nullVal;
-    wxString defaultValue;
-    wxStaticText *TitleCtl;
-    wxTextCtrl *textCtl;
-    wxComboBox *comCtl;
-    wxHyperlinkCtrl *linkCtl;
-    wxDatePickerCtrl *datePickerCtl;
-
-    FieldItem();
-
-    ~FieldItem();
-};
-WX_DECLARE_OBJARRAY(FieldItem, ArrayFieldItem);
-
 ///////////////////////////////////////////////////////////////////////////
 //wxDECLARE_EVENT(CUSTOM_EVENT_REFRESHGRID, wxCommandEvent);
 

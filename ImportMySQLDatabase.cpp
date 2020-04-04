@@ -13,114 +13,68 @@
 #include "Utility.h"
 #include "global.h"
 
+
 #include "ImportMySQLDatabase.h"
 
-ImportMySQLDatabase::ImportMySQLDatabase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+wxString ImportMySQLDatabase::GetDatabaseToCopy()
+{
+    return m_sSelectedDatabase;
+
+}
+
+wxString ImportMySQLDatabase::GetNewDatabaseToCopyInto()
+{
+    m_sNewDatabaseName =  GetDataValue("ID_SELECT_NAME");
+    m_sNewDatabaseName.Replace(" ",""); //Remove any spaces from the name.
+    return m_sNewDatabaseName;
+}
+
+ImportMySQLDatabase::ImportMySQLDatabase( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DialogBaseClass( parent, id, title, pos, size, style | wxID_OK )
 {
     m_sSelectedDatabase = "";
     m_sNewDatabaseName = "";
-    m_CreateTablesCtl = nullptr;
-    m_ImportDataCtl =nullptr;
-
-    m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
+//    m_CreateTablesCtl = nullptr;
+  //  m_ImportDataCtl =nullptr;
+    wxBoxSizer *sizer1 = new wxBoxSizer( wxHORIZONTAL );
 
     this->SetLabel("Import MySQL Databases.");
 
     //------------------------------------------------
     // AVAILABLE DATABASES COMBO
-    wxBoxSizer *sizer1 = new wxBoxSizer( wxHORIZONTAL );
-
-    wxStaticText* txt = new wxStaticText( this, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxSize(TEXTWIDTH,20), 0 );
-    txt->SetLabel("Available Databases *");
-    sizer1->Add( txt, 0, wxALL, BORDERWIDTH );
-
-    m_AvailableDatabasesCombo = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
-    m_AvailableDatabasesCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( ImportMySQLDatabase::OnDatabaseComboChange ), nullptr, this );
-    m_AvailableDatabasesCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( ImportMySQLDatabase::OnDatabaseComboDropDown ), nullptr, this );
-    sizer1->Add( m_AvailableDatabasesCombo, ALLOW_TO_GROW, wxALL, BORDERWIDTH );
-
-    wxArrayString sSelectionItemArray;
-    Utility::LoadStringArrayWidthMySQLDatabaseNames(sSelectionItemArray);
-
-    //Fill the list box with the selection items.
-    for ( int index=0; index<sSelectionItemArray.GetCount(); index++ )
-        m_AvailableDatabasesCombo->Append(sSelectionItemArray[index]);
-
-    m_MainFormSizer->Add( sizer1, 0, wxEXPAND, BORDERWIDTH );
+    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Tables *", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
+    SetFlags("ID_SELECT_TABLE","SQL_DATABASES");
+    wxComboBox *pCom = (wxComboBox*)GetControl("ID_SELECT_TABLE");
+    pCom->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( ImportMySQLDatabase::OnDatabaseComboChange ), nullptr, this );
 
     //------------------------------------------------
     // New Database Name
-    sizer1 = new wxBoxSizer( wxHORIZONTAL );
 
-    titleNewDB = new wxStaticText( this, wxID_ANY, "New Database Name", wxDefaultPosition, wxSize(TEXTWIDTH,20), 0 );
-    sizer1->Add( titleNewDB, 0, wxALL, BORDERWIDTH );
+    AddCtlItem(CTL_TEXT, "New Database Name", "Select a name for the new database.", "ID_SELECT_NAME");
+   // m_NewDatabaseNameCtl = (wxTextCtrl*)GetControl("ID_SELECT_NAME");
 
-    m_NewDatabaseNameCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
-    sizer1->Add( m_NewDatabaseNameCtl, ALLOW_TO_GROW, wxEXPAND, BORDERWIDTH );
-
-
-    m_MainFormSizer->Add( sizer1, 0, wxEXPAND, BORDERWIDTH);
     //------------------------------------------------
     // CREATE TABLES CHECKBOX
-    sizer1 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxStaticText* lb = new wxStaticText( this, wxID_ANY, "", wxDefaultPosition, wxSize(TEXTWIDTH,20), 0 );
-    lb->SetLabel("Create Tables");
-    sizer1->Add( lb, 0, wxALL, BORDERWIDTH );
-
-    m_CreateTablesCtl = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-    m_CreateTablesCtl->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( ImportMySQLDatabase::OnCheckCreateTables ), nullptr, this );
-    sizer1->Add( m_CreateTablesCtl, 0, wxALL, BORDERWIDTH);
-
-    m_MainFormSizer->Add( sizer1, 0, wxEXPAND, BORDERWIDTH);
-
-    //Default check value
+    AddCtlItem(CTL_CHECKBOX, "Create Tables", "After the definitions are created, this will create the actual table in the database.", "ID_CHECK_CREATE_TABLE");
+    wxCheckBox *pCtlCheck = (wxCheckBox*)GetControl("ID_CHECK_CREATE_TABLE");
+    pCtlCheck->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( ImportMySQLDatabase::OnCheckCreateTables ), nullptr, this );
     if(Settings.bImportCreateTables)
-        m_CreateTablesCtl->SetValue(true);
+        SetDataValue("ID_CHECK_CREATE_TABLE","true");
 
     //------------------------------------------------
     // IMPORT DATA CHECKBOX
-    sizer1 = new wxBoxSizer( wxHORIZONTAL );
-
-    lb = new wxStaticText( this, wxID_ANY, "", wxDefaultPosition, wxSize(TEXTWIDTH,20), 0 );
-    lb->SetLabel("Import Data");
-    sizer1->Add( lb, 0, wxALL, BORDERWIDTH );
-
-    m_ImportDataCtl = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-    m_ImportDataCtl->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( ImportMySQLDatabase::OnCheckImportData ), nullptr, this );
-    sizer1->Add( m_ImportDataCtl, 0, wxALL, BORDERWIDTH );
-    m_MainFormSizer->Add( sizer1, 0, wxEXPAND, BORDERWIDTH );
-
-    //Default check value
+    AddCtlItem(CTL_CHECKBOX, "Import Data", "After creating definitions and tables, this will import all the data into the table.", "ID_CHECK_IMPORT_DATA");
+    pCtlCheck = (wxCheckBox*)GetControl("ID_CHECK_IMPORT_DATA");
+    pCtlCheck->Connect( wxEVT_CHECKBOX, wxCommandEventHandler( ImportMySQLDatabase::OnCheckImportData ), nullptr, this );
     if(Settings.bImportData)
-        m_ImportDataCtl->SetValue(true);
-
-    //------------------------------------------------
-    // BUTTONS IMPORT AND CANCEL
-
-    wxBoxSizer *btSizer = new wxBoxSizer( wxHORIZONTAL );
-
-    m_Import = new wxButton( this, wxID_ANY , wxT("Import Database"), wxDefaultPosition, wxSize(120,20), 0 );
-    //m_Import->SetMaxSize( wxSize( 120,20 ) );
-    m_Import->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ImportMySQLDatabase::OnbImport ), nullptr, this );
-    btSizer->Add( m_Import, 0, wxALL, BORDERWIDTH );
+        SetDataValue("ID_CHECK_IMPORT_DATA","true");
 
 
-    m_Cancel = new wxButton( this, wxID_ANY , wxT("Cancel"), wxDefaultPosition, wxSize(120,20), 0 );
-    //m_Cancel->SetMaxSize( wxSize( 120,20 ) );
-    m_Cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( ImportMySQLDatabase::OnbCancel ), nullptr, this );
-    btSizer->Add( m_Cancel, 0, wxALL, BORDERWIDTH );
+    //Render all the controls to the mainframe sizer.
+    RenderAllControls();
 
-
-
-    m_MainFormSizer->Add( btSizer, 0, wxALIGN_CENTER, BORDERWIDTH);
-    this->SetSizer( m_MainFormSizer );
-    this->Layout();
-
-
-}
-
-ImportMySQLDatabase::~ImportMySQLDatabase(){
+    //Create the buttons to the dialog
+    this->Create();
 
 }
 
@@ -130,54 +84,12 @@ void ImportMySQLDatabase::OnDatabaseComboChange( wxCommandEvent& event ) {
     m_sSelectedDatabase = combo->GetStringSelection();
 }
 
-void ImportMySQLDatabase::OnDatabaseComboDropDown( wxCommandEvent& event )
-{
-
-}
-
-//We can send a message to the parent that this window is destroyed.
-bool ImportMySQLDatabase::Destroy()
-{
-    bool bResult = wxFrame::Destroy();
-
-    MyEvent my_event( this );
-    my_event.m_bDestroyed=true;
-    GetParent()->ProcessWindowEvent( my_event );
-
-    return bResult;
-}
-
 void ImportMySQLDatabase::OnCheckCreateTables(wxCommandEvent& event)
 {
-    Settings.bImportCreateTables = m_CreateTablesCtl->GetValue();
+    Settings.bImportCreateTables =GetCheckState("ID_CHECK_CREATE_TABLE");
 }
 
 void ImportMySQLDatabase::OnCheckImportData(wxCommandEvent& event)
 {
-    Settings.bImportData = m_ImportDataCtl->GetValue();
-}
-
-void ImportMySQLDatabase::OnbCancel( wxCommandEvent& event )
-{
-    //Refresh the control by generating an event to the main frame.
-    MyEvent my_event( this );
-    GetParent()->ProcessWindowEvent( my_event ) ;
-
-    Close(TRUE);
-}
-
-void ImportMySQLDatabase::OnbImport( wxCommandEvent& event )
-{
-    m_sNewDatabaseName =  m_NewDatabaseNameCtl->GetValue();
-    m_sNewDatabaseName.Replace(" ",""); //Remove any spaces from the name.
-
-    Close(TRUE);
-    //Refresh the control by generating an event to the main frame.
-    MyEvent my_event( this );
-    my_event.m_sDatabaseName = m_sSelectedDatabase;
-    my_event.m_sNewDatabaseName = m_sNewDatabaseName;
-    my_event.m_bImportDatabase = true;
-    GetParent()->ProcessWindowEvent( my_event ) ;
-
-
+    Settings.bImportData = GetCheckState("ID_CHECK_IMPORT_DATA");
 }

@@ -4,33 +4,30 @@
 
 #ifndef DBWORKS_IMPORTMYSQLDATABASE_H
 #define DBWORKS_IMPORTMYSQLDATABASE_H
+#include "DialogBaseClass.h"
 
 
-class ImportMySQLDatabase : public wxFrame{
+class ImportMySQLDatabase : public DialogBaseClass{
 
 private:
-    wxBoxSizer* m_MainFormSizer;
-    wxComboBox * m_AvailableDatabasesCombo;
-    wxButton* m_Cancel;
-    wxButton* m_Import;
+   // wxComboBox * m_AvailableDatabasesCombo;
     wxString m_sSelectedDatabase;
     wxString m_sNewDatabaseName;
-    wxTextCtrl * m_NewDatabaseNameCtl;
-    wxStaticText* titleNewDB;
-    wxCheckBox * m_CreateTablesCtl;
-    wxCheckBox * m_ImportDataCtl;
+
+   // wxStaticText* titleNewDB;
+   // wxCheckBox * m_CreateTablesCtl;
+   // wxCheckBox * m_ImportDataCtl;
 public:
     explicit ImportMySQLDatabase( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
 
-    ~ImportMySQLDatabase() override;
+    wxString GetDatabaseToCopy();
+    wxString GetNewDatabaseToCopyInto();
 
     //We are overriding the Destroy function so we can send a message to the parent that this window has been destroyed.
     // This is needed if the parent can null any pointers to this class so they can be tested for null condition.
-    bool Destroy() override;
+
     void OnDatabaseComboChange(wxCommandEvent& event);
-    void OnDatabaseComboDropDown( wxCommandEvent& event );
-    void OnbCancel( wxCommandEvent& event );
-    void OnbImport( wxCommandEvent& event );
+
     void OnCheckCreateTables(wxCommandEvent& event);
     void OnCheckImportData(wxCommandEvent& event);
 };

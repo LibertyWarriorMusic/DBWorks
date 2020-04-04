@@ -1,6 +1,6 @@
 
 #include "HtmlHelp.h"
-#include "ImportMySQLDatabase.h"
+
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Class MainFrame
@@ -15,7 +15,14 @@ class MainFrame : public wxFrame
         DBGrid* m_MainGrid;
         wxToolBar * m_Toolbar1;
         HtmlHelp *m_HtmlWin;
-        ImportMySQLDatabase *m_ImportMySQLForm;
+        TableDiagramFrame *m_pTableDiagaram;
+       // ImportMySQLDatabase *m_ImportMySQLForm;
+        //ObTableDiagram * m_TableDiagramPanel; //Used for drawing
+
+
+
+
+        void AddTableObject(); //Will add a new table object to the DrawPanelTable
 
         //System and Usr tables;
         GenericTable * m_pFilters;
@@ -44,8 +51,10 @@ class MainFrame : public wxFrame
         void OnUserGroupComboDropDown( wxCommandEvent& event );
         void OnDatabaseComboChange(wxCommandEvent& event);
         void OnDatabaseComboDropDown( wxCommandEvent& event );
-        void LoadGrid(); //Load or reload the grid from the database.
 
+
+        void LoadGrid(); //Load or reload the grid from the database.
+        void LoadTableObjects(); //Reload all the drawing objects
 
 
         // The default filter for different usertypes.
@@ -73,7 +82,7 @@ class MainFrame : public wxFrame
         myProgressControl * m_ProgressGauge;
     public:
         myProgressControl *GetProgressControlPointer();
-        void Refresh();
+        void Refresh(bool bReloadTableDiagram=false);
         void UpdateProgressBar(int val);
         explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
         void SetProgressLabel(wxString sLabel);
@@ -90,12 +99,13 @@ class MainFrame : public wxFrame
         void OnbViewItem( wxCommandEvent& event );
         void OnbFilter( wxCommandEvent& event );
         void OnAutoCheckDefinitions(wxCommandEvent& event);
+        void OnOpenTableDiagram(wxCommandEvent& event);
         void OnbHelp( wxCommandEvent& event );
         void OnDeleteCurrentDatabase( wxCommandEvent& event );
         static void CreateToolBars();
         void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);
         wxComboBox * GetDatabaseComboBox();
-
+        void SetStateOfAutoCheckDefinitions(bool bOnIsTrue = true);
         DBGrid* GetMainGrid();
         void SetSettingsLoaded(bool bSettingsLoadedFlag);
 
@@ -147,7 +157,7 @@ public:
     bool bProgress_loop_on;
     void activateRenderLoop(bool on);
     void StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName);
-
+    void SetStateOfAutoCheckDefinitions(bool bOnIsTrue);
 
     void StartCheckIfTableDefinitionsMatchDatabaseTable();
     void StopCheckIfTableDefinitionsMatchDatabaseTable();

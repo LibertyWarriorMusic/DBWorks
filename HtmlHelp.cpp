@@ -36,7 +36,7 @@ bool HtmlHelp::Destroy()
 
 
     MyEvent my_event( this );
-    my_event.m_bDestroyed=true;
+    my_event.m_bHelpFrameWasDestroyed=true;
     GetParent()->ProcessWindowEvent( my_event );
 
     return bResult;

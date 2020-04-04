@@ -7,6 +7,7 @@
 #include <wx/stdpaths.h>
 #include "global.h"
 #include "myProgressControl.h"
+
 #include <mysql.h>
 #include <mysql++.h>
 
@@ -18,6 +19,263 @@ using namespace mysqlpp;
 
 #include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(ArrayTableFields);
+
+bool Utility::IsPointInRect(wxPoint pt, wxRect rect) // returns true if the point lies inside the rectangle.
+{
+    bool bXInRect = false;
+    bool bYInRect = false;
+
+    if(pt.x >= rect.x && pt.x <= (rect.x+rect.width))
+        bXInRect = true;
+
+    if(pt.y >= rect.y && pt.y <= (rect.y+rect.height))
+        bYInRect = true;
+
+    if(bXInRect && bYInRect)
+        return true;
+
+    return false;
+}
+
+// When you click inside a rect with the mouse, the pt offset from the top left corner of the rect is calculated.
+wxSize Utility::CalcPtInRectOffset(wxPoint pt, wxRect rect)
+{
+    wxSize size;
+
+    size.x=0;
+    size.y=0;
+
+    if(IsPointInRect(pt,rect)){
+        size.x = pt.x - rect.x;
+        size.y = pt.y - rect.y;
+    }
+
+    return size;
+}
+// Will return the pt at one of the corners of the rect that the point is closest too.
+wxPoint Utility::CalPtSnapToClosestCornerInRect(wxPoint pt, wxRect rect)
+{
+
+    if(pt.y<=0)
+        pt.y=0;
+
+    if(pt.x<0)
+        pt.x=0;
+
+    wxPoint ptToReturn;
+    ptToReturn.x=0;
+    ptToReturn.y=0;
+    //Approach, divide the rect into four rects and do a hit test on all of them, then move to the closet corner
+
+    wxRect TopLeftRect;
+    TopLeftRect.x = rect.x;
+    TopLeftRect.y = rect.y;
+    TopLeftRect.width =  rect.width/2;
+    TopLeftRect.height = rect.height/2;
+
+
+    wxRect TopRightRect;
+    TopRightRect.x = rect.x + rect.width/2;
+    TopRightRect.y = rect.y;
+    TopRightRect.width =  rect.width/2;
+    TopRightRect.height = rect.height/2;
+
+
+    wxRect BottomLeftRect;
+    BottomLeftRect.x = rect.x;
+    BottomLeftRect.y = rect.y+rect.height/2;
+    BottomLeftRect.width =  rect.width/2;
+    BottomLeftRect.height = rect.height/2;
+
+
+    wxRect BottomRightRect;
+    BottomRightRect.x = rect.x + rect.width/2;
+    BottomRightRect.y = rect.y + rect.height/2;
+    BottomRightRect.width =  rect.width/2;
+    BottomRightRect.height = rect.height/2;
+
+    if(IsPointInRect(pt,TopLeftRect)){
+        ptToReturn.x = rect.x;
+        ptToReturn.y = rect.y;
+    }
+    else if(IsPointInRect(pt,TopRightRect)) {
+        ptToReturn.x = rect.x+rect.width;
+        ptToReturn.y = rect.y;
+    }
+    else if(IsPointInRect(pt,BottomLeftRect)) {
+        ptToReturn.x = rect.x;
+        ptToReturn.y = rect.y + rect.height;
+    }
+    else if(IsPointInRect(pt,BottomRightRect)) {
+        ptToReturn.x = rect.x + rect.width;
+        ptToReturn.y = rect.y + rect.height;
+    }
+
+    return ptToReturn;
+
+}
+// Find the grid rect that the point lies. The grid is fixed on the screen.
+wxRect Utility::CalcGridRectThatPtLiesInside(wxPoint pt,wxSize gridSize)
+{
+    int XPos = pt.x / gridSize.x;
+    int YPos = pt.y / gridSize.y;
+
+    wxRect rectToReturn;
+
+    rectToReturn.x = XPos * gridSize.x;
+    rectToReturn.y = YPos * gridSize.y;
+
+    rectToReturn.width = gridSize.x;
+    rectToReturn.height = gridSize.y;
+
+
+    return rectToReturn;
+
+}
+
+
+int Utility::StringToInt(const wxString& stringToConvert)
+{
+    long value;
+    if(!stringToConvert.ToLong(&value)) {
+        wxLogMessage("Error converting string to int");
+    }
+    return (int) value;
+}
+long Utility::StringToLong(const wxString& stringToConvert)
+{
+    long value;
+    if(!stringToConvert.ToLong(&value)) {
+        wxLogMessage("Error converting string to int");
+    }
+    return  value;
+}
+
+bool Utility::CreateSystemTables(wxString sDatabase)
+{
+    //Check to see if the database was created.
+    if(DoesDatabaseExist(sDatabase)){
+
+
+        //Check to see if the system tables exist, of not, create them.
+        if(!DoesTableExist(sDatabase,"sys_tables")){
+
+
+            //We can load from a file or write in code here. I think it's better to write it code. The other option is the place this in sys_docs table as a system document type.
+            wxString query="";
+
+            //OPTION 1 LOAD FROM FILE
+            //wxFile file("SQL/createsystables.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysTablesDocID);
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_tables` ("
+                    "  `sys_tablesId` int NOT NULL AUTO_INCREMENT,"
+                    "  `title` varchar(100) NOT NULL,"
+                    "  `tablename` varchar(100) NOT NULL,"
+                    "  `tabletype` varchar(255) NOT NULL,"
+                    "  `comments` varchar(255),"
+                    "  `table_data` text ,"
+                    "  PRIMARY KEY (`sys_tablesId`)"
+                    ") ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;";
+
+
+            if(!query.IsEmpty()){
+
+                ExecuteQuery(sDatabase,query);
+            }
+
+        }
+        if(!DoesTableExist(sDatabase,"sys_fields")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+            //wxFile file("SQL/createsysfields.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_fields` ("
+                    "`sys_fieldsId` int NOT NULL AUTO_INCREMENT,"
+                    " `sys_tablesId` int NOT NULL,"
+                    " `valfield` varchar(100) NOT NULL,"
+                    " `valtype` varchar(100) NOT NULL,"
+                    " `valnull` varchar(10) NOT NULL,"
+                    " `valkey` varchar(10) DEFAULT NULL,"
+                    " `valdefault` varchar(255) DEFAULT NULL,"
+                    "`valextra` varchar(255) DEFAULT NULL,"
+                    " `title` varchar(100) DEFAULT NULL,"
+                    " `flags` varchar(200) DEFAULT NULL,"
+                    "PRIMARY KEY (`sys_fieldsId`)"
+                    ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+
+        }
+
+        if(!DoesTableExist(sDatabase,"sys_docs")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+            //Option 1;
+            //wxFile file("SQL/createsysdocs.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysDocsDocID);
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_docs` ("
+                    "`sys_docsId` int NOT NULL AUTO_INCREMENT,"
+                    "`Title` varchar(200) NOT NULL,"
+                    "`TypeOfDoc` varchar(100) NOT NULL DEFAULT 'Help Document',"
+                    "`Document` longtext,"
+                    "PRIMARY KEY (`sys_docsId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
+        if(!DoesTableExist(sDatabase,"usr_filters")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `usr_filters` ("
+                    "`usr_filtersId` int NOT NULL AUTO_INCREMENT,"
+                    "`filterName` varchar(255) NOT NULL,"
+                    "`queryDefinition` text NOT NULL,"
+                    "`associatedTableId` int,"
+                    "`description` text NOT NULL,"
+                    "PRIMARY KEY (`usr_filtersId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
+    }
+    else{
+        return false;
+    }
+
+    return true;
+}
 
 
 // Th
@@ -196,7 +454,6 @@ wxString Utility::ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxStri
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
-
     // Connect to the sample database.
     Connection conn(false);
 
@@ -268,13 +525,24 @@ wxString Utility::ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxStri
 
 
 
+
 bool Utility::LoadBitmap(wxBitmap &image, wxString ImageFileName)
 {
-    wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
-    strExe.Replace("DBWorks", "images/"+ImageFileName); //For mac and linux
-    strExe.Replace("dbworks", "images/"+ImageFileName); //For mac and linux
-    strExe.Replace("dbworks.exe", "images/"+ImageFileName); // For windows.
+
+    //This has caused an issue when the Bear tested on his mac.
+
+
+   // wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+    //wxLogMessage(strExe);
+ //   strExe.Replace("DBWorks", "images/"+ImageFileName); //For mac and linux
+ //   strExe.Replace("dbworks", "images/"+ImageFileName); //For mac and linux
+  //  strExe.Replace("dbworks.exe", "images/"+ImageFileName); // For windows.
+
+    wxString strExe = "/Applications/DatabaseWorks/images/"+ImageFileName;
+    //wxString strExe = "images/"+ImageFileName;
     //  strExe.Replace("view.png", "help.png"); //For mac and linux
+
+    //wxString strExe = "images/"+ImageFileName;
     return image.LoadFile(strExe, wxBITMAP_TYPE_PNG);
 }
 
@@ -698,7 +966,7 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
     return false;
 }
 
-wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, wxString sTableId)
+wxString Utility::GetTableNameFromSYS_TABLESById(wxString sDatabase, wxString sTableId)
 {
 
     wxString database(sDatabase);
@@ -755,7 +1023,7 @@ wxString Utility::GetTableNameFromSYS_TABLES(wxString sDatabase, wxString sTable
 }
 
 
-wxString Utility::GetTableTitleFromSYS_TABLES(wxString sDatabase, wxString sTableId)
+wxString Utility::GetTableTitleFromSYS_TABLESById(wxString sDatabase, wxString sTableId)
 {
 
     if(sTableId.IsEmpty())
@@ -927,7 +1195,7 @@ wxString Utility::GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString s
 }
 
 
-wxString Utility::GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, wxString sColumnNumber)
+wxString Utility::GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxString sTableName, wxString sColumnNumber)
 {
     wxString database(sDatabase);
     wxString server(Settings.sServer);
@@ -994,8 +1262,8 @@ void Utility::LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArraySt
 
     wxString sTableId;
     sTableId << lTableId;
-    wxString sTableName = GetTableNameFromSYS_TABLES(sDatabase, sTableId);
-    wxString sFieldName = GetTableFieldNameFromTable(sDatabase, sTableName,sColumnNumber);
+    wxString sTableName = GetTableNameFromSYS_TABLESById(sDatabase, sTableId);
+    wxString sFieldName = GetTableFieldNameFromMySQLInfoSchema(sDatabase, sTableName,sColumnNumber);
 
 
     wxString database(sDatabase);
@@ -1149,10 +1417,65 @@ void Utility::GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayStr
 
 
 }
+//First we need to find the tablename from the SYS_TABLES table having lTableId.
+//Then we need to find the field name correcsponding with lcolumnNumber.
+// Once we have the tablename and field name, we can load the table.
+void Utility::LoadStringArrayWithMySQLTableNames(wxString sDatabase, wxArrayString &sArray ){
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "SHOW TABLES;";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow]["Tables_in_"+sDatabase], wxConvUTF8);
+
+                    //NOTE We don't want to load system tables, they will be in the database, however we
+                    // don't wan't the user to see them in the table definitions.
+                    // If we ever create more system tables, we need to reject them here.
+                    if(!(strData=="sys_tables" || strData=="sys_fields"))
+                        sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}
 
 
 void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
-
 
     wxString database("INFORMATION_SCHEMA"); // This doesn't have to be this database, but we know this database is created in MySQL
     wxString server(Settings.sServer);
@@ -1200,7 +1523,6 @@ void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
     else{
         wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
-
 }
 
 void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value)
@@ -1420,6 +1742,12 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTable
 
                             if(fieldItem.fieldNull=="yes")
                                 fieldItem.fieldNull="";
+
+                            if(sDefault=="NULL")
+                                sDefault="";
+
+                            if(fieldItem.fieldDefault=="NULL")
+                                fieldItem.fieldDefault="";
 
                             if (sField != fieldItem.fieldName ||
                                  sType != fieldItem.fieldType ||
@@ -1745,12 +2073,10 @@ bool Utility::IsReservedMySQLWord(wxString wordToFind)
 
     return false;
 }
-
-
 //First we need to find the tablename from the SYS_TABLES table having lTableId.
 //Then we need to find the field name correcsponding with lcolumnNumber.
 // Once we have the tablename and field name, we can load the table.
-void Utility::LoadStringArrayWithDatabaseTableNames(wxString sDatabase, wxArrayString &sArray ){
+void Utility::LoadStringArrayWithTableIdsFromSysTables(wxString sDatabase, wxArrayString &sArray ){
 
     wxString database(sDatabase);
     wxString server(Settings.sServer);
@@ -1766,7 +2092,7 @@ void Utility::LoadStringArrayWithDatabaseTableNames(wxString sDatabase, wxArrayS
                      (const_cast<char*>((const char*)pass.mb_str())))) {
 
         //SetStatusText("Database Connected");
-        wxString QueryString = "SHOW TABLES;";
+        wxString QueryString = "select sys_tablesId from sys_tables";
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
 
@@ -1780,13 +2106,67 @@ void Utility::LoadStringArrayWithDatabaseTableNames(wxString sDatabase, wxArrayS
             for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
 
                 try {
-                    wxString strData(res[currentRow]["Tables_in_"+sDatabase], wxConvUTF8);
+                    wxString strData(res[currentRow]["sys_tablesId"], wxConvUTF8);
 
                     //NOTE We don't want to load system tables, they will be in the database, however we
                     // don't wan't the user to see them in the table definitions.
                     // If we ever create more system tables, we need to reject them here.
-                    if(!(strData=="sys_tables" || strData=="sys_fields"))
-                        sArray.Add(strData);
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}
+//First we need to find the tablename from the SYS_TABLES table having lTableId.
+//Then we need to find the field name correcsponding with lcolumnNumber.
+// Once we have the tablename and field name, we can load the table.
+void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxArrayString &sArray ){
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "select tablename from sys_tables";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow]["tablename"], wxConvUTF8);
+
+                    //NOTE We don't want to load system tables, they will be in the database, however we
+                    // don't wan't the user to see them in the table definitions.
+                    // If we ever create more system tables, we need to reject them here.
+                    sArray.Add(strData);
                 }
                 catch (int& num) {
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);
@@ -1848,12 +2228,14 @@ wxString Utility::CreateTable(wxString sDatabase, wxString sTableName, ArrayTabl
         valkey=m_FieldsArray[row].fieldKey;
 
         val=m_FieldsArray[row].fieldDefault; //Default needs to be DEFAULT = 'value' if a value exists, otherwise it can be empty.
+
+
         if(val.Lower()=="null" || val == "0")
-            valdefault=" ";
+            valdefault=" ";  //There is stupid bug in the wxWidgets grid that text in a cell draws over the right cell it that cel is empty.
         else if (Utility::IsEmpty(val))
             valdefault="";
         else
-            valdefault= " DEFAULT '" + valkey + "'";
+            valdefault= " DEFAULT '" + val + "'";
 
 
 
@@ -1912,27 +2294,25 @@ bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableN
                     wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
                     wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
 
+                    //If you are importing a databaseworks generated table, you don't want to import the primary key of that that because it automatically gets created
+                    // and you don't want duplicate PRI keys.
+                    if(sField !=sTableName+"Id"){
+                        auto *tableField = new TableFieldItem();
+                        if(sKey=="PRI"){
+                            //If we have a PRI key, then don't create it because the database creates it's own PRI
+                            //Check the option to create a primary key but never create one if dbworks created it, that will be tablenameId
 
-                    if(sKey=="PRI"){
-                        //If we have a PRI key, then don't create it because the database creates it's own PRI
-                        //Check the option to create a primary key but never create one if dbworks created it, that will be tablenameId
-                        if(Settings.bImportPrimaryKey && sField !=sTableName+"Id" ){
+                            if(Settings.bImportPrimaryKey)
+                                tableField->fieldKey=sKey;// Don't include the PRI here
+                            else
+                                tableField->fieldKey="";
 
-                            auto *tableField = new TableFieldItem();
-                            tableField->fieldName=sField;
-                            tableField->fieldType=sType;
-                            tableField->fieldNull=sNull;
-                            tableField->fieldKey="";// Don't include the PRI here
-                            tableField->fieldDefault = sDefault;
-                            m_Fields.Add(tableField);
-                        }
+                        } else
+                            tableField->fieldKey=sKey;
 
-                    } else{
-                        auto* tableField = new TableFieldItem();
                         tableField->fieldName=sField;
                         tableField->fieldType=sType;
                         tableField->fieldNull=sNull;
-                        tableField->fieldKey=sKey;
                         tableField->fieldDefault = sDefault;
                         m_Fields.Add(tableField);
                     }
@@ -1954,130 +2334,7 @@ bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableN
  return true;
 }
 
-bool Utility::CreateSystemTables(wxString sDatabase)
-{
-    //Check to see if the database was created.
-    if(DoesDatabaseExist(sDatabase)){
 
-
-        //Check to see if the system tables exist, of not, create them.
-        if(!DoesTableExist(sDatabase,"sys_tables")){
-
-
-            //We can load from a file or write in code here. I think it's better to write it code. The other option is the place this in sys_docs table as a system document type.
-            wxString query="";
-
-            //OPTION 1 LOAD FROM FILE
-            //wxFile file("SQL/createsystables.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysTablesDocID);
-
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_tables` ("
-                    "  `sys_tablesId` int NOT NULL AUTO_INCREMENT,"
-                    "  `title` varchar(100) NOT NULL,"
-                    "  `tablename` varchar(100) NOT NULL,"
-                    "  `tabletype` varchar(255) NOT NULL,"
-                    "  `comments` varchar(255) DEFAULT NULL,"
-                    "  PRIMARY KEY (`sys_tablesId`)"
-                    ") ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;";
-
-
-            if(!query.IsEmpty()){
-
-                ExecuteQuery(sDatabase,query);
-            }
-
-        }
-        if(!DoesTableExist(sDatabase,"sys_fields")){
-
-            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
-            wxString query="";
-            //wxFile file("SQL/createsysfields.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_fields` ("
-                    "`sys_fieldsId` int NOT NULL AUTO_INCREMENT,"
-                    " `sys_tablesId` int NOT NULL,"
-                    " `valfield` varchar(100) NOT NULL,"
-                    " `valtype` varchar(100) NOT NULL,"
-                    " `valnull` varchar(10) NOT NULL,"
-                    " `valkey` varchar(10) DEFAULT NULL,"
-                    " `valdefault` varchar(255) DEFAULT NULL,"
-                    "`valextra` varchar(255) DEFAULT NULL,"
-                    " `title` varchar(100) DEFAULT NULL,"
-                    " `flags` varchar(200) DEFAULT NULL,"
-                    "PRIMARY KEY (`sys_fieldsId`)"
-                    ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
-
-            if(!query.IsEmpty())
-                ExecuteQuery(sDatabase,query);
-
-
-        }
-
-        if(!DoesTableExist(sDatabase,"sys_docs")){
-
-            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
-            wxString query="";
-
-            //Option 1;
-            //wxFile file("SQL/createsysdocs.sql");
-            //file.ReadAll(&query,wxConvUTF8);
-
-            //Option 2 Load from table sys_docs.
-            //query = Utility::LoadSystemDocument(Settings.iSysDocsDocID);
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `sys_docs` ("
-                    "`sys_docsId` int NOT NULL AUTO_INCREMENT,"
-                    "`Title` varchar(200) NOT NULL,"
-                    "`TypeOfDoc` varchar(100) NOT NULL,"
-                    "`Document` longtext,"
-                    "PRIMARY KEY (`sys_docsId`)"
-                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
-
-            if(!query.IsEmpty())
-                ExecuteQuery(sDatabase,query);
-
-        }
-
-        if(!DoesTableExist(sDatabase,"usr_filters")){
-
-            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
-            wxString query="";
-
-
-            //Option 3 DIRECTLY IN CODE. I think this is the best
-            query = "CREATE TABLE `usr_filters` ("
-                    "`usr_filtersId` int NOT NULL AUTO_INCREMENT,"
-                    "`filterName` varchar(255) NOT NULL,"
-                    "`queryDefinition` text NOT NULL,"
-                    "`associatedTableId` int,"
-                    "`description` text NOT NULL,"
-                    "PRIMARY KEY (`usr_filtersId`)"
-                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
-
-            if(!query.IsEmpty())
-                ExecuteQuery(sDatabase,query);
-
-        }
-
-    }
-    else{
-        return false;
-    }
-
-    return true;
-}
 
 wxString Utility::InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableName)
 {
@@ -2086,6 +2343,7 @@ wxString Utility::InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableNam
    return GetTableIdFromSYS_TABLES(sDatabase,sTableName);
 
 }
+
 
 void Utility::InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem)
 {
@@ -2148,6 +2406,7 @@ void Utility::AppendDBWorksDatabases(wxArrayString &arrayToAppend)
 
 }
 
+//Used to save our imported databases
 void Utility::SaveDatabaseToDBWorks(wxString sDatabaseNameToSave){
 
     if(!DoesRecordExist("dbworks","sys_databases","databasename",sDatabaseNameToSave)){
@@ -2156,6 +2415,7 @@ void Utility::SaveDatabaseToDBWorks(wxString sDatabaseNameToSave){
     }
 }
 
+//Generic function that checks if a record in the database exists.
 bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue)// Check to see if a record with a particular value exists.
 {
     wxString QueryString;
@@ -2201,8 +2461,7 @@ bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFie
     return false;
 
 }
-//We are going to use this to load all the queries in sys_filters but try and make it generic
-// select * from usr_filters
+//Load all the queries in sys_filters into a combo box. Select selection has an associated ComboDataItem that stores the query and other information about our filter.
 void Utility::LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId)
 {
     wxString database(sDatabase);
@@ -2278,4 +2537,192 @@ void Utility::DestroyComboDataObjects(wxComboBox *pCombo)
         ComboDataItem* comboItem = (ComboDataItem*) pCombo->GetClientData(index);
         delete comboItem;
     }
+}
+// Get table can store system data of any type, this is the generic place to put data.
+// You need to define a unique key for the data and supply the table ID where the data is stored.
+// that data is stored in the table_data field in sys_tables; The format is as follows
+// NOTE: This function can be used to search for the data also, it will return true if data is found and false if no data found.
+// <key:keyname>the data to store</key>
+bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString KeyName, wxString &sData)
+{
+
+    //STEP 1: Get the data from the sys_tables field.
+    wxString    tableData = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName));
+
+
+
+    //STEP 2: Search for <key:KeyName> to find the position
+
+    wxString keyToSearch= "<key:"+KeyName+">";
+    int lenKey=keyToSearch.Length();
+    int keyPos = tableData.Find(keyToSearch);
+
+    if(keyPos == wxNOT_FOUND){
+        return false;
+    }
+    else{
+
+        int startPosOfData = keyPos + lenKey;
+
+        //STEP 3: Search for</key>
+        int endPosOfData=tableData.find("</key>",startPosOfData);;
+
+
+        //STEP 4: Extract the data
+        sData = tableData.Mid(startPosOfData,endPosOfData-startPosOfData);
+        return true;
+    }
+    return true;
+}
+
+
+
+
+bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString KeyName, wxString &sData, wxString &entireDataString, int &startPosOfData)
+{
+    //STEP 1: Get the data from the sys_tables field.
+
+    entireDataString = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName));
+
+    //STEP 2: Search for <key:KeyName> to find the position
+
+    wxString keyToSearch= "<key:"+KeyName+">";
+    int lenKey=keyToSearch.Length();
+    int keyPos = entireDataString.Find(keyToSearch);
+
+    if(keyPos == wxNOT_FOUND){
+        return false;
+    }
+    else{
+
+        startPosOfData = keyPos + lenKey;
+
+        //STEP 3: Search for</key>
+        int endPosOfData=entireDataString.find("</key>",startPosOfData);;
+
+
+        //STEP 4: Extract the data
+        sData = entireDataString.Mid(startPosOfData,endPosOfData-startPosOfData);
+        return true;
+    }
+    return true;
+
+}
+
+
+void Utility::SaveTableData(const wxString& sDatabase, const wxString& sTableName, const wxString& KeyName, wxString data)
+{
+    //STEP 1 Call LoadTableData to see if data exists and get the entire data string from the sys_tables.
+    wxString entireDataString="";
+    int startPosOfData=0;
+    wxString newData = data;
+    if(Utility::LoadTableData(sDatabase, sTableName, KeyName, data,entireDataString, startPosOfData)){
+        //Amend the data string
+        wxString entireDataStringToWriteBack="";
+        int LenEntireString = entireDataString.Length();
+
+        //STEP 3: Search for</key>
+        int endPosOfData=entireDataString.find("</key>",startPosOfData);;
+
+        //STEP 4: Replace the data in the entire data string so we can write it back to the database
+
+        entireDataStringToWriteBack = entireDataString.Left(startPosOfData) + newData + entireDataString.Right(LenEntireString-endPosOfData);
+
+        wxString table = "sys_tables";
+        wxString field = "table_data";
+
+        //Update the database table sys_fields
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+        UpdateTableFieldById(sDatabase,table,sTableId,field,entireDataStringToWriteBack);
+    }
+    else{
+
+        //Update the database table sys_fields
+        wxString dataToUpdata;
+        dataToUpdata = entireDataString+"<key:"+KeyName+">"+newData+"</key>";
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+        UpdateTableFieldById(sDatabase,"sys_tables",sTableId,"table_data",dataToUpdata);
+
+    }
+
+    //STEP 2 If it exists, we will amend the string, if not, add the new data to the end of the string.
+    //STEP 3 Write the string back to sys_tables.
+
+}
+
+//The key data combination example  <key:keyname1>data1</key><key:keyname2>data2</key><key:keyname3>data3</key>
+//Write the data in one hit, but it needs to be stored sequencially.
+void Utility::SaveTableDataBulk(wxString sDatabase,wxString sTableName, wxString KeyDataCombination)
+{
+    //STEP 1 Call GetTableData to see if data exists
+    //STEP 2 Get the entire data string from the sys_tables.
+    //STEP 3 If it exists, we will amend the string, if not, add the new data to the end of the string.
+    //STEP 4 Write the string back to sys_tables.
+
+}
+
+//Get the entire data string
+wxString Utility::GetTableDataString(wxString sDatabase, wxString sTableId)
+{
+
+    wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        wxString QueryString =   "";
+        QueryString << "SELECT table_data FROM  sys_tables where sys_tablesId=" + sTableId + " LIMIT 1";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // Get each row in result set, and print its contents
+            for (size_t i = 0; i < res.num_rows(); ++i) {
+
+                try {
+
+                    wxString data(res[i]["table_data"], wxConvUTF8);
+                    if(data=="NULL")
+                        return "";
+
+                    return data;
+
+
+                }
+                catch (int num) {
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    return "";
+
+                }
+            }
+        }
+        else {
+            // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            return "";
+        }
+    }
+    else{
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        return "";
+    }
+    return "";
+}
+
+
+void Utility::UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxString sTableId, wxString sFieldname, wxString sValue)
+{
+    wxString QueryString="";
+    QueryString="UPDATE "+sTableName+" SET "+sFieldname+" = '"+sValue +"' WHERE "+sTableName+"Id="+ sTableId;
+    ExecuteQuery(sDatabase,QueryString);
+
 }

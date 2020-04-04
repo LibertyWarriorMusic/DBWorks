@@ -1,21 +1,5 @@
 
 
-class GridItem
-{
-public:
-    wxString fieldName;
-    wxString fieldType;
-    wxString fieldNull;
-    wxString fieldKey;
-    wxString fieldExtra;
-    wxString fieldDefault;
-    wxString title;
-    wxString flags;
-};
-
-
-WX_DECLARE_OBJARRAY(GridItem, ArrayGridItem);
-
 
 class DBGrid :
     public wxGrid
@@ -35,7 +19,7 @@ private:
     wxString m_sTableName; //The name of the table this grid represents
     wxString m_sPrimaryKeyName;  //The table file name that stores the key ID of the table, used for deleting etc.
     wxString m_sWhereCondition;// A where condition to filter the grid if required
-    
+
     ArrayGridItem m_GridArray; //Stores the information that builds the grid, field, title flags extra.
     int HasRowDocumentFlag(int iRow);
 
@@ -56,7 +40,6 @@ public:
     ~DBGrid() override;
 
     void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra );
-
 
     bool GetGridItemArray(ArrayGridItem &GridItemList); //Loads an Array of GridItem class. Does a copy can creates all new row items.
     bool GetFirstRowCellValue(wxString& sCellValue,int  ColumnNumber);

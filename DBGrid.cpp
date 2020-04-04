@@ -85,11 +85,11 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
 
         for (int index=0;index<count;index++){
 
-            auto *item = new GridItem();
+            auto *item = new TableField();
 
-            item->title = m_GridArray[index].title;
+            item->Title = m_GridArray[index].Title;
             item->fieldName = m_GridArray[index].fieldName;
-            item->flags = m_GridArray[index].flags;
+            item->Flags = m_GridArray[index].Flags;
             item->fieldDefault = m_GridArray[index].fieldDefault;
 
             GridItemList.Add(item);
@@ -179,7 +179,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
 
                                 wxString fieldName = m_GridArray[index].fieldName;
                                 wxString defaultValue = m_GridArray[index].fieldDefault;
-                                wxString flag = m_GridArray[index].flags;
+                                wxString flags = m_GridArray[index].Flags;
                                 //wsString strData1 = "";
                                 //strData1 =  res[i][fieldName];
 
@@ -219,18 +219,18 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                         strData1 = defaultValue;
                                 }
 
-                                if(Utility::HasFlag(flag,"PASSWORD")){
+                                if(Utility::HasFlag(flags,"PASSWORD")){
 
                                     if(!Utility::IsEmpty(strData1))
                                         SetCellValue(iTracRowIncaseOfSkip,index+1,Utility::ReplaceStringWithAsterix(strData1));
                                     else
                                         SetCellValue(iTracRowIncaseOfSkip,index+1,strData1);
                                 }
-                                else if(Utility::HasFlag(flag,"SELECTION_LINKED_NAME") ){
+                                else if(Utility::HasFlag(flags,"SELECTION_LINKED_NAME") ){
                                     wxArrayString sArray;
-                                    wxString flags = m_GridArray[index].flags;
+                                    wxString flags = m_GridArray[index].Flags;
                                     flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                    Utility::ExtractSelectionItems(sArray,m_GridArray[index].flags);
+                                    Utility::ExtractSelectionItems(sArray,m_GridArray[index].Flags);
 
 
                                     wxString tableName = sArray[0];
@@ -238,7 +238,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
 
 
                                     if (tableName==SYS_TABLES){
-                                        SetCellValue(iTracRowIncaseOfSkip, index + 1, Utility::GetTableTitleFromSYS_TABLES(Settings.sDatabase, strData1)); //Set the value of the cell from the table value.e
+                                        SetCellValue(iTracRowIncaseOfSkip, index + 1, Utility::GetTableTitleFromSYS_TABLESById(Settings.sDatabase, strData1)); //Set the value of the cell from the table value.e
                                     }
                                     else
                                      {
@@ -251,18 +251,18 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                          }
                                      }
                                 }
-                                else if(Utility::HasFlag(flag,"SELECTION_LINKED_ID")){
+                                else if(Utility::HasFlag(flags,"SELECTION_LINKED_ID")){
 
                                     wxArrayString sArray;
-                                    wxString flags = m_GridArray[index].flags;
+                                    wxString flags = m_GridArray[index].Flags;
                                     flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                    Utility::ExtractSelectionItems(sArray,m_GridArray[index].flags);
+                                    Utility::ExtractSelectionItems(sArray,m_GridArray[index].Flags);
 
                                     wxString tableId = sArray[0];
                                     wxString column = sArray[1];
                                     wxArrayString sTableResult;
-                                    wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
-                                    wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+                                    wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
+                                    wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
                                     strData1.Trim();
                                     if(!strData1.IsEmpty()){
@@ -272,13 +272,11 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
 
                                     }
 
-
-                                   // }
                                 }
                                 else {
                                     SetCellValue(iTracRowIncaseOfSkip, index + 1, strData1); //Set the value of the cell from the table value.
 
-                                    if(Utility::HasFlag(flag,"WEBLINK")){
+                                    if(Utility::HasFlag(flags,"WEBLINK")){
                                         SetCellTextColour(iTracRowIncaseOfSkip, index+1, wxSystemSettings::GetColour(wxSYS_COLOUR_HOTLIGHT));  // hyperlink blue
                                         SetCellFont(iTracRowIncaseOfSkip, index+1, wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT).Underlined()); // underline
                                         Connect(wxEVT_GRID_CELL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
@@ -405,7 +403,7 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 
                                     wxString fieldName = m_GridArray[index].fieldName;
                                     wxString defaultValue = m_GridArray[index].fieldDefault;
-                                    wxString flag = m_GridArray[index].flags;
+                                    wxString flag = m_GridArray[index].Flags;
                                     //wsString strData1 = "";
                                     //strData1 =  res[i][fieldName];
 
@@ -454,15 +452,15 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                                     }
                                     else if(Utility::HasFlag(flag,"SELECTION_LINKED_NAME") ){
                                         wxArrayString sArray;
-                                        wxString flags = m_GridArray[index].flags;
+                                        wxString flags = m_GridArray[index].Flags;
                                         flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                        Utility::ExtractSelectionItems(sArray,m_GridArray[index].flags);
+                                        Utility::ExtractSelectionItems(sArray,m_GridArray[index].Flags);
 
                                         wxString tableName = sArray[0];
                                         wxString fieldName = sArray[1];
 
                                         if (tableName==SYS_TABLES){
-                                            SetCellValue(m_gridRow, index + 1, Utility::GetTableTitleFromSYS_TABLES(Settings.sDatabase, strData1)); //Set the value of the cell from the table value.e
+                                            SetCellValue(m_gridRow, index + 1, Utility::GetTableTitleFromSYS_TABLESById(Settings.sDatabase, strData1)); //Set the value of the cell from the table value.e
                                         }
                                         else
                                         {
@@ -474,15 +472,15 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                                     else if(Utility::HasFlag(flag,"SELECTION_LINKED_ID")){
 
                                         wxArrayString sArray;
-                                        wxString flags = m_GridArray[index].flags;
+                                        wxString flags = m_GridArray[index].Flags;
                                         flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
-                                        Utility::ExtractSelectionItems(sArray,m_GridArray[index].flags);
+                                        Utility::ExtractSelectionItems(sArray,m_GridArray[index].Flags);
 
                                         wxString tableId = sArray[0];
                                         wxString column = sArray[1];
                                         wxArrayString sTableResult;
-                                        wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase,tableId);
-                                        wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase,tableName,column);
+                                        wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
+                                        wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
                                         strData1.Trim();
                                         if(!strData1.IsEmpty()){
@@ -684,7 +682,7 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
 int DBGrid::HasRowDocumentFlag(int iRow) {
 
     for (int i=0;i<m_GridArray.GetCount();i++){
-        if(Utility::HasFlag(m_GridArray[i].flags, "DOCUMENT")){
+        if(Utility::HasFlag(m_GridArray[i].Flags, "DOCUMENT")){
             return i+1;//Because the GridArray doesn't hold the ID of the table, it is generated from the table name automatically.
         }
     }
@@ -728,15 +726,15 @@ void DBGrid::CreateFields()
     if (count>0){
         
         for(int i=0;i<count;i++)
-             SetColLabelValue(i+1, m_GridArray[i].title);
+             SetColLabelValue(i+1, m_GridArray[i].Title);
     }
 }
 void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra )
 {
-    auto *item = new GridItem();
-    item->title = fieldTitle;
+    auto *item = new TableField();
+    item->Title = fieldTitle;
     item->fieldName = field;
-    item->flags = flags;
+    item->Flags = flags;
     item->fieldType = fieldType;
     item->fieldExtra = fieldExtra;
     item->fieldNull = fieldNull;
@@ -800,7 +798,7 @@ void DBGrid::ResizeSpreadSheet()
              int find = wxNOT_FOUND;
              
              if(col>0)
-                 find =m_GridArray[col-1].flags.Find("HIDE");
+                 find =m_GridArray[col-1].Flags.Find("HIDE");
              
              if(col>0 && find != wxNOT_FOUND){
 
@@ -966,7 +964,7 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
     //Both of these will have ID's stored in the table and not the cell values.
     wxString flags;
     if(m_iCol>0) {
-        flags = m_GridArray[m_iCol - 1].flags;
+        flags = m_GridArray[m_iCol - 1].Flags;
 
         if (Utility::HasFlag(flags, "SELECTION_LINKED_ID")) {
             //sValue = itemArray[i].comCtl->GetValue();
@@ -974,13 +972,13 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
             wxArrayString sArray;
             //wxString flags = itemArray[i].flag;
             flags.Replace("SELECTION_LINKED_NAME", "SELECTION");
-            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].flags);
+            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].Flags);
 
             wxString tableId = sArray[0]; //Table ID to the table we need to lookup
             wxString column = sArray[1];
             wxArrayString sTableResult;
-            wxString tableName = Utility::GetTableNameFromSYS_TABLES(Settings.sDatabase, tableId);
-            wxString fieldName = Utility::GetTableFieldNameFromTable(Settings.sDatabase, tableName, column);
+            wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase, tableId);
+            wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase, tableName, column);
 
             // wxString ID;
             Utility::GetTableIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
@@ -1006,7 +1004,7 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
             wxArrayString sArray;
             //wxString flags = m_GridArray[m_iCol-1].flag;
             flags.Replace("SELECTION_LINKED_NAME", "SELECTION");
-            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].flags);
+            Utility::ExtractSelectionItems(sArray, m_GridArray[m_iCol - 1].Flags);
 
             wxString tableName = sArray[0];
             wxString fieldName = sArray[1];
@@ -1175,7 +1173,7 @@ void DBGrid::OnGridClick(wxGridEvent& event )
     SelectRow(row);
 
     if(col>0){
-        wxString flags = m_GridArray[col-1].flags;
+        wxString flags = m_GridArray[col-1].Flags;
 
         if(Utility::HasFlag(flags,"WEBLINK")){
             wxString webLink = GetCellValue(row,col);

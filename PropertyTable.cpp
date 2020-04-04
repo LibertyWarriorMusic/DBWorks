@@ -358,6 +358,9 @@ void PropertyTable::OnMyEvent(MyEvent& event) {
         EditItem(event.m_iRow);
     }
     else if(event.m_bDestroyed){
+
+    }
+    else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
 

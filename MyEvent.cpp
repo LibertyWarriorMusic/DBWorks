@@ -17,6 +17,13 @@ MyEvent::MyEvent( wxWindow* win )
     m_bParseDocument=false;
     m_bShowAll=false;
     m_bImportDatabase=false;
+    m_bStatusMessage=false;
+
+    //Indicators for frames being destroyed.
+    m_bTableDiagramFrameWasDestroyed=false;
+    m_bHelpFrameWasDestroyed=false;
+
+
     m_sTableName="";
     m_sDatabaseName="";
     m_sNewDatabaseName="";
@@ -27,4 +34,5 @@ MyEvent::MyEvent( wxWindow* win )
     m_sQueryToApply="";
     SetEventType( myEVT_MYEVENT );
     SetEventObject( win );
+    m_sData="";
 }

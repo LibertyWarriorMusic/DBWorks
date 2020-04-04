@@ -48,12 +48,19 @@ public:
     static wxString ReplaceStringWithAsterix(wxString str);
     static bool IsReservedMySQLWord(wxString wordToFind);
 
-    //Unicode
+    //Unicode and wxString Conversions
     static void EscapeAscii(wxString& QueryString);
-
+    static int StringToInt(const wxString& stringToConvert);
+    static long StringToLong(const wxString& stringToConvert);
     //Combo loading functions
     static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
     static void DestroyComboDataObjects(wxComboBox *pCombo);
+
+    //Rect and Calc Functions
+    static bool IsPointInRect(wxPoint pt, wxRect rect); // returns true if the point lies inside the rectangle.
+    static wxSize CalcPtInRectOffset(wxPoint pt, wxRect rect); // When you click inside a rect with the mouse, the pt offset from the top left corner of the rect is calculated.
+    static wxRect CalcGridRectThatPtLiesInside(wxPoint pt,wxSize gridSize);// Find the grid rect that the point lies. The grid is fixed on the screen.
+    static wxPoint CalPtSnapToClosestCornerInRect(wxPoint pt, wxRect rect); // Will return the pt at one of the corners of the rect that the point is closest too.
 
     //Parsers
     static wxString PassHTMLDocument(wxString sDocument);
@@ -78,22 +85,33 @@ public:
     static wxDateTime StringToDate(const wxString & str);
     static wxString DateNow();
 
+    //TABLE DATA FUNCTIONS
+    static bool LoadTableData(wxString sDatabase, wxString sTableName, wxString KeyName, wxString &sData, wxString &entireDataString, int &startPosOfData);
+    static bool LoadTableData(wxString sDatabase, wxString sTableName, wxString KeyName, wxString &sData);
+    static void SaveTableData(const wxString& sDatabase, const wxString& sTableName, const wxString& KeyName, wxString data);
+    static void SaveTableDataBulk(wxString sDatabase,wxString sTableName, wxString KeyDataCombination);
+    static wxString GetTableDataString(wxString sDatabase, wxString sTableId);
+
     //DATABASE UTILITIES
     static void CreateDatabase(wxString sDatabaseToCreate);
     static bool CreateSystemTables(wxString sDatabase);
     static bool DoesDatabaseExist(wxString sDatabase);
     //static bool DoesTableExist(wxString sDatabase,wxString sTable);
-    static wxString GetTableNameFromSYS_TABLES(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
-    static wxString GetTableTitleFromSYS_TABLES(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableNameFromSYS_TABLESById(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
+    static wxString GetTableTitleFromSYS_TABLESById(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
     static wxString GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString sTableTitle);
     static wxString GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
-    static wxString GetTableFieldNameFromTable(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+    static wxString GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+
+
     static void GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName, wxString value);
     static void GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value);
+
+
     static void LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArrayString &sArray, long lTableId, wxString sColumnNumber);// Load an StringArray with from a table given the tableId and Column number
     static void LoadStringArrayFromDatabaseTableByName(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName);
-    static void LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray);
-    static void LoadStringArrayWithDatabaseTableNames( wxString sDatabase,  wxArrayString &sArray);
+    static void LoadStringArrayWidthMySQLDatabaseNames( wxArrayString &sArray);
+    static void LoadStringArrayWithMySQLTableNames(wxString sDatabase, wxArrayString &sArray );
     static void ExecuteQuery(const wxString& QueryString); //Execute a query string
     static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
     static bool DoesTableExist(wxString sDatabase, wxString sTableName);
@@ -110,6 +128,12 @@ public:
     static void AppendDBWorksDatabases(wxArrayString &arrayToAppend);
     static void SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
    // static void DestroyFieldItemList(ArrayTableFields &fieldList); // Runs through the list and destroys all the items.
+
+   //UPDATE
+   static void UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxString sTableId, wxString sFieldname, wxString sValue);
+
+    static void LoadStringArrayWithTableNamesFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
+    static void LoadStringArrayWithTableIdsFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
 
 };
 

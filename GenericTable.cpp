@@ -25,13 +25,15 @@
 #include "GenericItemForm.h"
 #include "MyEvent.h"
 #include "DBGrid.h"
-#include "ImagePanel.h"
+#include "Utility.h"
+
+
 #include "GenericTable.h"
 
-#include <wx/arrimpl.cpp>
 
+#include <wx/arrimpl.cpp>
 WX_DEFINE_OBJARRAY(ArrayTableField);
-#include "Utility.h"
+
 
 enum {
     ID_TOOL_ADD= wxID_HIGHEST + 10000,
@@ -75,15 +77,16 @@ void GenericTable::AddField(const wxString& title, const wxString& field, const 
 {
     
     auto * tableField = new TableField();
+
     tableField->fieldName=field;
-    tableField->title=title;
-    tableField->type = type;
-    tableField->flag = flag;
-    tableField->extra = ExtraVal;
-    tableField->key = KeyVal;
-    tableField->nullval=nullVal;
-    tableField->defaultValue = defaultVal;
-    
+    tableField->fieldType = type;
+    tableField->fieldExtra = ExtraVal;
+    tableField->fieldKey = KeyVal;
+    tableField->fieldNull=nullVal;
+    tableField->fieldDefault = defaultVal;
+    tableField->Title=title;
+    tableField->Flags = flag;
+
     m_FieldArray.Add(tableField);
     
 }
@@ -113,9 +116,9 @@ bool GenericTable::Create()
                     for(int index=0;index<count;index++){
                         //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
                         if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
-                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue, m_FieldArray[index].type, m_FieldArray[index].nullval,m_FieldArray[index].key,m_FieldArray[index].extra );
+                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra );
                         else
-                            m_Grid->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].defaultValue, m_FieldArray[index].type, m_FieldArray[index].nullval,m_FieldArray[index].key,m_FieldArray[index].extra);
+                            m_Grid->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra);
                     }
                        
                 }
@@ -333,7 +336,7 @@ void GenericTable::AddItem(long rowID)
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval);
+            formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
@@ -370,7 +373,7 @@ void GenericTable::EditItem(long rowID)
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval );
+            formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull );
     }
 
 
@@ -420,7 +423,7 @@ void GenericTable::ViewItem(long rowID)
         if (count>0){
 
             for(int index=0;index<count;index++)
-                formItem->AddItem(m_FieldArray[index].title,m_FieldArray[index].fieldName,m_FieldArray[index].flag,m_FieldArray[index].type,m_FieldArray[index].defaultValue,m_FieldArray[index].key,m_FieldArray[index].extra,m_FieldArray[index].nullval);
+                formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
         }
 
         formItem->SetUse("VIEW");
@@ -482,6 +485,9 @@ void GenericTable::OnMyEvent(MyEvent& event )
     else if (event.m_bEdit)
         EditItem(event.m_iRow);
     else if(event.m_bDestroyed){
+
+    }
+    else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
     else if (event.m_bParseDocument)
