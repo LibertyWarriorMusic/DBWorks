@@ -15,8 +15,8 @@
 
 #include "global.h"
 #include "Utility.h"
-#include "GenericTable.h"
-#include "DBGrid.h"
+#include "Generic/GenericTable.h"
+#include "Generic/DBGrid.h"
 #include "MyEvent.h"
 #include "HtmlHelp.h"
 
@@ -153,7 +153,7 @@ void PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
 void PropertyTable::AlterTable(int row) {
 
     int num_cols=m_Grid->GetNumberCols();
-
+    wxString msg = MSG_MYSQL_RESERVED_WORD;
     if( num_cols>0) {
         wxString fieldName = "";
         wxString valtype = "";
@@ -168,6 +168,13 @@ void PropertyTable::AlterTable(int row) {
             switch (col) {
                 case 2:
                     fieldName = cellValue;
+                    if(Utility::IsReservedMySQLWord(fieldName)){
+
+                        msg << fieldName;
+                        wxLogMessage(msg);
+
+                        return;
+                    }
                     break;
                 case 3:
                     valtype = cellValue;
@@ -196,11 +203,7 @@ void PropertyTable::AlterTable(int row) {
             }
         }
 
-        if(Utility::IsReservedMySQLWord(fieldName)){
-            wxLogMessage(MSG_MYSQL_RESERVED_WORD + fieldName);
 
-            return;
-        }
 
         wxString previousFieldName="";
 
@@ -255,8 +258,9 @@ wxString PropertyTable::PrepareCreateQuery()
     wxString valkey;
     wxString valdefault;
     wxString extra;
-    
-    
+
+    wxString msg = MSG_MYSQL_RESERVED_WORD;
+
     queryString = "CREATE TABLE IF NOT EXISTS `"+m_sDatabase+"`.`"+m_sGridTableName+"` (";
     queryString += "`"+m_sGridTableName+"Id` INT NOT NULL AUTO_INCREMENT, ";
    
@@ -280,6 +284,13 @@ wxString PropertyTable::PrepareCreateQuery()
                 {
                     case 2:
                         fieldName=cellValue;
+                        if(Utility::IsReservedMySQLWord(fieldName)){
+
+                            msg << fieldName;
+                            wxLogMessage(msg);
+
+                            return "";
+                        }
                         break;
                     case 3:
                         valtype=cellValue;
@@ -308,6 +319,8 @@ wxString PropertyTable::PrepareCreateQuery()
                         break;
                     
                 }
+
+
         }
             queryString += fieldName + "` " + valtype + valnull + " " + valkey + " " + valdefault + " " + extra + ",";
             //Update the string

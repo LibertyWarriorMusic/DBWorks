@@ -13,7 +13,6 @@ class MyEvent : public wxEvent
     wxString m_sTableId;
     wxString m_sDatabaseName;
     wxString m_sNewDatabaseName;
-    long m_lTableID;//Remove this one
 
     //These flags indicate which context menu we came from
     bool m_bTableFieldDefinitions;

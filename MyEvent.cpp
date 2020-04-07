@@ -26,7 +26,6 @@ MyEvent::MyEvent( wxWindow* win )
     m_sTableName="";
     m_sDatabaseName="";
     m_sNewDatabaseName="";
-    m_lTableID=0;
     m_cellValue=""; // The value of the current clicked cell.
     m_cellFieldName=""; // The field name for that cell
     m_sWhereCondition="";

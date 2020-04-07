@@ -40,10 +40,10 @@ public:
     static wxString Replace(wxString searchString, wxString Old, wxString New, bool all=true);
     static double CalculateProgressStepsforImport(int iCount);
     static void ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch);
-    static void ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag);
-    static void ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag);
-    static void ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag);
-    static void ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag);
+    static bool ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables=false);
+    static bool ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables=false);
+    static bool ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables=false);
+    static bool ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables=false);
     static bool HasFlag(wxString flags, wxString flag);
     static wxString ReplaceStringWithAsterix(wxString str);
     static bool IsReservedMySQLWord(wxString wordToFind);
@@ -51,6 +51,7 @@ public:
     //Unicode and wxString Conversions
     static void EscapeAscii(wxString& QueryString);
     static int StringToInt(const wxString& stringToConvert);
+    static wxString IntToString(const int & num);
     static long StringToLong(const wxString& stringToConvert);
     //Combo loading functions
     static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
@@ -100,12 +101,12 @@ public:
     static wxString GetTableNameFromSYS_TABLESById(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
     static wxString GetTableTitleFromSYS_TABLESById(wxString sDatabase, wxString sTableId); // Loads an array with all values from a table given TableId and ColumnNumber
     static wxString GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString sTableTitle);
-    static wxString GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
+    static wxString GetTableIdFromSYS_TABLESByTableName(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
     static wxString GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
 
 
     static void GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName, wxString value);
-    static void GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value);
+    static bool GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value);
 
 
     static void LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArrayString &sArray, long lTableId, wxString sColumnNumber);// Load an StringArray with from a table given the tableId and Column number
@@ -132,7 +133,7 @@ public:
    //UPDATE
    static void UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxString sTableId, wxString sFieldname, wxString sValue);
 
-    static void LoadStringArrayWithTableNamesFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
+    static void LoadStringArrayWithTableNamesFromSysTables( wxString sDatabase,  wxArrayString &sArray, bool HiddenTablesOnly = false);//Gets all the tables in the database, NOT from sys_tables;
     static void LoadStringArrayWithTableIdsFromSysTables( wxString sDatabase,  wxArrayString &sArray);//Gets all the tables in the database, NOT from sys_tables;
 };
 

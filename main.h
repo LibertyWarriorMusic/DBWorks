@@ -41,7 +41,7 @@ class MainFrame : public wxFrame
 
         GenericItemForm *m_FormItem{};
         void OpenForm(wxString sTableName, wxString sTableID); //Open the user data form
-        void OpenEditForm(int sRow); //Open the user data form
+        void OpenEditForm(wxString sTableId); //Open the user data form
         bool CheckCreateDatabase(wxString sDatabase);
         static void ExecuteQuery(const wxString& queryString); //Execute a query string
         wxString PrepareDeleteQuery(wxString sTable); //Prepare the delete query

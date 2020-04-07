@@ -26,13 +26,13 @@
 #include "Utility.h"
 #include "global.h"
 #include "MyEvent.h"
-#include "GenericItemForm.h"
-#include "DBGrid.h"
-#include "GenericTable.h"
+#include "Generic/GenericItemForm.h"
+#include "Generic/DBGrid.h"
+#include "Generic/GenericTable.h"
 #include "PropertyTable.h"
-#include "myProgressControl.h"
-#include "ImportMySQLDatabase.h"
-#include "TableDiagramFrame.h"
+#include "CustomControls/myProgressControl.h"
+#include "Dialog/ImportMySQLDatabase.h"
+#include "TableDefDiagram/TableDiagramFrame.h"
 
 
 //#include "ObTableDiagram.h"
@@ -1198,12 +1198,10 @@ void MainFrame::LoadGrid()
     }
 
 
-
-
     //Create the spread sheet grid
     m_MainGrid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
     m_MainGrid->AddItem("Title","title","","","","","","");
-    m_MainGrid->AddItem("Tablename","tablename","","","","","","");
+    m_MainGrid->AddItem("Tablename *","tablename","","","","","","");
     m_MainGrid->AddItem("Type of Table","tabletype","","","","","","");
     m_MainGrid->AddItem("Comments","comments","","","","","","");
     m_MainGrid->CreateFields();
@@ -1370,7 +1368,7 @@ void MainFrame::OnbAddItem( wxCommandEvent& event ) {
 
 
 }
-void MainFrame::OpenEditForm(int sRow) {
+void MainFrame::OpenEditForm(wxString sTableId) {
 
     // wxPoint(100,100),
     // wxSize(500,410),
@@ -1379,7 +1377,7 @@ void MainFrame::OpenEditForm(int sRow) {
 
     //Define the database
     m_FormItem->AddItem("Title","title","","","","","","");
-    m_FormItem->AddItem("Tablename","tablename","","","","","","");
+    m_FormItem->AddItem("Tablename *","tablename","","","","","","");
     m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user","","","");
     m_FormItem->AddItem("Comments","comments","MULTILINE","","","","","");
 
@@ -1388,11 +1386,9 @@ void MainFrame::OpenEditForm(int sRow) {
     m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
 
 
+    SetStatusText(sTableId);
 
-    wxString spasswordId = m_MainGrid->GetCellValue(sRow,0);
-    SetStatusText(spasswordId);
-
-    m_FormItem->SetID(spasswordId);
+    m_FormItem->SetID(sTableId);
     m_FormItem->Show(true);
     m_FormItem->LoadFields();
     SetStatusText("Edit Item");
@@ -1413,7 +1409,8 @@ void MainFrame::OnbEditItem( wxCommandEvent& event )
 
         if (size == 1) {
             int row = rowsSelected[0];
-            OpenEditForm(row);
+            wxString sTableId = m_MainGrid->GetCellValue(row,0);
+            OpenEditForm(sTableId);
         }
     }
 }
@@ -1784,7 +1781,9 @@ void MainFrame::OnbHelp( wxCommandEvent& event )
 //We can send a message to the parent that this window is destroyed.
 bool MainFrame::Destroy()
 {
-    //Safely destroy any window that is open so your program doesn't crash on close.
+    //Safely destroy any window that are open so your program doesn't crash on close.
+    // If you have a frames window open and you close the main app window, the program will crash on close because
+    // you need to destroy all the open windows before you destroy the main frame.
 
     //This is where we need to shut down any windows that are open.
     if (m_TableForm != nullptr)
@@ -1796,7 +1795,10 @@ bool MainFrame::Destroy()
     if(m_pFilters != nullptr)
         m_pFilters->Destroy();
 
-    //Always do this last
+    if(m_pTableDiagaram != nullptr)
+        m_pTableDiagaram->Destroy();
+
+    //Always do this last, only destroy the main frame when all open windows are destroyed. 
     bool bResult = wxFrame::Destroy();
     return bResult;
 }
@@ -1839,15 +1841,12 @@ void MainFrame::OnOpenTableDiagram(wxCommandEvent& event)
 {
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
     // be pointing to garbage memory and the program will crash if you try and call Destroy().
- //   if(m_pTableDiagaram != nullptr)
-  //      m_pTableDiagaram->Destroy();
 
     if(m_pTableDiagaram != nullptr)
         m_pTableDiagaram->Destroy();
 
 
     m_pTableDiagaram = new TableDiagramFrame((TableDiagramFrame*) this, -1, "Table Diagram Definitions", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE);
-   // m_pTableDiagaram->AttachPanel(m_TableDiagramPanel);
     LoadTableObjects();
     m_pTableDiagaram->Show(true);
 
@@ -1882,7 +1881,7 @@ void MainFrame::OpenTableDefinitions(wxString sTableName)
         m_TableForm = nullptr;
     }
 
-    wxString sTabldId= Utility::GetTableIdFromSYS_TABLES(Settings.sDatabase,sTableName);
+    wxString sTabldId= Utility::GetTableIdFromSYS_TABLESByTableName(Settings.sDatabase,sTableName);
     // Instead of opening contacts, we are going to open the generic form table.
     m_TableForm = new PropertyTable((wxFrame*) this, -1, " Table Field Definitions: "+sTableName,wxDefaultPosition,wxDefaultSize,(unsigned)wxDEFAULT_FRAME_STYLE);
 
@@ -1924,25 +1923,38 @@ void MainFrame::OnMyEvent(MyEvent& event)
         OpenTableDefinitions(event.m_sTableName);
     }
     else if(event.m_bOpen){
-        wxString TableID;
-        TableID<< event.m_lTableID;
-        OpenForm(event.m_sTableName,TableID);
+        OpenForm(event.m_sTableName,event.m_sTableId);
     }
     else if(event.m_bEdit){
-        wxString TableID;
-        TableID<< event.m_lTableID;
-        OpenEditForm(event.m_iRow);
+        OpenEditForm(event.m_sTableId);
+    }
+    else if(event.m_bHelpFrameWasDestroyed){
+        m_pTableDiagaram = nullptr;
     }
     else if(event.m_bDestroyed){
 
+
+        // If we have the diagram open, reload it incase we change an entry in the field definition.
+        // At some stage, we will simply want to update the effected table, not reload the entire diagram.
+        if(m_pTableDiagaram!= nullptr && m_TableForm!= nullptr)
+            LoadTableObjects();
+
         //This needs to be changed because you might have two or more windows open, a help, table definitions, a table diagram and you don't want to null all of them.
         //What you need is extra flags in the event to identify which pointers you need to null.
+
+
+
         m_TableForm = nullptr;
+
+
         //m_ImportMySQLForm = nullptr; // This if fine here, you don't want to keep this window open after you import it.
         m_pFilters = nullptr;
         
         if(Settings.bAutoCheckDefinitions)
             wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
+
+
+
     }
     else if(event.m_bTableDiagramFrameWasDestroyed){
         m_pTableDiagaram = nullptr; //NOT SURE YET, you might want to keep it open
@@ -1950,10 +1962,6 @@ void MainFrame::OnMyEvent(MyEvent& event)
     else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
-   // else if(event.m_bImportDatabase){
-
-
-   // }
     else if(event.m_bStatusMessage){
         SetStatusText(event.m_sData);
     }
@@ -1965,7 +1973,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
         if(!event.m_sWhereCondition.IsEmpty()){
             SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
             SetGridWhereCondition(event.m_sWhereCondition);
-            Refresh();
+            Refresh(true);
 
         }else{
             //If the events where condition is empty, then see if we have a stored where condition.
@@ -1973,7 +1981,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
                 SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
             }
             SetGridWhereCondition(GetCurrentStoredWhereCondition());
-            Refresh();
+            Refresh(true);
         }
 
     }

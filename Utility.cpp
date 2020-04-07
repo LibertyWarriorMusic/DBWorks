@@ -6,7 +6,7 @@
 
 #include <wx/stdpaths.h>
 #include "global.h"
-#include "myProgressControl.h"
+#include "CustomControls/myProgressControl.h"
 
 #include <mysql.h>
 #include <mysql++.h>
@@ -136,6 +136,10 @@ wxRect Utility::CalcGridRectThatPtLiesInside(wxPoint pt,wxSize gridSize)
 
 int Utility::StringToInt(const wxString& stringToConvert)
 {
+ //   if(stringToConvert.IsEmpty())
+     //   return 0;
+
+
     long value;
     if(!stringToConvert.ToLong(&value)) {
         wxLogMessage("Error converting string to int");
@@ -151,6 +155,12 @@ long Utility::StringToLong(const wxString& stringToConvert)
     return  value;
 }
 
+wxString Utility::IntToString(const int & num)
+{
+    wxString sNum;
+    sNum << num;
+    return sNum;
+}
 bool Utility::CreateSystemTables(wxString sDatabase)
 {
     //Check to see if the database was created.
@@ -214,6 +224,35 @@ bool Utility::CreateSystemTables(wxString sDatabase)
                     " `title` varchar(100) DEFAULT NULL,"
                     " `flags` varchar(200) DEFAULT NULL,"
                     "PRIMARY KEY (`sys_fieldsId`)"
+                    ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+
+        }
+
+        if(!DoesTableExist(sDatabase,"sys_diagrams")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+            //wxFile file("SQL/createsysfields.sql");
+            //file.ReadAll(&query,wxConvUTF8);
+
+
+            //Option 2 Load from table sys_docs.
+            //query = Utility::LoadSystemDocument(Settings.iSysFieldsDocID);
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `sys_diagrams` ("
+                    "`sys_diagramsId` int NOT NULL AUTO_INCREMENT,"
+                    " `name` int NOT NULL,"
+                    " `xPosition` int NOT NULL,"
+                    " `yPosition` int NOT NULL,"
+                    " `width` int NOT NULL,"
+                    " `height` int NOT NULL,"
+                    " `diagram_data` text,"
+                    "PRIMARY KEY (`sys_diagramsId`)"
                     ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
 
             if(!query.IsEmpty())
@@ -613,6 +652,10 @@ bool Utility::IsCustomUser()
 //NOTE this only processes one line of text, there should be no returns in the passing string.
 void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSearch)
 {
+
+    if(sToSearch.IsEmpty())
+        return;
+
   wxString found;
   int position=0;
   int countSelection=0;
@@ -715,7 +758,10 @@ void Utility::ExtractSelectionItems(wxArrayString &sArray, const wxString& sToSe
 
 //This function will look at the sFlag, it will contain the value SELECTION_LOOKUP_ID{tableID;ColumnNumber;}
 // Once we extract the tableID and ColumnNumber, we load the array with values having the columnNumber
-void Utility::ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag) {
+bool Utility::ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables) {
+
+    if(sFlag.IsEmpty()|| sFlag.Find("SELECTION_LOOKUP_ID")==wxNOT_FOUND)
+        return false;
 
     //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LOOKUP_ID to SELECTION
     wxArrayString flagContents;
@@ -724,6 +770,13 @@ void Utility::ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFla
     ExtractSelectionItems(flagContents,sFlag);
 
     if(flagContents.GetCount()>0){
+
+        if(bExtractListVariables)
+        {
+            sArray=flagContents;
+            return true;
+        }
+
         long TableId;
         flagContents[0].ToLong(&TableId);
 
@@ -731,8 +784,13 @@ void Utility::ExtractSelectionLookupItemsID(wxArrayString &sArray, wxString sFla
        // flagContents[1].ToLong(&ColumnNumber);
         LoadStringArrayFromDatabaseTableByID(Settings.sDatabase, sArray,TableId,flagContents[1]);
     }
+
+    return true;
 }
-void Utility::ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag) {
+bool Utility::ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables) {
+
+    if(sFlag.IsEmpty() || sFlag.Find("SELECTION_LOOKUP_NAME")==wxNOT_FOUND)
+        return false;
 
     //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LOOKUP_ID to SELECTION
     wxArrayString flagContents;
@@ -741,13 +799,24 @@ void Utility::ExtractSelectionLookupItemsName(wxArrayString &sArray, wxString sF
     ExtractSelectionItems(flagContents,sFlag);
 
     if(flagContents.GetCount()>0){
+
+        if(bExtractListVariables)
+        {
+            sArray=flagContents;
+            return true;
+        }
+
         LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, sArray,flagContents[0],flagContents[1]);
     }
+    return true;
 }
 
 //This function will look at the sFlag, it will contain the value SELECTION_LINKED_ID{tableID;ColumnNumber;}
 // Once we extract the tableID and ColumnNumber, we load the array with values having the columnNumber
-void Utility::ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag) {
+bool Utility::ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables) {
+
+    if(sFlag.IsEmpty() || sFlag.Find("SELECTION_LINKED_ID")==wxNOT_FOUND)
+        return false;
 
     //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LINKED_ID to SELECTION
     wxArrayString flagContents;
@@ -756,6 +825,13 @@ void Utility::ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFla
     ExtractSelectionItems(flagContents,sFlag);
 
     if(flagContents.GetCount()>0){
+
+        if(bExtractListVariables)
+        {
+            sArray=flagContents;
+            return true;
+        }
+
         long TableId;
         flagContents[0].ToLong(&TableId);
 
@@ -763,8 +839,12 @@ void Utility::ExtractSelectionLinkedItemsID(wxArrayString &sArray, wxString sFla
        // flagContents[1].ToLong(&ColumnNumber);
         LoadStringArrayFromDatabaseTableByID(Settings.sDatabase, sArray,TableId,flagContents[1]);
     }
+    return true;
 }
-void Utility::ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag) {
+bool Utility::ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sFlag, bool bExtractListVariables) {
+
+    if(sFlag.IsEmpty()|| sFlag.Find("SELECTION_LINKED_NAME")==wxNOT_FOUND)
+        return false;
 
     //We can extract the tableID and ColumnNumber using Utility::ExtractSelection if we change SELECTION_LINKED_ID to SELECTION
     wxArrayString flagContents;
@@ -776,8 +856,16 @@ void Utility::ExtractSelectionLinkedItemsName(wxArrayString &sArray, wxString sF
     wxString fieldName = flagContents[1];
 
     if(flagContents.GetCount()>0){
+
+        if(bExtractListVariables)
+        {
+            sArray=flagContents;
+            return true;
+        }
+
         LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, sArray,flagContents[0],flagContents[1]);
     }
+    return true;
 }
 
 bool Utility::HasFlag(wxString flags, wxString flag)
@@ -1082,7 +1170,7 @@ wxString Utility::GetTableTitleFromSYS_TABLESById(wxString sDatabase, wxString s
     return "";
 }
 
-wxString Utility::GetTableIdFromSYS_TABLES(wxString sDatabase, wxString sTableName)
+wxString Utility::GetTableIdFromSYS_TABLESByTableName(wxString sDatabase, wxString sTableName)
 {
 
     wxString database(sDatabase);
@@ -1525,8 +1613,11 @@ void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
     }
 }
 
-void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value)
+bool Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value)
 {
+    if(sDatabase.IsEmpty() || sTableName.IsEmpty() || sFieldName.IsEmpty() || value.IsEmpty() ||  value=="NULL") //We need to do this more often.
+        return false;
+
     wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
@@ -1559,6 +1650,7 @@ void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayStrin
                 try {
                     wxString strData(res[currentRow][sFieldToGet], wxConvUTF8);
                     sArray.Add(strData);
+                    return true;
                 }
                 catch (int& num) {
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);
@@ -1574,7 +1666,7 @@ void Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayStrin
         wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
-
+    return false;
 }
 
 
@@ -2131,7 +2223,8 @@ void Utility::LoadStringArrayWithTableIdsFromSysTables(wxString sDatabase, wxArr
 //First we need to find the tablename from the SYS_TABLES table having lTableId.
 //Then we need to find the field name correcsponding with lcolumnNumber.
 // Once we have the tablename and field name, we can load the table.
-void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxArrayString &sArray ){
+// If HiddenTablesOnly is true, then only tables with having the table_data attribute ObTableShow as no will be listed.
+void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxArrayString &sArray , bool HiddenTablesOnly ){
 
     wxString database(sDatabase);
     wxString server(Settings.sServer);
@@ -2147,7 +2240,7 @@ void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxA
                      (const_cast<char*>((const char*)pass.mb_str())))) {
 
         //SetStatusText("Database Connected");
-        wxString QueryString = "select tablename from sys_tables";
+        wxString QueryString = "select tablename, table_data from sys_tables";
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
 
@@ -2162,11 +2255,25 @@ void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxA
 
                 try {
                     wxString strData(res[currentRow]["tablename"], wxConvUTF8);
+                    wxString tableData(res[currentRow]["table_data"], wxConvUTF8);
+
+                    wxString sData = tableData;
+
+                    sData=sData.Lower();
+                    if(sData=="null")
+                        tableData="";
 
                     //NOTE We don't want to load system tables, they will be in the database, however we
                     // don't wan't the user to see them in the table definitions.
                     // If we ever create more system tables, we need to reject them here.
-                    sArray.Add(strData);
+                    // If no data has been set, we wat to list the table.
+                    if(tableData.IsEmpty() || !HiddenTablesOnly){
+                        sArray.Add(strData);
+                    } else{
+                        int pos = tableData.Find("<key:ObTableShow>no</key>");
+                        if(pos!=wxNOT_FOUND)
+                            sArray.Add(strData);
+                    }
                 }
                 catch (int& num) {
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);
@@ -2250,7 +2357,7 @@ wxString Utility::CreateTable(wxString sDatabase, wxString sTableName, ArrayTabl
 
     ExecuteQuery(sDatabase,queryString);
 
-    return Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+    return Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName);
 }
 
 //Will need to describe the table and fill the m_fields
@@ -2340,7 +2447,7 @@ wxString Utility::InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableNam
 {
    wxString QueryString = "INSERT INTO sys_tables (title,tablename,tabletype,comments) VALUES ('"+sTableName+"','"+sTableName+"','user_imported','')";
    ExecuteQuery(sDatabase,QueryString);
-   return GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+   return GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName);
 
 }
 
@@ -2547,7 +2654,7 @@ bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString Ke
 {
 
     //STEP 1: Get the data from the sys_tables field.
-    wxString    tableData = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName));
+    wxString    tableData = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName));
 
 
 
@@ -2582,7 +2689,7 @@ bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString Ke
 {
     //STEP 1: Get the data from the sys_tables field.
 
-    entireDataString = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName));
+    entireDataString = GetTableDataString(sDatabase,Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName));
 
     //STEP 2: Search for <key:KeyName> to find the position
 
@@ -2632,7 +2739,7 @@ void Utility::SaveTableData(const wxString& sDatabase, const wxString& sTableNam
         wxString field = "table_data";
 
         //Update the database table sys_fields
-        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName);
         UpdateTableFieldById(sDatabase,table,sTableId,field,entireDataStringToWriteBack);
     }
     else{
@@ -2640,7 +2747,7 @@ void Utility::SaveTableData(const wxString& sDatabase, const wxString& sTableNam
         //Update the database table sys_fields
         wxString dataToUpdata;
         dataToUpdata = entireDataString+"<key:"+KeyName+">"+newData+"</key>";
-        wxString sTableId = Utility::GetTableIdFromSYS_TABLES(sDatabase,sTableName);
+        wxString sTableId = Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,sTableName);
         UpdateTableFieldById(sDatabase,"sys_tables",sTableId,"table_data",dataToUpdata);
 
     }
