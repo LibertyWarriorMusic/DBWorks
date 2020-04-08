@@ -66,6 +66,7 @@ enum {
     ID_TOOL_DELETE,
     ID_TOOL_VIEW,
     ID_TOOL_FILTER,
+    ID_TOOL_FORM_QUERIES,
     ID_HELP,
     ID_AUTO_CHECK_DEFINITION,
     ID_OPEN_TABLE_DIAGRAM
@@ -85,6 +86,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TOOL(ID_TOOL_DELETE, MainFrame::OnbDeleteItem)
     EVT_TOOL(ID_TOOL_VIEW, MainFrame::OnbViewItem)
     EVT_TOOL(ID_TOOL_FILTER, MainFrame::OnbFilter)
+    EVT_TOOL(ID_TOOL_FORM_QUERIES, MainFrame::OnbFormQuery)
     EVT_TOOL(ID_HELP, MainFrame::OnbHelp)
     EVT_TOOL(ID_AUTO_CHECK_DEFINITION, MainFrame::OnAutoCheckDefinitions)
     EVT_TOOL(ID_OPEN_TABLE_DIAGRAM, MainFrame::OnOpenTableDiagram)
@@ -1014,7 +1016,11 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
 
         Utility::LoadBitmap(BitMap,"filter.png");
-        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define filters for your tables."));
+        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters for single table lookups."));
+
+        Utility::LoadBitmap(BitMap,"formQueries.png");
+        m_Toolbar1->AddTool(ID_TOOL_FORM_QUERIES, wxT("Form Query."), BitMap, wxT("Design queries that forms will be based."));
+
 
         //Create the checkbox for auto check definitions to tables
         if(Utility::IsSystemDatabaseDeveloper()){
@@ -1345,6 +1351,35 @@ void MainFrame::SaveFileAs(wxCommandEvent& WXUNUSED(event))
 void MainFrame::Quit(wxCommandEvent& WXUNUSED(event))
 {
     Close(TRUE); // Close the window
+}
+
+void MainFrame::OnbFormQuery( wxCommandEvent& event )
+{
+    m_pFilters = new GenericTable((wxFrame*) this, -1,"Form Query Definitions",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+    m_pFilters->SetTableDefinition("usr_queries", "User Queries", "","");// We will grab this from our form.
+
+    if (m_pFilters != nullptr){
+
+        //m_pFilters->SetGridTableName("usr_filters");
+
+        // wxString linkID;
+        // linkID << event.m_lTableID;
+
+        m_pFilters->SetTableDefinition("usr_queries", "User Queries", "Select a query.","");
+        //Add the field items
+        m_pFilters->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_pFilters->AddField("Form Query Name *","queryName","varchar(255)","","","","","");
+        m_pFilters->AddField("Query Definition","queryDefinition","text","MULTILINE","","","","");
+        m_pFilters->AddField("Description","description","text","MULTILINE","","","","");
+
+        m_pFilters->Create();// Create the table.
+        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+        m_pFilters->HideIDColumn();
+        m_pFilters->Show(true);
+
+
+    }
 }
 
 void MainFrame::OnbAddItem( wxCommandEvent& event ) {
@@ -1721,11 +1756,10 @@ void MainFrame::OnbFilter( wxCommandEvent& event ) {
         //Add the field items
         m_pFilters->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
 
-        m_pFilters->AddField("ID","usr_filtersId","int","HIDE-READONLY","","","",""); // This is the linking ID
         m_pFilters->AddField("Filter Name *","filterName","varchar(255)","","","","","");
-        m_pFilters->AddField("Query Definition","queryDefinition","text","MULTILINE","","","","");
-        m_pFilters->AddField("Associated TableId","associatedTableId","int","SELECTION_LINKED_NAME{sys_tables;Title;} - READONLY","","","","");
-        m_pFilters->AddField("Description","description","text","","MULTILINE","","","");
+        m_pFilters->AddField("Filter Definition","queryDefinition","text","MULTILINE","","","","");
+        m_pFilters->AddField("Associated Table","associatedTableId","int","SELECTION_LINKED_NAME{sys_tables;Title;} - READONLY","","","","");
+        m_pFilters->AddField("Description","description","text","MULTILINE","","","","");
 
         m_pFilters->Create();// Create the table.
         //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here

@@ -308,6 +308,26 @@ bool Utility::CreateSystemTables(wxString sDatabase)
 
         }
 
+        if(!DoesTableExist(sDatabase,"usr_queries")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `usr_queries` ("
+                    "`usr_queriesId` int NOT NULL AUTO_INCREMENT,"
+                    "`queryName` varchar(255) NOT NULL,"
+                    "`queryDefinition` text NOT NULL,"
+                    "`description` text NOT NULL,"
+                    "PRIMARY KEY (`usr_queriesId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
     }
     else{
         return false;

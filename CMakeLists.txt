@@ -12,6 +12,7 @@ set(SOURCE_FILES
         Generic/DBGrid.cpp
         Generic/GenericItemForm.cpp
         Generic/GenericTable.cpp
+        Generic/GenericQueryGrid.cpp
         CustomControls/myProgressControl.cpp
         TableDefDiagram/DiagramFrame.cpp
         TableDefDiagram/ObTablePanel.cpp

@@ -102,6 +102,7 @@ class MainFrame : public wxFrame
         void OnAutoCheckDefinitions(wxCommandEvent& event);
         void OnOpenTableDiagram(wxCommandEvent& event);
         void OnbHelp( wxCommandEvent& event );
+        void OnbFormQuery( wxCommandEvent& event );
         void OnDeleteCurrentDatabase( wxCommandEvent& event );
         static void CreateToolBars();
         void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);

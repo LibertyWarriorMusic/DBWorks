@@ -244,3 +244,4 @@ WX_DECLARE_OBJARRAY(TableField, ArrayGridItem); //Used in DBGrid class
 WX_DECLARE_OBJARRAY(FieldCtlItem,ArrayFieldDataCtls); // Used in DialogbaseClass
 WX_DECLARE_OBJARRAY(TableLinkageLine, ArrayTableLinkageLine); //Used in GenericItemForm class
 WX_DECLARE_OBJARRAY(ObTable, ArrayDrawObjects); //Used in ObTablePanel class
+WX_DECLARE_OBJARRAY(TableField, ArrayQueryField); //Used in Generic Query Grid

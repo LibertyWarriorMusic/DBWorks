@@ -14,7 +14,8 @@ Files="myProgressControl.cpp ObTable.cpp
 ObTablePanel.cpp DBGrid.cpp
 GenericItemForm.cpp ImagePanel.cpp MyEvent.cpp
 GenericTable.cpp PropertyTable.cpp main.cpp Utility.cpp HtmlHelp.cpp
-ImportMySQLDatabase.cpp DialogBaseClass.cpp DialogTemplate.cpp DlgTableSelect.cpp"
+ImportMySQLDatabase.cpp DialogBaseClass.cpp GenericQueryGrid.cpp
+DialogTemplate.cpp DlgTableSelect.cpp"
 
 
 echo Making Database Works, please wait.....

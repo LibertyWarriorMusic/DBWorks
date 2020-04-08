@@ -27,11 +27,11 @@
 #include "../Utility.h"
 
 #include "DBGrid.h"
-#include "GenericTable.h"
+#include "GenericQueryGrid.h"
 
 
 #include <wx/arrimpl.cpp>
-WX_DEFINE_OBJARRAY(ArrayTableField);
+WX_DEFINE_OBJARRAY(ArrayQueryField);
 
 
 enum {
@@ -43,20 +43,20 @@ enum {
 
 };
 
-wxBEGIN_EVENT_TABLE(GenericTable, wxFrame)
-    EVT_MYEVENT(GenericTable::OnMyEvent)
-    EVT_TOOL(ID_TOOL_ADD, GenericTable::OnbAddItem)
-    EVT_TOOL(ID_TOOL_EDIT, GenericTable::OnbEditItem)
-    EVT_TOOL(ID_TOOL_DELETE, GenericTable::OnbDeleteItem)
-    EVT_TOOL(ID_TOOL_VIEW, GenericTable::OnbViewItem)
-    EVT_TOOL(ID_HELP, GenericTable::OnbHelp)
+wxBEGIN_EVENT_TABLE(GenericQueryGrid, wxFrame)
+    EVT_MYEVENT(GenericQueryGrid::OnMyEvent)
+    EVT_TOOL(ID_TOOL_ADD, GenericQueryGrid::OnbAddItem)
+    EVT_TOOL(ID_TOOL_EDIT, GenericQueryGrid::OnbEditItem)
+    EVT_TOOL(ID_TOOL_DELETE, GenericQueryGrid::OnbDeleteItem)
+    EVT_TOOL(ID_TOOL_VIEW, GenericQueryGrid::OnbViewItem)
+    EVT_TOOL(ID_HELP, GenericQueryGrid::OnbHelp)
 wxEND_EVENT_TABLE()
 
 //=============
 // MyFrame Class Methods
 //
 
-GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+GenericQueryGrid::GenericQueryGrid( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
     m_StatusBar = nullptr;
     m_Close = nullptr;
@@ -72,7 +72,7 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
 }
 
 
-void GenericTable::AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag, const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal)
+void GenericQueryGrid::AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag, const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal)
 {
     
     auto * tableField = new TableField();
@@ -89,7 +89,7 @@ void GenericTable::AddField(const wxString& title, const wxString& field, const 
     m_FieldArray.Add(tableField);
     
 }
-bool GenericTable::Create()
+bool GenericQueryGrid::Create()
 {
     
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
@@ -154,7 +154,7 @@ bool GenericTable::Create()
 
 
     //Attache handlers to buttons
-    m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericTable::OnbExitApp ), nullptr, this );
+    m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericQueryGrid::OnbExitApp ), nullptr, this );
 
     //Set the grid settings
     m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
@@ -226,7 +226,7 @@ bool GenericTable::Create()
         m_txtFilter->SetLabel("Filters ");
         m_ComboFilter = new wxComboBox( m_Toolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
         m_ComboFilter->SetSize(260,-1);
-        m_ComboFilter->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( GenericTable::OnUserGroupComboChange ), nullptr, this );
+        m_ComboFilter->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( GenericQueryGrid::OnUserGroupComboChange ), nullptr, this );
 
         //This is the default search.
         m_ComboFilter->Append("Show All");
@@ -259,7 +259,7 @@ bool GenericTable::Create()
     
 }
 
-void GenericTable::OnUserGroupComboChange(wxCommandEvent& event)
+void GenericQueryGrid::OnUserGroupComboChange(wxCommandEvent& event)
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
     wxString selection = combo->GetStringSelection();
@@ -288,32 +288,32 @@ void GenericTable::OnUserGroupComboChange(wxCommandEvent& event)
     }
 }
 
-void GenericTable::HideIDColumn()
+void GenericQueryGrid::HideIDColumn()
 {
     m_Grid->HideCol(0);
 }
-void GenericTable::SetIDTitleName(wxString sTitle)
+void GenericQueryGrid::SetIDTitleName(wxString sTitle)
 {
     m_Grid->SetColLabelValue(0,sTitle);
 }
-void GenericTable::OnbExitApp(wxCommandEvent& event)
+void GenericQueryGrid::OnbExitApp(wxCommandEvent& event)
 {
     Close(true);
 }
 
-GenericTable::~GenericTable()
+GenericQueryGrid::~GenericQueryGrid()
 {
 
     // Disconnect button handlers
     if (m_Close != nullptr)
-        m_Close->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericTable::OnbExitApp ), nullptr, this );
+        m_Close->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericQueryGrid::OnbExitApp ), nullptr, this );
 
     m_FieldArray.Empty();
     
 }
 
 //Button Handle functions
-void GenericTable::OnbAddItem( wxCommandEvent& event )
+void GenericQueryGrid::OnbAddItem( wxCommandEvent& event )
 {
     //wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
     //int size = rowsSelected.size();
@@ -324,7 +324,7 @@ void GenericTable::OnbAddItem( wxCommandEvent& event )
    // }
 
 }
-void GenericTable::AddItem(long rowID)
+void GenericQueryGrid::AddItem(long rowID)
 {
 
     formItem = new GenericItemForm((wxFrame*) this, -1,"Add Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP| (unsigned)wxRESIZE_BORDER);
@@ -351,7 +351,7 @@ void GenericTable::AddItem(long rowID)
 
 }
 
-void GenericTable::OnbEditItem( wxCommandEvent& event )
+void GenericQueryGrid::OnbEditItem( wxCommandEvent& event )
 {
     wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
     int size = rowsSelected.size();
@@ -361,7 +361,7 @@ void GenericTable::OnbEditItem( wxCommandEvent& event )
         EditItem(row);
     }
 }
-void GenericTable::EditItem(long rowID)
+void GenericQueryGrid::EditItem(long rowID)
 {
 
     m_iTempRowIndex = rowID; // Save the row so we now what to refresh.
@@ -392,7 +392,7 @@ void GenericTable::EditItem(long rowID)
 
 }
 
-void GenericTable::OnbViewItem( wxCommandEvent& event )
+void GenericQueryGrid::OnbViewItem( wxCommandEvent& event )
 {
     wxArrayInt rowsSelected = m_Grid->GetSelectedRows();
     int size = rowsSelected.size();
@@ -403,7 +403,7 @@ void GenericTable::OnbViewItem( wxCommandEvent& event )
     }
 }
 
-void GenericTable::ViewItem(long rowID)
+void GenericQueryGrid::ViewItem(long rowID)
 {
 
     // wxPoint(100,100),
@@ -442,7 +442,7 @@ void GenericTable::ViewItem(long rowID)
     }
 }
 //Runs through all the selectd rows on the grid and deletes the entries from the database.
-void GenericTable::OnbDeleteItem( wxCommandEvent& event )
+void GenericQueryGrid::OnbDeleteItem( wxCommandEvent& event )
 {
 
     auto *dlg = new wxMessageDialog(nullptr, wxT("Are you sure you want to delete the selected record?"), wxT("Delete Recored"),  wxICON_EXCLAMATION|wxYES_NO);
@@ -459,7 +459,7 @@ void GenericTable::OnbDeleteItem( wxCommandEvent& event )
 
 }
 
-void GenericTable::SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition)
+void GenericQueryGrid::SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition)
 {
     m_sTableName = tableName;
     m_sTitle=title;
@@ -471,7 +471,7 @@ void GenericTable::SetTableDefinition(const wxString tableName, const wxString t
 
 
 //We created an event to refresh the grid so we can call it from any frame class.
-void GenericTable::OnMyEvent(MyEvent& event )
+void GenericQueryGrid::OnMyEvent(MyEvent& event )
 {
    // wxString msg;
    // msg << event.GetEventType();
@@ -522,7 +522,7 @@ void GenericTable::OnMyEvent(MyEvent& event )
 }
 
 // If we have a store row, we don't need reload all the grids, only updata the signle row.
-void GenericTable::Refresh()
+void GenericQueryGrid::Refresh()
 {
 
     //If we are just updating a row, then we don't need to reload the entire grid, just update the single row.
@@ -539,17 +539,17 @@ void GenericTable::Refresh()
 
 }
 
-wxString GenericTable::GetCurrentStoredWhereCondition()
+wxString GenericQueryGrid::GetCurrentStoredWhereCondition()
 {
     return m_sCurrentStoredWhereCondition;
 }
 
-void GenericTable::SetCurrentStoredWhereCondition(wxString sWhereCondition)
+void GenericQueryGrid::SetCurrentStoredWhereCondition(wxString sWhereCondition)
 {
     m_sCurrentStoredWhereCondition = sWhereCondition;
 }
 
-void GenericTable::OnParseDocument(wxString sDocument)
+void GenericQueryGrid::OnParseDocument(wxString sDocument)
 {
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
     // be pointing to garbage memory and the program will crash if you try and call Destroy().
@@ -563,7 +563,7 @@ void GenericTable::OnParseDocument(wxString sDocument)
 
 }
 //We need to add the 'WHERE' but there is nothing to blend for now.
-void GenericTable::SetGridWhereCondition(wxString whereToBlend)
+void GenericQueryGrid::SetGridWhereCondition(wxString whereToBlend)
 {
     wxString userWhere = ""; // There is no userwhere at the moment.
     wxString sWhereCon = "";
@@ -586,7 +586,7 @@ void GenericTable::SetGridWhereCondition(wxString whereToBlend)
 }
 
 
-void GenericTable::OnbHelp( wxCommandEvent& event )
+void GenericQueryGrid::OnbHelp( wxCommandEvent& event )
 {
 
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
@@ -604,7 +604,7 @@ void GenericTable::OnbHelp( wxCommandEvent& event )
 
 
 //We can send a message to the parent that this window is destroyed.
-bool GenericTable::Destroy()
+bool GenericQueryGrid::Destroy()
 {
 
     MyEvent my_event( this );
