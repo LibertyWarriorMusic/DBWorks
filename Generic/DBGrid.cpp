@@ -70,7 +70,30 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
    // Disconnect( wxEVT_GRID_CELL_LEFT_CLICK, wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
     //m_GridArray.Empty();
 }
+void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra )
+{
+    auto *item = new TableField();
+    item->Title = fieldTitle;
+    item->fieldName = field;
+    item->Flags = flags;
+    item->fieldType = fieldType;
+    item->fieldExtra = fieldExtra;
+    item->fieldNull = fieldNull;
+    item->fieldDefault = defaultVal;
+    m_GridArray.Add(item);
 
+}
+
+void DBGrid::SetSettings(const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName, const wxString& KeyName, const wxString& whereCondition)
+{
+    m_sTableName = tableName;
+    m_sPrimaryKeyName = KeyName;
+    m_sWhereCondition = whereCondition;
+    //  m_sDatabase=database;
+    //  m_sServer=server;
+    // m_sUser=user;
+    // m_sPassword=password;
+}
 void DBGrid::SetGridWhereCondition(wxString sWhere)
 {
     m_sWhereCondition = sWhere;
@@ -529,7 +552,7 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
             return false;
         }
 
-        ResizeSpreadSheet();
+      //  ResizeSpreadSheet();
         return true;
 
 
@@ -695,14 +718,15 @@ int DBGrid::HasRowDocumentFlag(int iRow) {
 }
 void DBGrid::HideColumn(int colNumber)
 {
-   // SetColumnWidth(colNumber,0);
    HideCol(colNumber);
 }
 
 void DBGrid::CreateFields()
 {
      // Don't add any rows yet, they will be added when we query the database.
-     CreateGrid( 0, (int)m_GridArray.GetCount()+1,wxGrid::wxGridSelectCells);
+
+     int iNumCol = m_GridArray.GetCount()+1;
+     CreateGrid( 0, iNumCol,wxGrid::wxGridSelectCells);
      SetSelectionMode(wxGridSelectRows );
      EnableEditing( false );
      EnableGridLines( true );
@@ -726,37 +750,13 @@ void DBGrid::CreateFields()
 
     int count = m_GridArray.GetCount();
 
-
     if (count>0){
         
         for(int i=0;i<count;i++)
-             SetColLabelValue(i+1, m_GridArray[i].Title);
+            SetColLabelValue(i+1, m_GridArray[i].Title);
     }
 }
-void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra )
-{
-    auto *item = new TableField();
-    item->Title = fieldTitle;
-    item->fieldName = field;
-    item->Flags = flags;
-    item->fieldType = fieldType;
-    item->fieldExtra = fieldExtra;
-    item->fieldNull = fieldNull;
-    item->fieldDefault = defaultVal;
-    m_GridArray.Add(item);
 
-}
-
-void DBGrid::SetSettings(const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName, const wxString& KeyName, const wxString& whereCondition)
-{
-    m_sTableName = tableName;
-    m_sPrimaryKeyName = KeyName;
-    m_sWhereCondition = whereCondition;
-  //  m_sDatabase=database;
-  //  m_sServer=server;
-   // m_sUser=user;
-   // m_sPassword=password;
-}
 
 wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
 {
@@ -780,12 +780,24 @@ wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
     return "";
     
 }
+void DBGrid::OnSizeGridSpreadSheet( wxGridEvent& event )
+{
+    //Because we are interupting the base class size event, if we don't call this function to set the widths of the columns, then the cells will not be drawn.
+
+    //Generate the size event for the base class
+    wxSizeEvent sizeEvent;
+    sizeEvent.SetSize(GetVirtualSize());
+    OnSize(sizeEvent);
 
 
+    ResizeSpreadSheet();
+}
 
 //Adjects the widths of columns to fit the text.
 void DBGrid::ResizeSpreadSheet()
 {
+    // There is a sizing issue if we use this funcition because we are interupting the base class size event.
+    //
      wxSize sizeOfFrame= GetVirtualSize();
      
      int num_cols=GetNumberCols();
@@ -793,31 +805,26 @@ void DBGrid::ResizeSpreadSheet()
      int frameSizeWidth=sizeOfFrame.GetWidth();
      int CurrentWidth=0;
      int totalGridWidth = num_cols*width;
-     
+
+     // If we can't fit all the columns in the width of the frame by text, then we have to assign a width so each column is visible on the screen.
      if (frameSizeWidth>totalGridWidth){
+
          for(int col=0;col<num_cols-1;col++)
          {
-             //wxNOT_FOUND
+             bool bHide = false;
+             if(col>0){
+                 bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
+             }
              
-             int find = wxNOT_FOUND;
-             
-             if(col>0)
-                 find =m_GridArray[col-1].Flags.Find("HIDE");
-             
-             if(col>0 && find != wxNOT_FOUND){
+             if(col>0 && bHide){
 
                  //Only set it if it's not allready zero, zero width means it's hidden.
                  int CurrentWidth = GetColumnWidth(col);
                  if (CurrentWidth>0)
                      SetColSize(col,0);
-
-
-                 //wxString msg;
-                 //msg << col;
-                 //wxMessageBox("Hiding");
                  
              }else{
-                 //Auto size the column to the with so we can read the correct width value from getColSize()
+                 //Auto size the column to the width so we can read the correct width value from getColSize()
                  AutoSizeColumn(col);
                  
                  // Get the column width and make sure it's over 100.
@@ -847,12 +854,42 @@ void DBGrid::ResizeSpreadSheet()
          // Will set the last column to fit the remaining window.
          if (num_cols>0)
          {
-              width=GetClientSize().GetWidth()-width-1;
+             width=GetClientSize().GetWidth()-width-1;
              if(width>=Settings.lMinGridColWidth)
                  SetColSize(num_cols-1,width);
          }
-     }
+     } else{
 
+         if(num_cols>0){
+             int totalWidth = sizeOfFrame.x;
+
+             if(totalWidth>150)
+                 totalWidth =totalWidth - GetRowLabelSize(); //Account for the Row Title field
+
+              if( num_cols>0)
+                width = totalWidth / num_cols;
+              else
+                width=30; // Some default
+
+             //Determine the width of each column by the size of the frame
+             for(int col=0;col<num_cols;col++) {
+
+                 bool bHide = false;
+                 if(col>0){
+                     bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
+                 }
+
+                 if(!bHide){
+                     SetColSize(col,width);
+                     SetColMinimalWidth(col,width);
+                 } else{
+                     int CurrentWidth = GetColumnWidth(col);
+                     if (CurrentWidth>0)
+                         SetColSize(col,0);
+                 }
+             }
+         }
+     }
 }
 
 //Delete all the rows from the grid so it can be repopulated again.
@@ -919,10 +956,7 @@ void DBGrid::DeleteEntryFromDatabase(const wxString& Id){
 }
 
 
-void DBGrid::OnSizeGridSpreadSheet( wxGridEvent& event )
-{
-    ResizeSpreadSheet();
-}
+
 void DBGrid::OnGridEvents(wxGridEvent& event)
 {
      ResizeSpreadSheet();

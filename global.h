@@ -17,6 +17,7 @@ struct  GlobalSettings {
     wxString sServer="127.0.0.1:3306";
     wxString sUsergroup="SYSTEM_DATABASE_DEVELOPER";
     wxString sDClickGridCell="EDIT";
+
     long lMainWindowWidth=1400;
     long lMainWindowHeight=700;
     long lMaxGridColWidth=500;
@@ -29,6 +30,7 @@ struct  GlobalSettings {
     bool bImportData=false;
     bool bAutoCheckDefinitions=false;
     bool bShowGridColumnFields=false;
+    bool ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY=true;
 
     wxString sDatbaseSelectionList="SELECTION{information;test;final_release;}";
 };

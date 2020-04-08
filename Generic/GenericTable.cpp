@@ -92,85 +92,85 @@ void GenericTable::AddField(const wxString& title, const wxString& field, const 
 bool GenericTable::Create()
 {
     
-        this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-        
-        //-------------------------------------------------
-        // The main form sizers, panels and controls
-        //This is the sizer that is directly attached to the main form
+    this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
-            m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
+    //-------------------------------------------------
+    // The main form sizers, panels and controls
+    //This is the sizer that is directly attached to the main form
 
-                //Create the spread sheet grid
-                m_Grid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
-   
-                int count = m_FieldArray.GetCount();
+        m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 
-                if (count>0){
-                    
-                    wxString msg;
-                    msg << count;
-                   
-                    //wxMessageBox(msg);
-                    
-                    for(int index=0;index<count;index++){
-                        //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
-                        if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
-                             m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra );
-                        else
-                            m_Grid->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra);
-                    }
-                       
+            //Create the spread sheet grid
+            m_Grid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
+
+            int count = m_FieldArray.GetCount();
+
+            if (count>0){
+
+                wxString msg;
+                msg << count;
+
+                //wxMessageBox(msg);
+
+                for(int index=0;index<count;index++){
+                    //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
+                    if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
+                         m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra );
+                    else
+                        m_Grid->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra);
                 }
 
-                m_Grid->SetEventType(myEVT_MYEVENT);
-                m_Grid->CreateFields();
-                //Set the column Labels
-                
-                //Remove the horizonal scroll bar
-                m_Grid->SetWindowStyleFlag( (unsigned)m_Grid->GetWindowStyle() &~ (unsigned)wxHSCROLL );
+            }
 
-        //Add the spread sheet directly to the main form box grid..
-        m_MainFormSizer->Add( m_Grid, 0, wxGROW, 0);
-        
+            m_Grid->SetEventType(myEVT_MYEVENT);
+            m_Grid->CreateFields();
+            //Set the column Labels
 
-                //The sizer that holds all the buttons will be placed in the formSizer
-                        auto* buttonSizer = new wxBoxSizer( wxHORIZONTAL );
+            //Remove the horizonal scroll bar
+            m_Grid->SetWindowStyleFlag( (unsigned)m_Grid->GetWindowStyle() &~ (unsigned)wxHSCROLL );
 
-                        m_Close= new wxButton( this, wxID_ANY, wxT("Close Window"), wxDefaultPosition, wxDefaultSize, 0 );
-                        buttonSizer->Add( m_Close, 0, wxALL, 5 );
+    //Add the spread sheet directly to the main form box grid..
+    m_MainFormSizer->Add( m_Grid, 0, wxGROW, 0);
 
 
-        //Add the button sizer to the main form box grid
-        m_MainFormSizer->Add( buttonSizer, 0, wxALL, 0 );
+            //The sizer that holds all the buttons will be placed in the formSizer
+            auto* buttonSizer = new wxBoxSizer( wxHORIZONTAL );
 
-        //Set the sizer to be attached to the main form
-        this->SetSizer( m_MainFormSizer );
-        
-        //Layout the grid.
-        this->Layout();
-   
-        //this->Centre( wxBOTH );
-        m_StatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+            m_Close= new wxButton( this, wxID_ANY, wxT("Close Window"), wxDefaultPosition, wxDefaultSize, 0 );
+            buttonSizer->Add( m_Close, 0, wxALL, 5 );
 
-        
-        //Attache handlers to buttons
-        m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericTable::OnbExitApp ), nullptr, this );
-        
-        //Set the grid settings
-        m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
-    
-    
-        //If we have an error and the grid faled to load, just destroy it.
-        if(!m_Grid->LoadGridFromDatabase()){
-            m_Grid->Destroy();
-            return false;
-        }
 
-        wxInitAllImageHandlers(); //You need to call this or the images will not load.
-        // Get the path to the images
-        wxString strExe = wxStandardPaths::Get().GetExecutablePath();
-        if(m_Toolbar == nullptr)
-            m_Toolbar = CreateToolBar();
+    //Add the button sizer to the main form box grid
+    m_MainFormSizer->Add( buttonSizer, 0, wxALL, 0 );
+
+    //Set the sizer to be attached to the main form
+    this->SetSizer( m_MainFormSizer );
+
+    //Layout the grid.
+    this->Layout();
+
+    //this->Centre( wxBOTH );
+    m_StatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+
+
+    //Attache handlers to buttons
+    m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericTable::OnbExitApp ), nullptr, this );
+
+    //Set the grid settings
+    m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
+
+
+    //If we have an error and the grid faled to load, just destroy it.
+    if(!m_Grid->LoadGridFromDatabase()){
+        m_Grid->Destroy();
+        return false;
+    }
+
+    wxInitAllImageHandlers(); //You need to call this or the images will not load.
+    // Get the path to the images
+
+    if(m_Toolbar == nullptr)
+        m_Toolbar = CreateToolBar();
 
 
     wxBitmap BitMap;

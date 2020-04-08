@@ -122,26 +122,16 @@ void ObTablePanel::rightClick(wxMouseEvent& event)
     {
         m_pObCurrentTable = pObTable;
 
-
-        //Object menus
-       // m_MouseMoveOffset=Utility::CalcPtInRectOffset(m_MousePos,pObTable->GetObjectRect());
-       // m_pObjectToDraw = pObTable;
-        //m_pObjectToDraw->TurnSnapOff();
         menu->Append(ID_MENU_EDIT_TABLE_DEFINITIONS, wxT("Edit table definitions"), wxT("Edit table definitions."));
         menu->Append(ID_MENU_EDIT_TABLE, wxT("Edit table"), wxT("Edit the table."));
         menu->Append(ID_MENU_REMOVE_TABLE, wxT("Remove this table from the database"), wxT("Edit table definitions."));
-
     }
     else{
-
         menu->Append(ID_MENU_ADD_TABLE, wxT("Add table"), wxT("At table at current position."));
         // menu->AppendSeparator();
-
     }
 
-
     PopupMenu( menu, m_MousePos);
-
 
     //Tell the parent to add a table to the drawing at the mouse point.
     MyEvent my_event( this );
@@ -160,7 +150,6 @@ void ObTablePanel::rightClick(wxMouseEvent& event)
  {
      m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
 
-
     if (m_pObjectToDrawTEMP != nullptr){
 
         wxPoint pos;
@@ -173,14 +162,12 @@ void ObTablePanel::rightClick(wxMouseEvent& event)
         wxClientDC dc(this);
         m_pObjectToDrawTEMP->DrawObject(dc);
         DrawTableLinkageLines(dc);
-
     }
-
  }
+
 void ObTablePanel::mouseDoubleClick(wxMouseEvent& event)
 {
     m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
-
 
     ObTable* pObTable = GetObjectHitByMouse(m_MousePos);
     if(pObTable!= nullptr)
@@ -188,7 +175,7 @@ void ObTablePanel::mouseDoubleClick(wxMouseEvent& event)
         MyEvent my_event( this );
         my_event.m_bOpen=true;
         my_event.m_sTableName=pObTable->GetTableName();
-        my_event.m_sTableId=m_pObCurrentTable->GetTableID();
+        my_event.m_sTableId=pObTable->GetTableID();
         GetParent()->ProcessWindowEvent( my_event );
     }
 }
@@ -203,22 +190,17 @@ void ObTablePanel::mouseDoubleClick(wxMouseEvent& event)
     {
         m_MouseMoveOffset=Utility::CalcPtInRectOffset(m_MousePos,pObTable->GetObjectRect());
         m_pObjectToDrawTEMP = pObTable;
-
         m_pObjectToDrawTEMP->TurnSnapOff();
-
     }
-
 
     MyEvent my_event( this );
     my_event.m_bStatusMessage=true;
     my_event.m_sData="mouseDown";
     GetParent()->ProcessWindowEvent( my_event );
-
 }
 
  void ObTablePanel::mouseWheelMoved(wxMouseEvent& event)
  {
-
      MyEvent my_event( this );
      my_event.m_bStatusMessage=true;
      my_event.m_sData="mouseWheelMoved";
@@ -250,10 +232,7 @@ void ObTablePanel::mouseDoubleClick(wxMouseEvent& event)
             m_pObjectToDrawTEMP = nullptr;
             m_MouseMoveOffset.x=0;
             m_MouseMoveOffset.y=0;
-
-
         }
-
 
      MyEvent my_event( this );
      my_event.m_bStatusMessage=true;
@@ -333,7 +312,6 @@ void ObTablePanel::render(wxDC&  dc)
         if(pObTable!= nullptr)
             pObTable->DrawObject(dc);
     }
-
 }
 
 void ObTablePanel::RemoveObjectFromDiagramByTableName(wxString sTableName)
@@ -351,16 +329,12 @@ void ObTablePanel::RemoveObjectFromDiagramByTableName(wxString sTableName)
 
                 break;
             }
-
         }
-
     }
     Refresh();
-
 }
 ObTable * ObTablePanel::GetObjectHitByMouse(wxPoint mousePt)
 {
-
     //Draw all the object to the screen.
     for (int index=0; index<m_ObTableList.GetCount();index++) {
 
@@ -370,11 +344,8 @@ ObTable * ObTablePanel::GetObjectHitByMouse(wxPoint mousePt)
             if(pObTable->HitTest(mousePt))
                 return pObTable;
         }
-
     }
-
     return nullptr;
-
 }
 
 
@@ -383,27 +354,27 @@ void ObTablePanel::AddTableObject(const wxString& sTableID, const wxString& sTab
 {
     ObTable *pObTable= DoesTableObjectExist(sTableName);
 
-    if(pObTable== nullptr)
+    if(pObTable == nullptr)
     {
+        //The table doesn't exist, so add it.
+        pObTable = AddNewTableObject();
+
+
         //Get the selected field list from the database
         ArrayTableField fieldItemList;
         GetSelectedFieldItemListDB(fieldItemList, sTableID,pObTable->m_aListOfLinkageFlags);
 
-        //The table doesn't exist, so add it.
-        pObTable = AddNewTableObject();
+
         pObTable->SetTableName(sTableName);
         pObTable->SetTableID(sTableID);
         pObTable->SetTableFieldList(fieldItemList);
         pObTable->SetObjectPosition(m_MousePos);
 
         m_ObTableList.Add(pObTable);
-
-
     }
     else{
         //The table exist, change it's position and redraw the screen.
         pObTable->SetObjectPosition(m_MousePos);
-
     }
     pObTable->SaveDB();
     RedrawTableObjects(); // Redraw all the objects.
@@ -461,10 +432,8 @@ void ObTablePanel::LoadTableObjects(const wxString& sDatabase)
                 pObTable->SetObjectPosition(pt);
 
                 m_ObTableList.Add(pObTable);
-
             }
         }
-
         RedrawTableObjects(); // Draw them to the screen.
     }
 }
@@ -627,7 +596,12 @@ void ObTablePanel::GetSelectedFieldItemListDB(ArrayTableField& fieldItemList, wx
                             //Note, the selection items may be anything so don't search for them, we only need to search for SELECTION_LOOKUP_NAME SELECTION_LINKED_NAME SELECTION_LOOKUP_ID SELECTION_LINKED_ID
                             // However we add the entire selection example SELECTION_LOOKUP_NAME{TableName;FieldName;} into the return array because it's the tablename and fieldname that will be used to determine linkages.
 
-                            flagToAdd+= flag + ";";
+                            //NOTE: Linked linkages will always link to the start objects primary key regardless of the field value.
+                            //HOWEVER: By enforcing this, the user can't SELECTION_LINKE to a ID field that isn't the primarary key
+                            if(flagIndex==1 && Settings.ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY)
+                                flagToAdd+= "0;";
+                            else
+                                flagToAdd+= flag + ";";
 
                         }
                         flagToAdd+= Utility::IntToString(i) + ";";
@@ -644,7 +618,11 @@ void ObTablePanel::GetSelectedFieldItemListDB(ArrayTableField& fieldItemList, wx
                             //Note, the selection items may be anything so don't search for them, we only need to search for SELECTION_LOOKUP_NAME SELECTION_LINKED_NAME SELECTION_LOOKUP_ID SELECTION_LINKED_ID
                             // However we add the entire selection example SELECTION_LOOKUP_NAME{TableName;FieldName;} into the return array because it's the tablename and fieldname that will be used to determine linkages.
 
-                            flagToAdd+= flag + ";";
+                            //NOTE: Linked linkages will always link to the start objects primary key regardless of the field value.
+                            if(flagIndex==1 && Settings.ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY)
+                                flagToAdd+= "0;";
+                           else
+                                flagToAdd+= flag + ";";
 
                         }
                         flagToAdd+= Utility::IntToString(i) + ";";
@@ -848,17 +826,8 @@ void ObTablePanel::DrawTableLinkageLines(wxDC& dc)
                 dc.DrawEllipse(wxRect(ptObEnd.x+1,ptObEnd.y-9,6,4));
 
             }
-
-
-
-
         }
-
-
-
     }
-
-
 }
 
 void ObTablePanel::GenerateLinkageLineArrayForDrawing()
@@ -866,7 +835,6 @@ void ObTablePanel::GenerateLinkageLineArrayForDrawing()
 
     //Make sure we clear the list
     m_ObLinkageList.Clear();
-
 
     //Run through all the table objects looking for linkage flags
     for (int index=0; index<m_ObTableList.GetCount();index++) {
@@ -1031,7 +999,6 @@ void ObTablePanel::DetermineOTableObjectLinkageSide(TableLinkageLine *pObLink)
 
     if(pStart != nullptr && pEnd != nullptr){
 
-
         wxRect rectEndOb = pEnd->GetObjectRect();
         wxRect rectStartOb = pStart->GetObjectRect();
 
@@ -1048,9 +1015,7 @@ void ObTablePanel::DetermineOTableObjectLinkageSide(TableLinkageLine *pObLink)
             pObLink->m_bStartObLinkageSide = db_link_left;
             pObLink->m_bEndObLinkageSide= db_link_right;
         }
-
     }
-
 }
 
 //Determine where to start drawing the linkage, find the offset relative to the top position of the table object.
@@ -1083,9 +1048,7 @@ void ObTablePanel::DetermineOTableObjectLinkageOffsets(TableLinkageLine *pObLink
         ObTable *pObject = pObLink->m_pStartTableObject;
         if(pObject != nullptr)
             StartFieldIndex = pObject->GetFieldIndexByFieldName(pObLink->m_sStartObLinkedFieldName);
-
     }
-
 
     //Set the offset
     pObLink->m_iStartObYOffset= (StartFieldIndex + 1) * (heightOfField ) + TitleHeight + RELATIONSHIP_DIAGRAM_GAP + RELATIONSHIP_DIAGRAM_GAP+3;

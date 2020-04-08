@@ -246,7 +246,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             //Option 3 DIRECTLY IN CODE. I think this is the best
             query = "CREATE TABLE `sys_diagrams` ("
                     "`sys_diagramsId` int NOT NULL AUTO_INCREMENT,"
-                    " `name` int NOT NULL,"
+                    " `name` varchar(255) NOT NULL,"
                     " `xPosition` int NOT NULL,"
                     " `yPosition` int NOT NULL,"
                     " `width` int NOT NULL,"

@@ -274,7 +274,12 @@ void MyApp::ProcessLine(wxString line)
         else if (value=="FIELD")
             Settings.bShowGridColumnFields=true;
     }
-
+    else if (setting=="ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY"){
+        if(value=="YES")
+            Settings.ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY=true;
+        else if (value=="NO")
+            Settings.ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY=false;
+    }
 
 
 }
