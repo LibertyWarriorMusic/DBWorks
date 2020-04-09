@@ -5,6 +5,7 @@ class wxHyperlinkCtrl;
 #define MYSQL_TYPE_OPTIONS "SELECTION{VARCHAR(255)     [String(0-255 Variable String)];CHAR(255)            [String(0-255) Padded String];TINYTEXT              [String(0-255)];TEXT                      [String(0-65535)];MEDIUMTEXT        [String(0-16777215)];LONGTEXT             [String(0-4294967295)];BINARY                  [0-255];TINYBLOB              [0-255];BLOB                     [0-65535];MEDIUMBLOB         [0-16777215];LONGBLOB          [0-4294967295];TINYINT           [-128 to 127];SMALLINT     [-32768 to 32767];MEDIUMINT     [-8388608 to 8388607];INT                  [-2147483648 to 2147483647];BIGINT            [-9223372036854775808 to 9223372036854775807];FLOAT(p)         [Where p is the precision];DOUBLE(m,d)     [m:total digits d:digits after the decimal];DECIMAL;DATE;TIME;DATETIME;TIMESTAMP;YEAR;ENUM;BOOLEAN;}"
 #define SYS_TABLES "sys_tables" //This is the name of the table in the information database that holds all user tables.
 #define SYS_FIELDS "sys_fields"//This is the name of the table in the information database that holds all user fields linked to sys_table.
+#define USR_QUERIES "usr_queries"
 #define SYS_DOCS "sys_docs" //This is the name of the table in the information database that holds system documents.
 #define MYSQLRESERVEDWORDS "KEY GROUP TABLE DATABASE CHARACTER COLUMN CURRENT_TIME CHECK COLUMNS CROSS CURRENT_TIMESTAMP COLLATE CONSTRAINT CURRENT_DATE ADD ALL ALTER ANALYZE AND AS ASC AUTO_INCREMENT BDB BERKELEYDB BETWEEN BIGINT BINARY BLOB BOTH BTREE BY CASCADE CASE CHANGE CHAR CHARACTER CHECK" // This is all the mysql reserved words.
 //Place all global settings here, can be use anywhere in the project.
@@ -31,6 +32,7 @@ struct  GlobalSettings {
     bool bAutoCheckDefinitions=false;
     bool bShowGridColumnFields=false;
     bool ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY=true;
+    bool SHOW_USERGROUP_COMBO_ON_TOOLBAR=false;
 
     wxString sDatbaseSelectionList="SELECTION{information;test;final_release;}";
 };

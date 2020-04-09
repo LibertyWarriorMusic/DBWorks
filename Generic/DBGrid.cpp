@@ -27,6 +27,7 @@ WX_DEFINE_OBJARRAY(ArrayGridItem);
 enum {
     ID_MENU_PROPERTIES = wxID_HIGHEST + 500,
     ID_MENU_OPEN,
+    ID_MENU_OPEN_FORM_QUERY,
     ID_MENU_EDIT,
     ID_MENU_FILTER,
     ID_MENU_FILTER_SHOW_ALL,
@@ -40,6 +41,7 @@ wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
     EVT_MENU(ID_MENU_EDIT, DBGrid::OnClickEdit)
     EVT_MENU(ID_MENU_FILTER, DBGrid::OnClickMenuFilter)
     EVT_MENU(ID_MENU_FILTER_SHOW_ALL, DBGrid::OnClickMenuFilterShowAll)
+    EVT_MENU(ID_MENU_OPEN_FORM_QUERY, DBGrid::OnOpenFormQuery)
 wxEND_EVENT_TABLE()
 
 using namespace mysqlpp;
@@ -50,8 +52,8 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
     m_iRow = 0;
     m_iCol = 0;
     m_iGetCellRowIndex=0;
-
-
+    bFormQueryMode=false;
+    m_sFormQuery="";
 
     // Connect Events
     Connect(wxEVT_SIZE,wxGridEventHandler( DBGrid::OnSizeGridSpreadSheet ), nullptr, this );
@@ -81,7 +83,14 @@ void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wx
     item->fieldNull = fieldNull;
     item->fieldDefault = defaultVal;
     m_GridArray.Add(item);
+}
 
+void DBGrid::SetFormQuery(const wxString& str)
+{
+    m_sFormQuery=str;
+
+    if(!m_sFormQuery.IsEmpty())
+        bFormQueryMode=true;
 }
 
 void DBGrid::SetSettings(const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName, const wxString& KeyName, const wxString& whereCondition)
@@ -116,10 +125,7 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
             item->fieldDefault = m_GridArray[index].fieldDefault;
 
             GridItemList.Add(item);
-
         }
-
-
         return true;
     }
     return false;
@@ -127,7 +133,6 @@ bool DBGrid::GetGridItemArray(ArrayGridItem &GridItemList)
 
 bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
 {
-
     //auto *f = dynamic_cast<wxFrame*>(this->GetParent());
 
     wxString database(Settings.sDatabase);
@@ -241,7 +246,8 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                     else
                                         strData1 = defaultValue;
                                 }
-
+                                int numCol = GetNumberCols();
+                                int numRow = GetNumberRows();
                                 if(Utility::HasFlag(flags,"PASSWORD")){
 
                                     if(!Utility::IsEmpty(strData1))
@@ -305,31 +311,21 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                         SetCellFont(iTracRowIncaseOfSkip, index+1, wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT).Underlined()); // underline
                                         Connect(wxEVT_GRID_CELL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
 
-
                                     }
-
                                 }
-
 
                                 SetReadOnly(iTracRowIncaseOfSkip,index+1);//All entries on the grid are ready only, you can't change values directly via the grid.
                             }
                         }
 
-
                         iTracRowIncaseOfSkip++;
-
                     }
-
                 }
                 catch (int& num) {
-
                     //f->SetStatusText("Database Connected - Row doesn't exist:");
                     wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return false;
-
                 }
-
-
             }
         }
         else {
@@ -351,11 +347,10 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
     // f->SetStatusText("Database Connected");
 }
 
+//This is used to upload a single grid row so we don't have to reload the entire grid when we update a single item.
 bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 {
     if(m_gridRow>-1){
-
-        //auto *f = dynamic_cast<wxFrame*>(this->GetParent());
 
         wxString database(Settings.sDatabase);
         wxString server(Settings.sServer);
@@ -365,10 +360,8 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
         //Get the database item that needs to be updated.
         wxString Id = GetCellValue(m_gridRow,0);
 
-
         // Connect to the sample database.
         Connection conn(false);
-
 
         if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
                          (const_cast<char*>((const char*)server.mb_str())),
@@ -379,8 +372,6 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
             wxString QueryString = "select * from " + m_sTableName + " WHERE " +m_sTableName+"Id="+Id + " LIMIT 1";
             Query query = conn.query(QueryString);
             StoreQueryResult res = query.store();
-
-
 
             // Display results
             if (res) {
@@ -401,13 +392,11 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 
                         if(bCheckTableExists){
 
-
                             if (!Utility::IsSystemDatabaseDeveloper()){
 
                                 wxString tableName(res[indexRow][m_GridArray[1].fieldName], wxConvUTF8);
                                 if(!Utility::DoesTableExist(Settings.sDatabase,tableName))
                                     bSkip=true;
-
                             }
                         }
 
@@ -490,6 +479,7 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                                         {
                                             wxArrayString sTableResult;
                                             Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
+
                                             SetCellValue(m_gridRow, index + 1,sTableResult[0]);
                                         }
                                     }
@@ -508,34 +498,29 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
 
                                         strData1.Trim();
                                         if(!strData1.IsEmpty()){
+
                                             Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
                                             SetCellValue(m_gridRow, index + 1,sTableResult[0]);
                                         }
 
                                     }
-                                    else
+                                    else{
                                         SetCellValue(m_gridRow,index+1,strData1); //Set the value of the cell from the table value.
+
+                                    }
 
 
                                     SetReadOnly(m_gridRow,index+1);//All entries on the grid are ready only, you can't change values directly via the grid.
                                 }
                             }
-
-
-                            //iTracRowIncaseOfSkip++;
-
                         }
-
                     }
                     catch (int& num) {
 
                         //f->SetStatusText("Database Connected - Row doesn't exist:");
                         wxLogMessage(MSG_DATABASE_FAIL_ROW);
                         return false;
-
                     }
-
-
                 }
             }
             else {
@@ -551,18 +536,10 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
             //f->SetStatusText("Did not connect to database.");
             return false;
         }
-
-      //  ResizeSpreadSheet();
         return true;
-
-
-
-
     }
     return true;
 }
-
-
 
 //Used in conjunction with GetNextcellValue to retrieve all the rows in a cell
 bool DBGrid::GetFirstRowCellValue(wxString& sCellValue,int  ColumnNumber)
@@ -626,83 +603,83 @@ void DBGrid::UnHighlightCell(int iRow, int iCol)
 void DBGrid::SetEventType(long type)
 {
     m_eventType = type;
-    
 }
 
 // ADD MENU ITEM TO CONTEXT MENU
 void DBGrid::OnGridRClick(wxGridEvent& event )
 {
-    m_iRow = event.GetRow();
-    m_iCol = event.GetCol();
-    SetGridCursor(m_iRow,m_iCol);
-    wxPoint point = event.GetPosition();
-    auto *menu = new wxMenu;
-    //For everyone at the moment, create a filter for the current grid.
-    wxString sColumnTitle = GetColLabelValue(m_iCol);
-    wxString sCellValue = GetCellValue(m_iRow,m_iCol);
+    if(!bFormQueryMode){
 
-    if(m_sTableName==SYS_TABLES)
-        wxString sHTMLDocument = GetCellValue(m_iRow,2);// NOT SURE WHY THIS IS HEAR
-
-    wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
-
-
-    if (Utility::IsSystemDatabaseDeveloper() ) {
+        m_iRow = event.GetRow();
+        m_iCol = event.GetCol();
+        SetGridCursor(m_iRow,m_iCol);
+        wxPoint point = event.GetPosition();
+        auto *menu = new wxMenu;
+        //For everyone at the moment, create a filter for the current grid.
+        wxString sColumnTitle = GetColLabelValue(m_iCol);
+        wxString sCellValue = GetCellValue(m_iRow,m_iCol);
 
         if(m_sTableName==SYS_TABLES)
-            menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
-        else{
-            menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+            wxString sHTMLDocument = GetCellValue(m_iRow,2);// NOT SURE WHY THIS IS HEAR
 
-            m_iDocumentColumn = HasRowDocumentFlag(m_iRow);// This will return -1 if we have not document.
+        wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
 
-            if(m_iDocumentColumn>=0){
-                menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
+        if (Utility::IsSystemDatabaseDeveloper() ) {
+
+            if(m_sTableName==USR_QUERIES)
+                menu->Append(ID_MENU_OPEN_FORM_QUERY, wxT("Open Form Query"), wxT("Open the form query to view the records."));
+            else if(m_sTableName==SYS_TABLES)
+                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
+            else{
+                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+
+                m_iDocumentColumn = HasRowDocumentFlag(m_iRow);// This will return -1 if we have not document.
+
+                if(m_iDocumentColumn>=0){
+                    menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
+                }
             }
 
+            //Only show for the system tables.
+            if(m_sTableName==SYS_TABLES)
+                menu->Append(ID_MENU_PROPERTIES, wxT("Field Definitions"), wxT("Edit the field definitions."));
+
+            menu->AppendSeparator();
+            menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
         }
+        else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
 
+            // If we are advanced or standard user on the main form, we only want to show the open menu
+            if(m_sTableName==SYS_TABLES){
+                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
 
-        //Only show for the system tables.
-        if(m_sTableName==SYS_TABLES)
-            menu->Append(ID_MENU_PROPERTIES, wxT("Field Definitions"), wxT("Edit the field definitions."));
+            }
+            else{ //If we are not on the main form, we just want to show the open and edit menu.
+                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+
+                if(!Utility::IsGuest()){
+                    menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
+                }
+            }
+        }
 
         menu->AppendSeparator();
-        menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-    }
-    else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
 
-        // If we are advanced or standard user on the main form, we only want to show the open menu
-        if(m_sTableName==SYS_TABLES){
-            menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
+        if(m_sTableName!=SYS_FIELDS)
+            menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
 
+
+        int len = menuLabel.Length();
+        if(len > 100){
+            menuLabel = menuLabel.Left(100);
+            menuLabel << " ....";
         }
-        else{ //If we are not on the main form, we just want to show the open and edit menu.
-            menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+        if(m_sTableName!=SYS_FIELDS)
+            menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
 
-            if(!Utility::IsGuest()){
-                menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-            }
-        }
+        PopupMenu( menu, point);
     }
 
-    menu->AppendSeparator();
-
-    if(m_sTableName!=SYS_FIELDS)
-        menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
-
-
-
-    int len = menuLabel.Length();
-    if(len > 100){
-        menuLabel = menuLabel.Left(100);
-        menuLabel << " ....";
-    }
-    if(m_sTableName!=SYS_FIELDS)
-        menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
-
-
-    PopupMenu( menu, point);
 }
 //Searches for all the columns in a given row on the grid and checks to see if there is DOCUMENT set in the flag.
 // Return -1 if no DOCUMENT flag found, return the ID where the document can be found
@@ -714,36 +691,46 @@ int DBGrid::HasRowDocumentFlag(int iRow) {
         }
     }
     return -1;
-
 }
+
 void DBGrid::HideColumn(int colNumber)
 {
    HideCol(colNumber);
 }
 
+void DBGrid::SetGridProperties()
+{
+    SetSelectionMode(wxGridSelectRows );
+    EnableEditing( false );
+    EnableGridLines( true );
+    EnableDragGridSize( false );
+
+    // Columns
+    EnableDragColMove( false );
+    EnableDragColSize( false );
+
+    SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+    // Rows
+    EnableDragRowSize( false );
+    SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
+
+    // Cell Defaults
+    SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
+
+}
+
+//The difference between create CreateFields and CreateFormQueryFields is that when
+//the grid is m_GridArray also holds the primary key for CreateFormQueryFields
+// Normally, m_GridArray doesn't contain the primary key as it's automatically generated.
 void DBGrid::CreateFields()
 {
      // Don't add any rows yet, they will be added when we query the database.
 
      int iNumCol = m_GridArray.GetCount()+1;
      CreateGrid( 0, iNumCol,wxGrid::wxGridSelectCells);
-     SetSelectionMode(wxGridSelectRows );
-     EnableEditing( false );
-     EnableGridLines( true );
-     EnableDragGridSize( false );
 
-     // Columns
-     EnableDragColMove( false );
-     EnableDragColSize( false );
-
-     SetColLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-     // Rows
-     EnableDragRowSize( false );
-     SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
-
-     // Cell Defaults
-     SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
+    SetGridProperties();
     
      // The database labels
      SetColLabelValue(0, _("ID"));
@@ -751,17 +738,32 @@ void DBGrid::CreateFields()
     int count = m_GridArray.GetCount();
 
     if (count>0){
-        
         for(int i=0;i<count;i++)
             SetColLabelValue(i+1, m_GridArray[i].Title);
     }
 }
 
+//This is used for viewing a query results including the primary keys.
+void DBGrid::CreateFormQueryColumns()
+{
+    // Don't add any rows yet, they will be added when we query the database.
+
+    int iNumCol = m_GridArray.GetCount();
+    CreateGrid( 0, iNumCol,wxGrid::wxGridSelectCells);
+
+    SetGridProperties();
+
+    // Create the labels for the grid
+    int count = m_GridArray.GetCount();
+
+    if (count>0){
+        for(int i=0;i<count;i++)
+            SetColLabelValue(i, m_GridArray[i].Title);
+    }
+}
 
 wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
 {
-    
-    
     wxArrayInt rowsSelected = GetSelectedRows();
 
     if(rowsSelected.size()==1){
@@ -788,7 +790,6 @@ void DBGrid::OnSizeGridSpreadSheet( wxGridEvent& event )
     wxSizeEvent sizeEvent;
     sizeEvent.SetSize(GetVirtualSize());
     OnSize(sizeEvent);
-
 
     ResizeSpreadSheet();
 }
@@ -836,19 +837,14 @@ void DBGrid::ResizeSpreadSheet()
                      if (CurrentWidth>0)
                          SetColSize(col,(int)Settings.lMinGridColWidth);
                  }
-
-
                   if (CurrentWidth > Settings.lMaxGridColWidth){
 
                       int CurrentWidth = GetColumnWidth(col);
                       if (CurrentWidth>0)
                         SetColSize(col,(int)Settings.lMaxGridColWidth);
                   }
-
-                  
                  width+=GetColSize(col);
              }
-
          }
          
          // Will set the last column to fit the remaining window.
@@ -898,7 +894,6 @@ void DBGrid::DeleteGridRows()
     int numRows = GetNumberRows();
     if(numRows>0)
         DeleteRows(0,numRows);
-
 }
 
 //Delete a single or multiple selected rows from the grid and DB passwords table and the grid.
@@ -919,13 +914,11 @@ void DBGrid::DeleteEntryFromDatabase(const wxString& Id){
 
     auto *f = dynamic_cast<wxFrame*>(this->GetParent());
 
-
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
 
-       
     try{
         // Connect to the sample database.
         Connection conn(false);
@@ -970,11 +963,9 @@ bool DBGrid::Destroy()
     my_event.m_bDestroyed=true;
     GetParent()->ProcessWindowEvent( my_event );
 
-
     bool bResult = wxGrid::Destroy();
     return bResult;
 }
-
 
 // CONTEXT MENU EVENT FUNCTIONS
 void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
@@ -1079,12 +1070,8 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
                     else
                         sWhereCondition << m_GridArray[m_iCol - 1].fieldName << "='" << sValue << "'";
                     my_event.m_sWhereCondition = sWhereCondition;
-
                 }
-
             }
-
-
         }else{
 
             wxString str = GetCellValue(m_iRow, 0);
@@ -1098,22 +1085,14 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
             else
                 sWhereCondition << my_event.m_cellFieldName << "='" << my_event.m_cellValue + "'";
             my_event.m_sWhereCondition = sWhereCondition;
-
-
         }
-
-
-
-
         //my_event.SetRow(event.GetRow());
         my_event.SetEventType(m_eventType);
         GetParent()->ProcessWindowEvent(my_event);
-
     }
 }
 void DBGrid::OnClickMenuFilterShowAll(wxCommandEvent& event)
 {
-
     //Send this event to the parent.
     MyEvent my_event( this );
     my_event.m_iRow = m_iRow;
@@ -1123,10 +1102,8 @@ void DBGrid::OnClickMenuFilterShowAll(wxCommandEvent& event)
     my_event.m_sTableName = m_sTableName;
     my_event.m_sWhereCondition = "";
 
-    //my_event.SetRow(event.GetRow());
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
-
 
 }
 
@@ -1182,7 +1159,6 @@ void DBGrid::OnClickEdit(wxCommandEvent& event)
     MyEvent my_event( this );
     my_event.m_iRow = m_iRow;
     my_event.m_iCol = m_iCol;
-
     my_event.m_bEdit = true;
 
     if(m_sTableName==SYS_TABLES)
@@ -1198,7 +1174,6 @@ void DBGrid::OnClickEdit(wxCommandEvent& event)
 //I have a grid click
 void DBGrid::OnGridClick(wxGridEvent& event )
 {
-
     //SelectRow(event.GetRow());
     int col = event.GetCol();
     int row = event.GetRow();
@@ -1213,7 +1188,6 @@ void DBGrid::OnGridClick(wxGridEvent& event )
             //wxExecute(webLink);
            wxLaunchDefaultBrowser(webLink);
         }
-
     }
 }
 
@@ -1226,11 +1200,16 @@ void DBGrid::OnGridDLClick(wxGridEvent& event )
 
     if(IsCellHighlighted(my_event.m_iRow,2)){
         wxLogMessage(MSG_FIELD_NOT_CREATED);
-
         return;
     }
+
     //Change the behaviour of double click cell to view or edit item depending on the system setting.
-    if(Settings.sDClickGridCell=="VIEW")
+    if(m_sTableName==USR_QUERIES){
+        my_event.m_bOpenQueryGrid = true;
+        my_event.m_sQueryToApply = GetCellValue(my_event.m_iRow,2);
+        my_event.m_sTitle = GetCellValue(my_event.m_iRow,1);
+    }
+    else if(Settings.sDClickGridCell=="VIEW")
         my_event.m_bOpen = true;
     else if(Settings.sDClickGridCell=="EDIT" && m_sTableName!=SYS_TABLES && !Utility::IsGuest())
         my_event.m_bEdit = true;
@@ -1240,11 +1219,9 @@ void DBGrid::OnGridDLClick(wxGridEvent& event )
     if(m_sTableName==SYS_TABLES)
         my_event.m_sTableName = GetCellValue(my_event.m_iRow,2);//Get the value of the first column. NOTE: This is generic, I might be able to set the table name differently.
 
-
     wxString str = GetCellValue(my_event.m_iRow,0);
     my_event.m_sTableId=str;
 
-//my_event.SetRow(event.GetRow());
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
 }
@@ -1268,4 +1245,103 @@ void DBGrid::OnClickOpenDocument(wxCommandEvent& event)
     //my_event.SetRow(event.GetRow());
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
+}
+
+void DBGrid::OnOpenFormQuery(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
+
+    my_event.m_bOpenQueryGrid = true;
+    my_event.m_sTitle = GetCellValue(my_event.m_iRow,1);
+    my_event.m_sQueryToApply = GetCellValue(my_event.m_iRow,2);
+    my_event.m_bOpenQueryGrid = true;
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}
+
+//This is actually the starting point to create a grid based on a query including the titles because have
+//no information about the grid until the query is run.
+void DBGrid::CreateFormQuery()
+{
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        Query query = conn.query(m_sFormQuery);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // The first thing we need to do is read all the fields definitions from the resultant recordset. Then we have to define the m_GridArray and load it with all the field.
+            // Once we have the definition,
+           // int RowsInTable = res.num_rows();
+
+            int num_fields = res.num_fields();
+            for (int fieldIndex=0;fieldIndex<num_fields; fieldIndex++){
+                //These are all the field names from our query.
+                wxString sFieldName = res.field_name(fieldIndex);
+                AddItem(sFieldName,sFieldName );
+            }
+            //
+            CreateFormQueryColumns();
+
+            int RowsInTable = res.num_rows();
+
+            //int iTracRowIncaseOfSkip = 0;
+            // Get each row in result set, and print its contents
+            for (int indexRow = 0; indexRow < RowsInTable; ++indexRow) {
+
+                try {
+                        int iCount = m_GridArray.GetCount();
+
+                        //It looks like deleted row show up also. This may be useful in the future but better not toshow them
+                        AppendRows();// Add a new grid row
+
+                            for(int Colindex=0;Colindex<iCount;Colindex++){
+                                //Get the field from the loaded grid array.
+                                wxString fieldName = m_GridArray[Colindex].fieldName;
+
+                                //Get the record data for that field
+                                wxString strData1(res[indexRow][fieldName], wxConvUTF8);
+
+                                SetReadOnly(indexRow,Colindex);
+                                SetCellValue(indexRow,Colindex,strData1); //from wxSmith
+                                //
+                            }
+
+                }
+                catch (int& num) {
+
+                    //f->SetStatusText("Database Connected - Row doesn't exist:");
+                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            //cerr << "Failed to get stock table: " << query.error() << endl;
+            //return 1;
+            //f->SetStatusText("Database Connected - Failed to get item list:");
+            wxLogMessage(MSG_FIELD_NOT_CREATED);
+
+        }
+    }
+    else{
+        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //f->SetStatusText("Did not connect to database.");
+
+    }
 }

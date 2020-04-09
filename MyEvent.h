@@ -17,6 +17,7 @@ class MyEvent : public wxEvent
     //These flags indicate which context menu we came from
     bool m_bTableFieldDefinitions;
     bool m_bOpen;
+    bool m_bOpenQueryGrid;
     bool m_bEdit;
     bool m_bRefreshDatabase; //Refresh the entire grid reloading every record.
     bool m_bDestroyed;
@@ -34,7 +35,7 @@ class MyEvent : public wxEvent
     wxString m_cellFieldName; // The field name for that cell
     wxString m_sWhereCondition;
     wxString m_sQueryToApply;
-
+    wxString m_sTitle;
     //DRAWING
     bool m_bRedraw = false;
     bool m_bAddTableObject = false;

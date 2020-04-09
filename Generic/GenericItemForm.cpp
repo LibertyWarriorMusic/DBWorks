@@ -553,7 +553,6 @@ void GenericItemForm::AddItem(const wxString& fieldTitle, const wxString& field,
     item->fieldDefault = defaultVal;
     item->fieldNull = nullVal;
     itemArray.Add(item);
-
 }
 
 void GenericItemForm::SetSettings( const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName, const wxString& KeyName)
@@ -576,7 +575,6 @@ void GenericItemForm::OnbOK( wxCommandEvent& event )
         //If we are only viewing, there is no need to refresh the grid.
         Close(TRUE);
         return;
-
     }
 
     //Send a message to the main frame to update the spreadsheet

@@ -18,6 +18,7 @@ MyEvent::MyEvent( wxWindow* win )
     m_bShowAll=false;
     m_bImportDatabase=false;
     m_bStatusMessage=false;
+    m_bOpenQueryGrid=false;
 
     //Indicators for frames being destroyed.
     m_bTableDiagramFrameWasDestroyed=false;
@@ -33,4 +34,5 @@ MyEvent::MyEvent( wxWindow* win )
     SetEventType( myEVT_MYEVENT );
     SetEventObject( win );
     m_sData="";
+    m_sTitle="";
 }

@@ -15,10 +15,17 @@ class GenericQueryGrid : public wxFrame
     
         //We are going to create two panels and then
         // attach them to a sizer.
+
+        //wxString m_sFormQuery;
+
+
+
         wxString m_sTitle;
         wxString m_sComments;
         wxString m_sWhereCondition;
-        wxString m_sTableName;
+       // wxString m_sTableName;
+
+
         //Pointers
         HtmlHelp *m_HtmlWin;
         wxStaticText *m_txtFilter;
@@ -68,15 +75,17 @@ class GenericQueryGrid : public wxFrame
     public:
 
         virtual void OnbDeleteItem( wxCommandEvent& event );
-        void SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition);
+       // void SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition);
         GenericItemForm *formItem{};
+
     
-        void AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag,const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal);
+       // void AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag,const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal);
         explicit GenericQueryGrid( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
     
         virtual bool Create();
         virtual void SetSettings(wxString& database, wxString& server, wxString& user, wxString& password){};
-        virtual void SetGridTableName(wxString& name){};
+        void SetFormQuery(const wxString& sFormQuery);
+        //virtual void SetGridTableName(wxString& name){};
 
         bool Destroy() override;
         void HideIDColumn();

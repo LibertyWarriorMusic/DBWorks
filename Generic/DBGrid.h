@@ -6,9 +6,9 @@ class DBGrid :
 {
    wxDECLARE_EVENT_TABLE();
 private:
-    
+    bool bFormQueryMode;
     long m_eventType; // Used to initiate a refresh of the grid
-    
+    wxString m_sFormQuery;
     int m_iRow; //Used when we right click on a cell to store the cell position
     int m_iCol;
     int m_iDocumentColumn; //If we found a DOCUMENT flag, this store the column where the document is located, else it's -1;
@@ -31,6 +31,7 @@ private:
     //Context Menu Event Functions
     void OnClickProperties(wxCommandEvent& event);
     void OnClickOpen(wxCommandEvent& event);
+    void OnOpenFormQuery(wxCommandEvent& event);
     void OnClickOpenDocument(wxCommandEvent& event);
     void OnClickEdit(wxCommandEvent& event);
     void OnClickMenuFilter(wxCommandEvent& event);
@@ -38,8 +39,8 @@ private:
 public:
     DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _style);
     ~DBGrid() override;
-
-    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra );
+    void SetFormQuery(const wxString& str);
+    void AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags="",const wxString& defaultVal="", const wxString& fieldType="", const wxString& fieldNull="", const wxString& fieldKey="",const wxString& fieldExtra="" );
 
     bool GetGridItemArray(ArrayGridItem &GridItemList); //Loads an Array of GridItem class. Does a copy can creates all new row items.
     bool GetFirstRowCellValue(wxString& sCellValue,int  ColumnNumber);
@@ -60,11 +61,17 @@ public:
 
     void HideColumn(int colNumber);
     
-    void SetSettings(const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName, const wxString& KeyName, const wxString& whereCondition);
+    void SetSettings(const wxString& database, const wxString& server, const wxString& user, const wxString& password, const wxString& tableName="", const wxString& KeyName="", const wxString& whereCondition="");
  
     void DeleteSelectedRow();
     void DeleteEntryFromDatabase(const wxString& contactId);
+
+    void SetGridProperties();
     void CreateFields(); // Creates the fields of the grid, used in initalising.
+    void CreateFormQueryColumns();
+
+    //FORM QUERY
+    void CreateFormQuery();
     
 
     wxString getSelectedFieldValue(const wxString& fieldname);

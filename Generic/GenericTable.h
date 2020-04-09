@@ -5,7 +5,7 @@ class DBGrid;
 class GenericItemForm;
 class MyEvent;
 class HtmlHelp;
-
+class GenericQueryGrid;
 
 
 //WX_DECLARE_OBJARRAY(TableField, ArrayTableField);
@@ -22,10 +22,12 @@ class GenericTable : public wxFrame
         wxString m_sComments;
         wxString m_sWhereCondition;
         wxString m_sTableName;
+        wxString m_sTempFormQuery; //Used to store the temp query when we double click or menu open a form query entry.
         //Pointers
         HtmlHelp *m_HtmlWin;
         wxStaticText *m_txtFilter;
         wxComboBox *m_ComboFilter;
+        GenericQueryGrid *m_pQueryGrid;
 
         wxString GetCurrentStoredWhereCondition();
         void SetCurrentStoredWhereCondition(wxString sWhereCondition);
@@ -37,6 +39,7 @@ class GenericTable : public wxFrame
         void Refresh();
 
         void OnParseDocument(wxString sDocument);
+        void OpenQueryGrid(wxString sTitle, wxString sFormGridQuery);
 
     void OnButtonAction( wxCommandEvent& event );
       

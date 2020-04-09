@@ -22,6 +22,7 @@
 
 
 //Add my own classes here
+#include "GenericQueryGrid.h"
 #include "GenericItemForm.h"
 #include "../MyEvent.h"
 #include "../Utility.h"
@@ -66,9 +67,10 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
     m_HtmlWin = nullptr;
     m_txtFilter=nullptr;
     m_ComboFilter=nullptr;
-
+    m_pQueryGrid=nullptr;
     m_sCurrentStoredWhereCondition="";
     m_iTempRowIndex=-1;
+    m_sTempFormQuery="";
 }
 
 
@@ -91,7 +93,6 @@ void GenericTable::AddField(const wxString& title, const wxString& field, const 
 }
 bool GenericTable::Create()
 {
-    
     this->SetSizeHints( wxDefaultSize, wxDefaultSize );
 
     //-------------------------------------------------
@@ -470,57 +471,6 @@ void GenericTable::SetTableDefinition(const wxString tableName, const wxString t
 
 
 
-//We created an event to refresh the grid so we can call it from any frame class.
-void GenericTable::OnMyEvent(MyEvent& event )
-{
-   // wxString msg;
-   // msg << event.GetEventType();
-       // wxMessageBox( msg);
-    //NOTE: We get here if resizing or right menu clicking, so we need to create a flag to indicated which.
-    if(event.m_bTableFieldDefinitions)
-         wxMessageBox("We are in Table from properties.");
-    else if(event.m_bOpen)
-        ViewItem(event.m_iRow);
-    else if (event.m_bEdit)
-        EditItem(event.m_iRow);
-    else if(event.m_bDestroyed){
-
-    }
-    else if(event.m_bHelpFrameWasDestroyed){
-        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
-    }
-    else if (event.m_bParseDocument)
-        OnParseDocument(event.m_cellValue);
-
-
-    if(event.m_bRefreshDatabase){
-
-        if(!event.m_sWhereCondition.IsEmpty()){
-            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
-            SetGridWhereCondition(event.m_sWhereCondition);
-            if(m_ComboFilter!=nullptr)
-                m_ComboFilter->SetStringSelection("Menu Filter");
-            Refresh();
-
-        }
-        else if(!event.m_sQueryToApply.IsEmpty()){
-
-            m_sTempQuery=event.m_sQueryToApply;
-            Refresh();
-
-        }else{
-            //If the events where condition is empty, then see if we have a stored where condition.
-            if(event.m_bShowAll){
-                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
-            }
-            SetGridWhereCondition(GetCurrentStoredWhereCondition());
-            if(m_ComboFilter!=nullptr)
-                m_ComboFilter->SetStringSelection("Show All");
-            Refresh();
-        }
-    }
-}
-
 // If we have a store row, we don't need reload all the grids, only updata the signle row.
 void GenericTable::Refresh()
 {
@@ -536,7 +486,6 @@ void GenericTable::Refresh()
     //After the row has been updated, we need to put this back to -1 so the entire grid can be refreshed.
     m_iTempRowIndex = -1;
     m_sTempQuery="";
-
 }
 
 wxString GenericTable::GetCurrentStoredWhereCondition()
@@ -560,7 +509,6 @@ void GenericTable::OnParseDocument(wxString sDocument)
     m_HtmlWin = new HtmlHelp((wxFrame*) this, -1, "Help", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
     m_HtmlWin->SetPage(Utility::PassHTMLDocument(sDocument)); //
     m_HtmlWin->Show(true);
-
 }
 //We need to add the 'WHERE' but there is nothing to blend for now.
 void GenericTable::SetGridWhereCondition(wxString whereToBlend)
@@ -578,17 +526,13 @@ void GenericTable::SetGridWhereCondition(wxString whereToBlend)
     else if(!whereToBlend.IsEmpty() && !userWhere.IsEmpty()){
         sWhereCon << " where " << whereToBlend << " and " << userWhere;
         m_Grid->SetGridWhereCondition(sWhereCon); // Make sure you show all records.
-
     }
     else
         m_Grid->SetGridWhereCondition(""); // Make sure we clear it or once we select a filter, it will remain that way even after you show all.
-
 }
-
 
 void GenericTable::OnbHelp( wxCommandEvent& event )
 {
-
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
     // be pointing to garbage memory and the program will crash if you try and call Destroy().
     if(m_HtmlWin != nullptr)
@@ -600,12 +544,13 @@ void GenericTable::OnbHelp( wxCommandEvent& event )
 
 }
 
-
-
-
 //We can send a message to the parent that this window is destroyed.
 bool GenericTable::Destroy()
 {
+    if(m_pQueryGrid!= nullptr){
+        m_pQueryGrid->Destroy();
+        m_pQueryGrid= nullptr;
+    }
 
     MyEvent my_event( this );
     my_event.m_bDestroyed=true;
@@ -615,4 +560,68 @@ bool GenericTable::Destroy()
     return bResult;
 }
 
+void GenericTable::OpenQueryGrid(wxString sTitle, wxString sFormGridQuery)
+{
+    m_pQueryGrid = new GenericQueryGrid((wxFrame*) this, -1,sTitle,wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
 
+    if (m_pQueryGrid != nullptr){
+        m_pQueryGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+        m_pQueryGrid->SetFormQuery(sFormGridQuery);
+        m_pQueryGrid->Create();// Create the table.
+        m_pQueryGrid->Show(true);
+    }
+}
+
+//We created an event to refresh the grid so we can call it from any frame class.
+void GenericTable::OnMyEvent(MyEvent& event )
+{
+    // wxString msg;
+    // msg << event.GetEventType();
+    // wxMessageBox( msg);
+    //NOTE: We get here if resizing or right menu clicking, so we need to create a flag to indicated which.
+    if(event.m_bTableFieldDefinitions)
+        wxMessageBox("We are in Table from properties.");
+    else if(event.m_bOpen)
+        ViewItem(event.m_iRow);
+    else if (event.m_bEdit)
+        EditItem(event.m_iRow);
+    else if(event.m_bDestroyed){
+        if(m_pQueryGrid!= nullptr){
+            //m_pQueryGrid->Destroy();
+            m_pQueryGrid= nullptr;
+        }
+    }
+    else if(event.m_bOpenQueryGrid)
+        OpenQueryGrid(event.m_sTitle, event.m_sQueryToApply);
+    else if(event.m_bHelpFrameWasDestroyed){
+        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
+    }
+    else if (event.m_bParseDocument)
+        OnParseDocument(event.m_cellValue);
+
+    if(event.m_bRefreshDatabase){
+
+        if(!event.m_sWhereCondition.IsEmpty()){
+            SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.
+            SetGridWhereCondition(event.m_sWhereCondition);
+
+            if(m_ComboFilter!=nullptr)
+                m_ComboFilter->SetStringSelection("Menu Filter");
+
+            Refresh();
+        }
+        else if(!event.m_sQueryToApply.IsEmpty()){
+            m_sTempQuery=event.m_sQueryToApply;
+            Refresh();
+        }else{
+            //If the events where condition is empty, then see if we have a stored where condition.
+            if(event.m_bShowAll){
+                SetCurrentStoredWhereCondition("");//Remove the stored where condition because we want to show all records.
+            }
+            SetGridWhereCondition(GetCurrentStoredWhereCondition());
+            if(m_ComboFilter!=nullptr)
+                m_ComboFilter->SetStringSelection("Show All");
+            Refresh();
+        }
+    }
+}

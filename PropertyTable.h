@@ -47,7 +47,7 @@ class PropertyTable : public GenericTable
 
 
 
-        bool Destroy() override;
+        virtual bool Destroy() override;
         ~PropertyTable() override;
     
     wxDECLARE_EVENT_TABLE();

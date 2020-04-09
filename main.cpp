@@ -282,8 +282,12 @@ void MyApp::ProcessLine(wxString line)
         else if (value=="NO")
             Settings.ENFORCE_SELECTION_LINKED_TO_PRIMARY_KEY=false;
     }
-
-
+    else if (setting=="SHOW_USERGROUP_COMBO_ON_TOOLBAR"){
+        if(value=="YES")
+            Settings.SHOW_USERGROUP_COMBO_ON_TOOLBAR=true;
+        else if (value=="NO")
+            Settings.SHOW_USERGROUP_COMBO_ON_TOOLBAR=false;
+    }
 }
 
 void MyApp::StartImportDatabase(wxString sDatabase, wxString sNewDatabaseName) {
@@ -997,23 +1001,26 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_txtCltUserGroup = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
 
     if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator()  ) {
-        m_txtCltUserGroup->SetLabel("Usergroup");
-        m_UserGroupCombo = new wxComboBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
-        m_UserGroupCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnUserGroupComboChange ), nullptr, this );
-        m_UserGroupCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnUserGroupComboDropDown ), nullptr, this );
-        m_UserGroupCombo->SetSize(260,-1);
 
-        wxArrayString sUserGroupSelectionItemArray;
-        Utility::ExtractSelectionItems(sUserGroupSelectionItemArray,"SELECTION{SYSTEM_DATABASE_DEVELOPER;SYSTEM_DATABASE_ADMINISTRATOR;ADVANCED_USER;STANDARD_USER;GUEST;}");
+        if(Settings.SHOW_USERGROUP_COMBO_ON_TOOLBAR){
+            m_txtCltUserGroup->SetLabel("Usergroup");
+            m_UserGroupCombo = new wxComboBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
+            m_UserGroupCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnUserGroupComboChange ), nullptr, this );
+            m_UserGroupCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnUserGroupComboDropDown ), nullptr, this );
+            m_UserGroupCombo->SetSize(260,-1);
 
-        //Fill the list box with the selection items.
-        for ( int index=0; index<sUserGroupSelectionItemArray.GetCount(); index++ )
-            m_UserGroupCombo->Append(sUserGroupSelectionItemArray[index]);
+            wxArrayString sUserGroupSelectionItemArray;
+            Utility::ExtractSelectionItems(sUserGroupSelectionItemArray,"SELECTION{SYSTEM_DATABASE_DEVELOPER;SYSTEM_DATABASE_ADMINISTRATOR;ADVANCED_USER;STANDARD_USER;GUEST;}");
 
-        m_Toolbar1->AddControl(m_txtCltUserGroup);
-        m_Toolbar1->AddControl(m_UserGroupCombo);
+            //Fill the list box with the selection items.
+            for ( int index=0; index<sUserGroupSelectionItemArray.GetCount(); index++ )
+                m_UserGroupCombo->Append(sUserGroupSelectionItemArray[index]);
 
-        m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
+            m_Toolbar1->AddControl(m_txtCltUserGroup);
+            m_Toolbar1->AddControl(m_UserGroupCombo);
+
+            m_UserGroupCombo->SetStringSelection(Settings.sUsergroup);
+        }
 
         Utility::LoadBitmap(BitMap,"filter.png");
         m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters for single table lookups."));

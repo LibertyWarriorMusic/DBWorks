@@ -58,6 +58,9 @@ wxEND_EVENT_TABLE()
 
 GenericQueryGrid::GenericQueryGrid( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
+
+    //m_sFormQuery="";
+
     m_StatusBar = nullptr;
     m_Close = nullptr;
     m_Grid = nullptr;
@@ -69,9 +72,20 @@ GenericQueryGrid::GenericQueryGrid( wxWindow* parent, wxWindowID id, const wxStr
 
     m_sCurrentStoredWhereCondition="";
     m_iTempRowIndex=-1;
+
+    //Create the spread sheet grid
+    m_Grid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
+
 }
 
+void GenericQueryGrid::SetFormQuery(const wxString& sFormQuery)
+{
+    //Pass the query onto the grid, it is going to load and create all records from the query.
+    if(m_Grid!= nullptr)
+        m_Grid->SetFormQuery(sFormQuery);
+}
 
+/*
 void GenericQueryGrid::AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag, const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal)
 {
     
@@ -89,6 +103,9 @@ void GenericQueryGrid::AddField(const wxString& title, const wxString& field, co
     m_FieldArray.Add(tableField);
     
 }
+
+*/
+
 bool GenericQueryGrid::Create()
 {
     
@@ -100,34 +117,15 @@ bool GenericQueryGrid::Create()
 
         m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 
-            //Create the spread sheet grid
-            m_Grid = new DBGrid( this, wxID_ANY, wxDefaultPosition, wxDefaultSize, (unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
 
-            int count = m_FieldArray.GetCount();
+         // m_Grid->SetEventType(myEVT_MYEVENT);
+        //Remove the horizonal scroll bar
+         m_Grid->SetWindowStyleFlag( (unsigned)m_Grid->GetWindowStyle() &~ (unsigned)wxHSCROLL );
 
-            if (count>0){
+        //Set the column Labels
+        m_Grid->CreateFormQuery();
 
-                wxString msg;
-                msg << count;
 
-                //wxMessageBox(msg);
-
-                for(int index=0;index<count;index++){
-                    //wxMessageBox(m_FieldArray[index].title + "-" + m_FieldArray[index].fieldName);
-                    if(Settings.bShowGridColumnFields && m_sTableName!=SYS_FIELDS)
-                         m_Grid->AddItem(m_FieldArray[index].fieldName,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra );
-                    else
-                        m_Grid->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldDefault, m_FieldArray[index].fieldType, m_FieldArray[index].fieldNull,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra);
-                }
-
-            }
-
-            m_Grid->SetEventType(myEVT_MYEVENT);
-            m_Grid->CreateFields();
-            //Set the column Labels
-
-            //Remove the horizonal scroll bar
-            m_Grid->SetWindowStyleFlag( (unsigned)m_Grid->GetWindowStyle() &~ (unsigned)wxHSCROLL );
 
     //Add the spread sheet directly to the main form box grid..
     m_MainFormSizer->Add( m_Grid, 0, wxGROW, 0);
@@ -157,14 +155,14 @@ bool GenericQueryGrid::Create()
     m_Close->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericQueryGrid::OnbExitApp ), nullptr, this );
 
     //Set the grid settings
-    m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName, m_sTableName+"Id",m_sWhereCondition);
+ //   m_Grid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
 
 
     //If we have an error and the grid faled to load, just destroy it.
-    if(!m_Grid->LoadGridFromDatabase()){
-        m_Grid->Destroy();
-        return false;
-    }
+ //   if(!m_Grid->LoadGridFromDatabase()){
+  //      m_Grid->Destroy();
+  //      return false;
+  //  }
 
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
     // Get the path to the images
@@ -178,7 +176,7 @@ bool GenericQueryGrid::Create()
     Utility::LoadBitmap(BitMap,"help.png");
     m_Toolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
 
-
+/*
     if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser()) {
         //======
         //Load images for the toolbar
@@ -217,9 +215,9 @@ bool GenericQueryGrid::Create()
         m_Grid->HideColumn(0);
 
     }
+*/
 
-
-    if(m_sTableName!="sys_fields"){ // Don't show filter on the field definitions frame
+/*    if(m_sTableName!="sys_fields"){ // Don't show filter on the field definitions frame
         ///-------------
         //ADD the query combo to the toolbar
         m_txtFilter = new wxStaticText( m_Toolbar, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
@@ -240,20 +238,22 @@ bool GenericQueryGrid::Create()
         m_Toolbar->AddControl(m_ComboFilter);
 
     }
-
+*/
 
     m_Toolbar->Realize();
     SetToolBar(m_Toolbar);
     SetSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight);
 
-    this->SetBackgroundColour(wxColour(77,120,77));
+    this->SetBackgroundColour(wxColour(77,77,120));
     //This is here for debugging.
     //SetStatusText("Message = " + Settings.Message);
 
-    if (Utility::IsSystemDatabaseDeveloper())
-        SetIDTitleName(m_sTableName+"Id *");
-    else
-        SetIDTitleName("ID");
+ //   if (Utility::IsSystemDatabaseDeveloper())
+  //      SetIDTitleName(m_sTableName+"Id *");
+  //  else
+   //     SetIDTitleName("ID");
+
+
 
     return true;
     
@@ -326,7 +326,7 @@ void GenericQueryGrid::OnbAddItem( wxCommandEvent& event )
 }
 void GenericQueryGrid::AddItem(long rowID)
 {
-
+/*
     formItem = new GenericItemForm((wxFrame*) this, -1,"Add Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP| (unsigned)wxRESIZE_BORDER);
 
 
@@ -339,7 +339,7 @@ void GenericQueryGrid::AddItem(long rowID)
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
-    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,"",m_sTableName+"Id");
 
     formItem->SetUse("ADD");
     formItem->CreateFields();
@@ -348,7 +348,7 @@ void GenericQueryGrid::AddItem(long rowID)
 
     formItem->Show(true);
     SetStatusText("Add Item.");
-
+*/
 }
 
 void GenericQueryGrid::OnbEditItem( wxCommandEvent& event )
@@ -363,7 +363,7 @@ void GenericQueryGrid::OnbEditItem( wxCommandEvent& event )
 }
 void GenericQueryGrid::EditItem(long rowID)
 {
-
+/*
     m_iTempRowIndex = rowID; // Save the row so we now what to refresh.
 
     formItem = new GenericItemForm((wxFrame*) this, -1,"Edit Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
@@ -389,7 +389,7 @@ void GenericQueryGrid::EditItem(long rowID)
     formItem->Show(true);
     formItem->LoadFields();
     SetStatusText("Edit Item");
-
+*/
 }
 
 void GenericQueryGrid::OnbViewItem( wxCommandEvent& event )
@@ -405,7 +405,7 @@ void GenericQueryGrid::OnbViewItem( wxCommandEvent& event )
 
 void GenericQueryGrid::ViewItem(long rowID)
 {
-
+/*
     // wxPoint(100,100),
     // wxSize(500,410),
     if(formItem != nullptr){
@@ -439,7 +439,7 @@ void GenericQueryGrid::ViewItem(long rowID)
         formItem->Show(true);
         formItem->LoadFields();
         SetStatusText("View Item");
-    }
+    }*/
 }
 //Runs through all the selectd rows on the grid and deletes the entries from the database.
 void GenericQueryGrid::OnbDeleteItem( wxCommandEvent& event )
@@ -458,7 +458,7 @@ void GenericQueryGrid::OnbDeleteItem( wxCommandEvent& event )
     GetParent()->ProcessWindowEvent( my_event );
 
 }
-
+/*
 void GenericQueryGrid::SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition)
 {
     m_sTableName = tableName;
@@ -468,7 +468,7 @@ void GenericQueryGrid::SetTableDefinition(const wxString tableName, const wxStri
 
 }
 
-
+*/
 
 //We created an event to refresh the grid so we can call it from any frame class.
 void GenericQueryGrid::OnMyEvent(MyEvent& event )
