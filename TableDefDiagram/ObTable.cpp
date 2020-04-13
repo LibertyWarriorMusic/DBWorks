@@ -9,6 +9,8 @@
 #include "../Generic/GenericTable.h"
 #include "ObTable.h"
 
+#include <wx/arrimpl.cpp>
+WX_DEFINE_OBJARRAY(ArrayFieldRect);
 
 ObTable::ObTable()
 {
@@ -28,6 +30,20 @@ ObTable::~ObTable()
     m_ObPosition.y=0;
 }
 
+wxString ObTable::GetFieldTypeByFieldName(wxString sFieldName)
+{
+    for(int index=0;index < m_TableFieldList.GetCount();index++){
+
+        TableField * pField= &m_TableFieldList[index];
+        if(pField!= nullptr){
+            if(pField->fieldName==sFieldName){
+                return pField->fieldType;
+            }
+        }
+    }
+    return "";
+}
+
 wxRect ObTable::GetObjectRect()
 {
     return m_TableRect;
@@ -42,15 +58,19 @@ bool ObTable::HitTest(wxPoint pt) //Returns true if point is in this objects rec
     return false;
 }
 
+
 void ObTable::SetObjectPosition(wxPoint pt)
 {
 
-    if(pt.y<=0)
-        pt.y=0;
+    //LIMIT Y
+    if(pt.y<=HEIGHT_QUERY_BUILDER+10)
+        pt.y=HEIGHT_QUERY_BUILDER+10;
+
+   // if(pt.y<0)
+     //   pt.y=0;
 
     if(pt.x<0)
         pt.x=0;
-
     
     wxPoint ptToSnap = pt;
 
@@ -93,7 +113,7 @@ void ObTable::RestorePreviousSnapCondition()
 }
 void ObTable::SetTableFieldList(const ArrayTableField &fieldItemList)
 {
-    m_TableFieldItem=fieldItemList;
+    m_TableFieldList=fieldItemList;
 }
 
 void ObTable::SetTableName(wxString sTableName)
@@ -143,11 +163,11 @@ void ObTable::SaveDB()
 }
 int ObTable::GetFieldIndexByFieldName(wxString sFieldName)
 {
-    if(m_TableFieldItem.GetCount()>0){
+    if(m_TableFieldList.GetCount()>0){
 
-        for (int index=0; index<m_TableFieldItem.GetCount(); index++) {
+        for (int index=0; index<m_TableFieldList.GetCount(); index++) {
             TableField fieldItem;
-            fieldItem = m_TableFieldItem[index];
+            fieldItem = m_TableFieldList[index];
             if(fieldItem.fieldName==sFieldName)
                 return index;
         }
@@ -164,6 +184,9 @@ void ObTable::DrawObject(wxDC&  dc)
     int GAP = RELATIONSHIP_DIAGRAM_GAP;
     int HEIGHT_TITLE= RELATIONSHIP_DIAGRAM_TITLE_HEIGHT + RELATIONSHIP_DIAGRAM_FIELD_HEIGHT;
     int FieldHeight = RELATIONSHIP_DIAGRAM_FIELD_HEIGHT;
+
+    FieldRect * pFR = nullptr;
+    m_FieldRectList.Clear(); // This will store all the field rects for the field hit test
 
     //If we are hiding this table, don't draw it.
     if (!m_bShowTable)
@@ -204,9 +227,9 @@ void ObTable::DrawObject(wxDC&  dc)
     wxSize extentTempFieldName(0,0);
     wxSize extentTempFieldType(0,0);
 
-    for (int index=0; index<m_TableFieldItem.GetCount(); index++) {
+    for (int index=0; index<m_TableFieldList.GetCount(); index++) {
         TableField fieldItem;
-        fieldItem = m_TableFieldItem[index];
+        fieldItem = m_TableFieldList[index];
         extentTempFieldName = dc.GetTextExtent(fieldItem.fieldName);
         extentTempFieldType = dc.GetTextExtent(fieldItem.fieldType);
 
@@ -243,6 +266,9 @@ void ObTable::DrawObject(wxDC&  dc)
   //  if(extentTempFieldType.y > extentFieldType.y )
   //      extentFieldType.y = extentTempFieldType.y;
 
+    // Make sure we have enough room to show the "auto int *"
+    if(extentFieldType.x<55)
+        extentFieldType.x = 55;
 
     int width = 0;
 
@@ -250,14 +276,12 @@ void ObTable::DrawObject(wxDC&  dc)
         //Set a default width if we have no fields.
         extentFieldName = dc.GetTextExtent(m_sTableName);
         extentFieldName.x += GAP;
-        width= extentFieldName.x + extentFieldType.x + (3*GAP);
+        width = extentFieldName.x + extentFieldType.x + (3*GAP);
 
     } else{
         extentFieldName.x += GAP;
         width= extentFieldName.x + extentFieldType.x + (3*GAP);
     }
-
-
 
     extentFieldName.x +=GAP;
     extentFieldName.y += GAP;
@@ -265,7 +289,7 @@ void ObTable::DrawObject(wxDC&  dc)
     ptType.x = pt.x + extentFieldName.x + GAP;
     ptType.y = pt.y;
 
-    int HeightOfTable = m_TableFieldItem.GetCount() * (extentFieldName.y);
+    int HeightOfTable = m_TableFieldList.GetCount() * (extentFieldName.y);
 
    // HeightOfTable += 25 ; // This is space for the primary key
 
@@ -298,6 +322,7 @@ void ObTable::DrawObject(wxDC&  dc)
     dc.SetPen( wxPen( wxColor(0,0,0), 1 ) ); // black line, 3 pixels thick
     dc.DrawText(m_sTableName,XStartPos+GAP,YStartPos+GAP);
 
+
     //FOR DEBUGGING
  //   wxRect obRect = GetObjectRect();
  //   dc.DrawText("XPos="+Utility::IntToString(obRect.x),XStartPos+GAP,YStartPos-30);
@@ -322,9 +347,31 @@ void ObTable::DrawObject(wxDC&  dc)
     pt.x = XStartPos +GAP ;
     wxPoint drawPt;
     drawPt = pt;
+
+    //Add the primary key to the field
+    pFR = new FieldRect();
+    pFR->m_Rect.x = drawPt.x;
+    pFR->m_Rect.y = drawPt.y;
+    pFR->m_Rect.width=szTitle2.x-20;
+    pFR->m_Rect.height=15;
+    pFR->m_sFieldName=m_sTableName+"Id";
+    m_FieldRectList.Add(pFR);
+
     drawPt.y +=2;
     dc.DrawText(m_sTableName+"Id",drawPt);
     dc.SetFont(ftItalic);
+
+    drawPt.x += (extentFieldName.x + extentFieldType.x) -10;
+    drawPt.y += 2;
+    dc.DrawText("*",drawPt);
+    drawPt.y -= 2;
+    pFR = new FieldRect();
+    pFR->m_Rect.x = drawPt.x;
+    pFR->m_Rect.y = drawPt.y;
+    pFR->m_Rect.width=20;
+    pFR->m_Rect.height=20;
+    pFR->m_sFieldName="*";
+    m_FieldRectList.Add(pFR);
 
     pt.x += extentFieldName.x;
 
@@ -337,24 +384,40 @@ void ObTable::DrawObject(wxDC&  dc)
     dc.SetPen( wxPen( wxColor(150,150,170), 1 ) );
     dc.DrawLine(XStartPos +GAP,pt.y,XStartPos+width-GAP,pt.y);
 
-    int count = m_TableFieldItem.GetCount();
+    int count = m_TableFieldList.GetCount();
 
     for (int index=0; index<count; index++){
 
         dc.SetPen( wxPen( wxColor(0,0,0), 2 ) );
         TableField fieldItem;
-        fieldItem = m_TableFieldItem[index];
+        fieldItem = m_TableFieldList[index];
         pt.x = XStartPos +GAP ;
 
         drawPt = pt;
+        //Create the dragging field
+        pFR = new FieldRect();
+        pFR->m_Rect.x = drawPt.x;
+        pFR->m_Rect.y = drawPt.y;
+        pFR->m_Rect.width=szTitle2.x;
+        pFR->m_Rect.height=15;
+        pFR->m_sFieldName=fieldItem.fieldName;
+        m_FieldRectList.Add(pFR);
+
         drawPt.y +=2;
         dc.DrawText(fieldItem.fieldName,drawPt);
+
+
+
 
         pt.x += extentFieldName.x;
 
         drawPt = ptType;
         drawPt.y +=2;
         dc.DrawText(fieldItem.fieldType,drawPt);
+
+
+
+
         pt.y +=extentFieldName.y;
         ptType.y = pt.y;
 
@@ -363,5 +426,23 @@ void ObTable::DrawObject(wxDC&  dc)
             dc.SetPen( wxPen( wxColor(150,150,170), 1 ) );
             dc.DrawLine(XStartPos +GAP,pt.y,XStartPos+width-GAP,pt.y);
         }
+
+
+
+
     }
+}
+
+//Returns the field name if point is in a field rect
+wxString ObTable::HitTestField(wxPoint mousePoint, wxRect& sfieldRect)
+{
+    int count = m_FieldRectList.GetCount();
+
+    for (int index=0; index<count; index++) {
+        sfieldRect = m_FieldRectList[index].m_Rect;
+        if(Utility::IsPointInRect(mousePoint,m_FieldRectList[index].m_Rect))
+            return m_FieldRectList[index].m_sFieldName;
+    }
+
+    return "";
 }

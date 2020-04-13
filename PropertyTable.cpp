@@ -95,7 +95,7 @@ void PropertyTable::SetGridTableName(wxString& name)
     if ( dlg->ShowModal() == wxID_YES ){
     }
         wxString queryString = PrepareDeleteQuery();
-        Utility::ExecuteQuery(queryString);
+        Utility::ExecuteQuery(Settings.sDatabase,queryString);
     
       dlg->Destroy();
 }
@@ -106,7 +106,8 @@ void PropertyTable::SetGridTableName(wxString& name)
 
     if (Utility::DoesTableExist(Settings.sDatabase,m_sGridTableName))
     {
-        UpdateDatabaseTableDefinitionsToDefinitions();
+        if(!UpdateDatabaseTableDefinitionsToDefinitions())
+            wxLogMessage("The table exists and the definition are up to date");
         return;
     }
 
@@ -115,14 +116,14 @@ void PropertyTable::SetGridTableName(wxString& name)
     auto *dlg = new wxMessageDialog(nullptr, "You are about the execute the following command, continue? \n\n"+queryString, wxT("Create Table"), wxYES_NO | wxICON_EXCLAMATION);
 
     if ( dlg->ShowModal() == wxID_YES )
-        Utility::ExecuteQuery(queryString);
+        Utility::ExecuteQuery(Settings.sDatabase,queryString);
 
     dlg->Destroy();
 
 }
-
+//This function needs more work.
 //We have to iterate through our grid and see if each field exits in the database.
-void PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
+bool PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
 {
 
     int num_rows=m_Grid->GetNumberRows();
@@ -135,7 +136,7 @@ void PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
         //buildString="";
         fieldName=m_Grid->GetCellValue(row,2); //Column 2 is the fieldname;
         if(Utility::DoesFieldExitInTable(m_sGridTableName,fieldName)){
-
+            return false;
 
         } else{
             // The field does not exist, we need to create it.
@@ -145,9 +146,8 @@ void PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
 
         }
     }
+    return true;
 }
-
-
 
 //This will alter the table by adding new records. NOTE: table records are not deleted.
 void PropertyTable::AlterTable(int row) {
@@ -235,7 +235,7 @@ void PropertyTable::AlterTable(int row) {
 
         if ( dlg->ShowModal() == wxID_YES ){
 
-            Utility::ExecuteQuery(QueryString);
+            Utility::ExecuteQuery(Settings.sDatabase,QueryString);
         }
 
         dlg->Destroy();
@@ -345,36 +345,6 @@ wxString PropertyTable::PrepareDeleteQuery()
 
 
 
-//
-
-void PropertyTable::OnMyEvent(MyEvent& event) {
-
-    if(event.m_bTableFieldDefinitions){
-        wxMessageBox("Event Function Properties : PropertyTable.Cpp 480");
-    }
-    else if(event.m_bOpen){
-        ViewItem(event.m_iRow);
-    }
-    else if(event.m_bEdit){
-        EditItem(event.m_iRow);
-    }
-    else if(event.m_bDestroyed){
-
-    }
-    else if(event.m_bHelpFrameWasDestroyed){
-        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
-    }
-
-    if(event.m_bRefreshDatabase){
-        m_Grid->LoadGridFromDatabase();
-
-        this->Layout(); // This is the key, you need to relayout the form.
-    }
-
-}
-
-
-
 void PropertyTable::OnbHelp( wxCommandEvent& event )
 {
 
@@ -390,15 +360,43 @@ void PropertyTable::OnbHelp( wxCommandEvent& event )
 }
 
 
-
 //We can send a message to the parent that this window is destroyed.
 bool PropertyTable::Destroy()
 {
 
     MyEvent my_event( this );
-    my_event.m_bDestroyed=true;
+    my_event.m_bDestroyedPropertyTable=true;
     GetParent()->ProcessWindowEvent( my_event );
 
     bool bResult = wxFrame::Destroy();
     return bResult;
+}
+
+
+void PropertyTable::OnMyEvent(MyEvent& event) {
+
+    if(event.m_bTableFieldDefinitions){
+        wxMessageBox("Event Function Properties : PropertyTable.Cpp 480");
+    }
+    else if(event.m_bOpen){
+        ViewItem(event.m_iRow);
+    }
+    else if(event.m_bEdit){
+        EditItem(event.m_iRow);
+    }
+    else if(event.m_bDestroyed){
+        m_HtmlWin= nullptr;
+        m_pFormItem=nullptr;
+
+    }
+    else if(event.m_bHelpFrameWasDestroyed){
+        m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
+    }
+
+    if(event.m_bRefreshDatabase){
+        m_Grid->LoadGridFromDatabase();
+
+        this->Layout(); // This is the key, you need to relayout the form.
+    }
+
 }

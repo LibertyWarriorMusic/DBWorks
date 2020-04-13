@@ -11,15 +11,17 @@
 // <key:ObTableShow>yes</key>
 
 
+
 class ObTable {
 
 private:
     wxString m_sTableName; //The table name this object is based on
     wxString m_sTableId;
 
-    ArrayTableField m_TableFieldItem; //Store the list of fields for this table
-    wxPoint m_ObPosition; // Stores the position on the screen the object will be drawn
+    ArrayFieldRect m_FieldRectList; //This list is generated  at drawing and used for the field hit test.
 
+    ArrayTableField m_TableFieldList; //Store the list of fields for this table
+    wxPoint m_ObPosition; // Stores the position on the screen the object will be drawn
 
 
     bool m_bShowTable;
@@ -48,10 +50,12 @@ private:
     void TurnSnapOn();
     void RestorePreviousSnapCondition();
 
+    wxString GetFieldTypeByFieldName(wxString sFieldName);
+
     wxRect GetObjectRect();
 
-
     bool HitTest(wxPoint pt); //Returns true if point is in this objects rect.
+    wxString HitTestField(wxPoint mousePoint, wxRect& sfieldRect); //Returns the fieldname if point is in a field rect
 
     void SetTableFieldList(const ArrayTableField &fieldItemList); //Saves all the table fields for this object.
     void SetTableName(wxString sTableName);//Saves the table name of this object.

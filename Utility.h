@@ -50,11 +50,14 @@ public:
 
     //Unicode and wxString Conversions
     static void EscapeAscii(wxString& QueryString);
+    static wxString Escape(wxString & str);
     static int StringToInt(const wxString& stringToConvert);
     static wxString IntToString(const int & num);
     static long StringToLong(const wxString& stringToConvert);
+
     //Combo loading functions
     static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
+    static void FillComboFromStringArray(wxComboBox *pCombo, const wxArrayString sArray);
     static void DestroyComboDataObjects(wxComboBox *pCombo);
 
     //Rect and Calc Functions
@@ -79,7 +82,7 @@ public:
     static bool IsSystemDatabaseAdministrator();
     static bool IsGuest();
     static bool IsCustomUser();
-    static wxString Escape(wxString & str);
+
 
     //DATETIME FUNCTIONS
     static wxString DateToString(const wxDateTime & dt);
@@ -105,6 +108,7 @@ public:
     static wxString GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
 
 
+
     static void GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName, wxString value);
     static bool GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldToGet, wxString sFieldName, wxString value);
 
@@ -113,7 +117,8 @@ public:
     static void LoadStringArrayFromDatabaseTableByName(wxString sDatabase, wxArrayString &sArray, wxString sTableName, wxString sFieldName);
     static void LoadStringArrayWidthMySQLDatabaseNames( wxArrayString &sArray);
     static void LoadStringArrayWithMySQLTableNames(wxString sDatabase, wxArrayString &sArray );
-    static void ExecuteQuery(const wxString& QueryString); //Execute a query string
+    static void LoadStringArrayAvailableQueriesFromUsrQueries(wxArrayString &sArray );
+    static void ExecuteQueryEscapeAscii(const wxString& QueryString); //Execute a query string
     static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
     static bool DoesTableExist(wxString sDatabase, wxString sTableName);
     static bool DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue);// Check to see if a record with a particular value exists.
@@ -127,8 +132,11 @@ public:
     static wxString InsertTableInSYS_TABLES(wxString sDatabase, wxString sTableName); // Insert a new table into the sys_tables
     static void InsertFieldInSYS_FIELDS(wxString sDatabase, wxString sTableId, TableFieldItem fieldItem); //Insert a new table field
     static void AppendDBWorksDatabases(wxArrayString &arrayToAppend);
-    static void SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
+    static bool SaveDatabaseToDBWorks(wxString sDatabaseNameToSave);
    // static void DestroyFieldItemList(ArrayTableFields &fieldList); // Runs through the list and destroys all the items.
+
+   //Generic Database Functions
+   static  bool GetSingleFieldRecords(wxString sQueryString, wxString FieldToGet,wxArrayString& ArrayFieldResults);
 
    //UPDATE
    static void UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxString sTableId, wxString sFieldname, wxString sValue);

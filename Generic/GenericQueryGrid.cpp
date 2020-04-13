@@ -123,8 +123,8 @@ bool GenericQueryGrid::Create()
          m_Grid->SetWindowStyleFlag( (unsigned)m_Grid->GetWindowStyle() &~ (unsigned)wxHSCROLL );
 
         //Set the column Labels
-        m_Grid->CreateFormQuery();
-
+        if(!m_Grid->CreateFormQuery())
+            return false;
 
 
     //Add the spread sheet directly to the main form box grid..
@@ -484,7 +484,8 @@ void GenericQueryGrid::OnMyEvent(MyEvent& event )
     else if (event.m_bEdit)
         EditItem(event.m_iRow);
     else if(event.m_bDestroyed){
-
+        event.m_bDestroyed=false;
+        Close(true);
     }
     else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.

@@ -31,7 +31,7 @@ protected:
     wxBoxSizer* GetMainSizer();
     int GetCtlIndex(wxString sIdentifier); // Get the index to the control by the identifier.
 public:
-    DialogBaseClass( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
+    explicit  DialogBaseClass( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
 
     void Create();
     ~DialogBaseClass() override;

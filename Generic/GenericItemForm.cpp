@@ -574,7 +574,6 @@ void GenericItemForm::OnbOK( wxCommandEvent& event )
     else{
         //If we are only viewing, there is no need to refresh the grid.
         Close(TRUE);
-        return;
     }
 
     //Send a message to the main frame to update the spreadsheet
@@ -589,10 +588,12 @@ void GenericItemForm::OnbCancel( wxCommandEvent& event )
 {
     //The is no need to refresh the parent if we are canceling.
     //Refresh the control by generating an event to the main frame.
- //   MyEvent my_event( this );
- //   GetParent()->ProcessWindowEvent( my_event ) ;
+    MyEvent my_event( this );
+    my_event.m_bDestroyed=true;
+    GetParent()->ProcessWindowEvent( my_event );
 
     Close(TRUE);
+
 }
 
 

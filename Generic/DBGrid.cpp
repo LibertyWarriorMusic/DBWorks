@@ -28,6 +28,7 @@ enum {
     ID_MENU_PROPERTIES = wxID_HIGHEST + 500,
     ID_MENU_OPEN,
     ID_MENU_OPEN_FORM_QUERY,
+    ID_MENU_RUN_FILTER,
     ID_MENU_EDIT,
     ID_MENU_FILTER,
     ID_MENU_FILTER_SHOW_ALL,
@@ -37,6 +38,7 @@ enum {
 wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
     EVT_MENU(ID_MENU_PROPERTIES, DBGrid::OnClickProperties)
     EVT_MENU(ID_MENU_OPEN, DBGrid::OnClickOpen)
+    EVT_MENU(ID_MENU_RUN_FILTER, DBGrid::OnRunFilter)
     EVT_MENU(ID_MENU_DOCUMENT, DBGrid::OnClickOpenDocument)
     EVT_MENU(ID_MENU_EDIT, DBGrid::OnClickEdit)
     EVT_MENU(ID_MENU_FILTER, DBGrid::OnClickMenuFilter)
@@ -53,13 +55,15 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
     m_iCol = 0;
     m_iGetCellRowIndex=0;
     bFormQueryMode=false;
-    m_sFormQuery="";
+    m_sFormQueryTemp="";
+    m_sFormQueryOriginal="";
 
     // Connect Events
     Connect(wxEVT_SIZE,wxGridEventHandler( DBGrid::OnSizeGridSpreadSheet ), nullptr, this );
     Connect(wxEVT_GRID_SELECT_CELL,wxGridEventHandler( DBGrid::OnGridEvents ), nullptr, this );
     Connect(wxEVT_GRID_CELL_RIGHT_CLICK,wxGridEventHandler( DBGrid::OnGridRClick ), nullptr, this );
     Connect(wxEVT_GRID_CELL_LEFT_DCLICK,wxGridEventHandler( DBGrid::OnGridDLClick ), nullptr, this );
+    Connect(wxEVT_GRID_LABEL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridLabelRightClick ), nullptr, this );
     //Connect(wxEVT_GRID_CELL_LEFT_CLICK,wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
 
 }
@@ -69,9 +73,289 @@ DBGrid::DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _
     Disconnect( wxEVT_GRID_SELECT_CELL, wxGridEventHandler( DBGrid::OnGridEvents ), nullptr, this );
     Disconnect( wxEVT_GRID_CELL_RIGHT_CLICK, wxGridEventHandler( DBGrid::OnGridRClick ), nullptr, this );
     Disconnect( wxEVT_GRID_CELL_LEFT_DCLICK, wxGridEventHandler( DBGrid::OnGridDLClick ), nullptr, this );
-   // Disconnect( wxEVT_GRID_CELL_LEFT_CLICK, wxGridEventHandler( DBGrid::OnGridClick ), nullptr, this );
     //m_GridArray.Empty();
 }
+
+void DBGrid::OnSizeGridSpreadSheet( wxGridEvent& event )
+{
+    //Because we are interupting the base class size event, if we don't call this function to set the widths of the columns, then the cells will not be drawn.
+
+    //Generate the size event for the base class
+    wxSizeEvent sizeEvent;
+    sizeEvent.SetSize(GetVirtualSize());
+    OnSize(sizeEvent);
+
+    ResizeSpreadSheet();
+}
+
+
+//Adjusts the widths of columns to fit the text.
+void DBGrid::ResizeSpreadSheet()
+{
+    // There is a sizing issue if we use this funcition because we are interupting the base class size event.
+    //
+    wxSize sizeOfFrame= GetVirtualSize();
+
+    int RoomForASC_DESC_Button=30;
+
+    int num_cols=GetNumberCols();
+    int width=GetRowLabelSize();
+    int frameSizeWidth=sizeOfFrame.GetWidth();
+    int CurrentWidth=0;
+    int totalGridWidth = num_cols*width;
+
+    // If we can't fit all the columns in the width of the frame by text, then we have to assign a width so each column is visible on the screen.
+    if (frameSizeWidth>totalGridWidth){
+
+        for(int col=0;col<num_cols-1;col++)
+        {
+            bool bHide = false;
+            if(col>0){
+                bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
+            }
+
+            if(col>0 && bHide){
+
+                //Only set it if it's not allready zero, zero width means it's hidden.
+                int CurrentWidth = GetColumnWidth(col);
+                CurrentWidth+=RoomForASC_DESC_Button; // Add a little for the order buttons
+                SetColumnWidth(col,CurrentWidth);
+
+                if (CurrentWidth>0)//Only do unhidden columns, hidden columns have zero width
+                    SetColSize(col,0);
+
+            }else{
+                //Auto size the column to the width so we can read the correct width value from getColSize()
+                AutoSizeColumn(col);
+
+                // Get the column width and make sure it's over 100.
+                CurrentWidth=GetColSize(col);
+                CurrentWidth+=RoomForASC_DESC_Button; // Add a little for the order buttons
+                SetColumnWidth(col,CurrentWidth);
+
+                if(CurrentWidth < Settings.lMinGridColWidth){
+
+                    int CurrentWidth = GetColumnWidth(col);
+                    if (CurrentWidth>0)//Only do unhidden columns, hidden columns have zero width
+                        SetColSize(col,(int)Settings.lMinGridColWidth);
+                }
+                if (CurrentWidth > Settings.lMaxGridColWidth){
+
+                    int CurrentWidth = GetColumnWidth(col);
+                    if (CurrentWidth>0)//Only do unhidden columns, hidden columns have zero width
+                        SetColSize(col,(int)Settings.lMaxGridColWidth);
+                }
+                width+=GetColSize(col);
+            }
+        }
+
+        // Will set the last column to fit the remaining window.
+        if (num_cols>0)
+        {
+            width=GetClientSize().GetWidth()-width-1;
+            if(width>=Settings.lMinGridColWidth)
+                SetColSize(num_cols-1,width+RoomForASC_DESC_Button);// A little more for the asc buttons
+        }
+    } else{
+
+        if(num_cols>0){
+            int totalWidth = sizeOfFrame.x;
+
+            if(totalWidth>150)
+                totalWidth =totalWidth - GetRowLabelSize(); //Account for the Row Title field
+
+            if( num_cols>0){
+                width = totalWidth / num_cols;
+                width = width;
+            }
+
+            else
+                width=30; // Some default
+
+
+
+            //Determine the width of each column by the size of the frame
+            for(int col=0;col<num_cols;col++) {
+
+                bool bHide = false;
+                if(col>0){
+                    bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
+                }
+
+                if(!bHide){
+                    SetColSize(col,width);
+                    SetColMinimalWidth(col,width);
+                } else{
+                    int CurrentWidth = GetColumnWidth(col);
+                    if (CurrentWidth>0)
+                        SetColSize(col,0);
+                }
+            }
+        }
+    }
+}
+
+// This will be used to order the grid alphabetically.
+void DBGrid::OnGridLabelRightClick(wxGridEvent& event )
+{
+    int row = event.GetRow();
+    int col = event.GetCol();
+
+    if(col==-1 && row ==-1){
+        if(bFormQueryMode){
+            m_sFormQueryTemp = m_sFormQueryOriginal;
+            CreateFormQuery(false);//We don't want to re-create the columns, they exist already
+
+        }else {
+            LoadGridFromDatabase();
+        }
+    }
+
+    if(col>=0){
+        int posStart = GetColLeft(col);
+        int posRight = GetColRight(col);
+
+        wxPoint pt = event.GetPosition();
+        pt.x = pt.x - 60;
+        wxString msg;
+
+        int LeftXofRect = posStart +2;
+
+        wxRect up(LeftXofRect,2,15,11);
+        wxRect down(LeftXofRect,14,15,11);
+
+        if(Utility::IsPointInRect(pt,up)){
+
+            if(bFormQueryMode){
+
+                wxString field = m_GridArray[col].fieldName;
+                m_sFormQueryTemp = m_sFormQueryOriginal + " ORDER BY " + field + " ASC";
+
+                CreateFormQuery(false);//We don't want to re-create the columns, they exist already
+
+            }else{
+                //m_sWhereCondition
+                wxString field = "";
+                if(col==0)
+                    field = m_sTableName + "Id";
+                else if(col>0)
+                    field = m_GridArray[col-1].fieldName;
+
+                wxString QueryString = "select * from " + m_sTableName + m_sWhereCondition + " ORDER BY " + field + " ASC";
+                LoadGridFromDatabase(false,QueryString);
+
+            }
+
+            ResizeSpreadSheet();
+
+        }
+        else if(Utility::IsPointInRect(pt,down)){
+
+            if(bFormQueryMode){
+
+                wxString field = m_GridArray[col].fieldName;
+                m_sFormQueryTemp = m_sFormQueryOriginal + " ORDER BY " + field + " DESC";
+                CreateFormQuery(false);//We don't want to re-create the columns, they exist already
+
+            }else{
+                wxString field = "";
+                if(col==0)
+                    field = m_sTableName + "Id";
+                else if(col>0)
+                    field = m_GridArray[col-1].fieldName;
+
+                wxString QueryString = "select * from " + m_sTableName + m_sWhereCondition + " ORDER BY " + field + " DESC";
+                LoadGridFromDatabase(false,QueryString);
+
+
+            }
+            ResizeSpreadSheet();
+        }
+    }
+}
+
+
+// ADD MENU ITEM TO CONTEXT MENU
+void DBGrid::OnGridRClick(wxGridEvent& event )
+{
+    m_iRow = event.GetRow();
+    m_iCol = event.GetCol();
+
+
+    if(!bFormQueryMode){
+
+        SetGridCursor(m_iRow,m_iCol);
+        wxPoint point = event.GetPosition();
+        auto *menu = new wxMenu;
+        //For everyone at the moment, create a filter for the current grid.
+        wxString sColumnTitle = GetColLabelValue(m_iCol);
+        wxString sCellValue = GetCellValue(m_iRow,m_iCol);
+
+        if(m_sTableName==SYS_TABLES)
+            wxString sHTMLDocument = GetCellValue(m_iRow,2);// NOT SURE WHY THIS IS HEAR
+
+        wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
+
+        if (Utility::IsSystemDatabaseDeveloper() ) {
+
+            if(m_sTableName==USR_QUERIES)
+                menu->Append(ID_MENU_OPEN_FORM_QUERY, wxT("Run Query"), wxT("Run the form query to view the records."));
+            else if(m_sTableName==USR_FILTERS)
+                menu->Append(ID_MENU_RUN_FILTER, wxT("Run Filter"), wxT("Run the filter to view the records."));
+            else if(m_sTableName==SYS_TABLES)
+                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
+            else{
+                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+
+                m_iDocumentColumn = HasRowDocumentFlag(m_iRow);// This will return -1 if we have not document.
+
+                if(m_iDocumentColumn>=0){
+                    menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
+                }
+            }
+
+            //Only show for the system tables.
+            if(m_sTableName==SYS_TABLES)
+                menu->Append(ID_MENU_PROPERTIES, wxT("Field Definitions"), wxT("Edit the field definitions."));
+
+            menu->AppendSeparator();
+            menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
+        }
+        else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
+
+            // If we are advanced or standard user on the main form, we only want to show the open menu
+            if(m_sTableName==SYS_TABLES){
+                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
+
+            }
+            else{ //If we are not on the main form, we just want to show the open and edit menu.
+                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
+
+                if(!Utility::IsGuest()){
+                    menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
+                }
+            }
+        }
+
+        menu->AppendSeparator();
+
+        if(m_sTableName!=SYS_FIELDS)
+            menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
+
+
+        int len = menuLabel.Length();
+        if(len > 100){
+            menuLabel = menuLabel.Left(100);
+            menuLabel << " ....";
+        }
+        if(m_sTableName!=SYS_FIELDS)
+            menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
+
+        PopupMenu( menu, point);
+    }
+
+}
+
 void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flags,const wxString& defaultVal, const wxString& fieldType, const wxString& fieldNull, const wxString& fieldKey,const wxString& fieldExtra )
 {
     auto *item = new TableField();
@@ -87,9 +371,10 @@ void DBGrid::AddItem(const wxString& fieldTitle, const wxString& field, const wx
 
 void DBGrid::SetFormQuery(const wxString& str)
 {
-    m_sFormQuery=str;
+    m_sFormQueryTemp=str;
+    m_sFormQueryOriginal=str;
 
-    if(!m_sFormQuery.IsEmpty())
+    if(!m_sFormQueryTemp.IsEmpty())
         bFormQueryMode=true;
 }
 
@@ -216,7 +501,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                 int numField = res.num_fields();
 
                                 for(int i=0;i<numField;i++){
-                                    String  strName;
+                                    wxString  strName="";
 
                                     strName = res.field_name(i);
 
@@ -224,9 +509,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                         bMatch = true;
                                         break;
                                     }
-
                                 }
-
 
                                 if(!bMatch){
                                     wxLogMessage(MSG_FIELD_NOT_CREATED);
@@ -323,7 +606,7 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                 }
                 catch (int& num) {
                     //f->SetStatusText("Database Connected - Row doesn't exist:");
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return false;
                 }
             }
@@ -332,12 +615,12 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
             //cerr << "Failed to get stock table: " << query.error() << endl;
             //return 1;
             //f->SetStatusText("Database Connected - Failed to get item list:");
-            wxLogMessage(MSG_FIELD_NOT_CREATED);
+            //wxLogMessage(MSG_FIELD_NOT_CREATED);
             return false;
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         //f->SetStatusText("Did not connect to database.");
         return false;
     }
@@ -605,82 +888,6 @@ void DBGrid::SetEventType(long type)
     m_eventType = type;
 }
 
-// ADD MENU ITEM TO CONTEXT MENU
-void DBGrid::OnGridRClick(wxGridEvent& event )
-{
-    if(!bFormQueryMode){
-
-        m_iRow = event.GetRow();
-        m_iCol = event.GetCol();
-        SetGridCursor(m_iRow,m_iCol);
-        wxPoint point = event.GetPosition();
-        auto *menu = new wxMenu;
-        //For everyone at the moment, create a filter for the current grid.
-        wxString sColumnTitle = GetColLabelValue(m_iCol);
-        wxString sCellValue = GetCellValue(m_iRow,m_iCol);
-
-        if(m_sTableName==SYS_TABLES)
-            wxString sHTMLDocument = GetCellValue(m_iRow,2);// NOT SURE WHY THIS IS HEAR
-
-        wxString menuLabel = "Filter: " + sColumnTitle +" = " + sCellValue;
-
-        if (Utility::IsSystemDatabaseDeveloper() ) {
-
-            if(m_sTableName==USR_QUERIES)
-                menu->Append(ID_MENU_OPEN_FORM_QUERY, wxT("Open Form Query"), wxT("Open the form query to view the records."));
-            else if(m_sTableName==SYS_TABLES)
-                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
-            else{
-                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
-
-                m_iDocumentColumn = HasRowDocumentFlag(m_iRow);// This will return -1 if we have not document.
-
-                if(m_iDocumentColumn>=0){
-                    menu->Append(ID_MENU_DOCUMENT, wxT("View Document"), wxT("View Document."));
-                }
-            }
-
-            //Only show for the system tables.
-            if(m_sTableName==SYS_TABLES)
-                menu->Append(ID_MENU_PROPERTIES, wxT("Field Definitions"), wxT("Edit the field definitions."));
-
-            menu->AppendSeparator();
-            menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-        }
-        else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
-
-            // If we are advanced or standard user on the main form, we only want to show the open menu
-            if(m_sTableName==SYS_TABLES){
-                menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
-
-            }
-            else{ //If we are not on the main form, we just want to show the open and edit menu.
-                menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
-
-                if(!Utility::IsGuest()){
-                    menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
-                }
-            }
-        }
-
-        menu->AppendSeparator();
-
-        if(m_sTableName!=SYS_FIELDS)
-            menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
-
-
-        int len = menuLabel.Length();
-        if(len > 100){
-            menuLabel = menuLabel.Left(100);
-            menuLabel << " ....";
-        }
-        if(m_sTableName!=SYS_FIELDS)
-            menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
-
-        PopupMenu( menu, point);
-    }
-
-}
 //Searches for all the columns in a given row on the grid and checks to see if there is DOCUMENT set in the flag.
 // Return -1 if no DOCUMENT flag found, return the ID where the document can be found
 int DBGrid::HasRowDocumentFlag(int iRow) {
@@ -698,6 +905,7 @@ void DBGrid::HideColumn(int colNumber)
    HideCol(colNumber);
 }
 
+//Used to setup the grid on creation.
 void DBGrid::SetGridProperties()
 {
     SetSelectionMode(wxGridSelectRows );
@@ -715,13 +923,29 @@ void DBGrid::SetGridProperties()
     EnableDragRowSize( false );
     SetRowLabelAlignment( wxALIGN_CENTER, wxALIGN_CENTER );
 
+    SetRowLabelSize(60);
+    SetColLabelSize(27);
+
     // Cell Defaults
     SetDefaultCellAlignment( wxALIGN_LEFT, wxALIGN_TOP );
 
 }
 
-//The difference between create CreateFields and CreateFormQueryFields is that when
-//the grid is m_GridArray also holds the primary key for CreateFormQueryFields
+void DBGrid::DrawCornerLabel(wxDC &dc)
+{
+    wxFontInfo info;
+    info.Italic(true);
+    info.Family(wxFONTFAMILY_ROMAN );
+    wxFont ftItalic(info);
+
+    dc.SetFont(ftItalic);
+
+    dc.SetPen( wxPen( wxColor(45,45,45), 1 ) );
+    dc.DrawText("DBWorks",wxPoint(5,5));
+}
+
+//The difference between create CreateFields and CreateFormQueryFields is that
+// m_GridArray also holds the primary key for CreateFormQueryFields
 // Normally, m_GridArray doesn't contain the primary key as it's automatically generated.
 void DBGrid::CreateFields()
 {
@@ -742,7 +966,52 @@ void DBGrid::CreateFields()
             SetColLabelValue(i+1, m_GridArray[i].Title);
     }
 }
+//This is the wxWidgets base class overridden.
+void DBGrid::DrawColLabel(wxDC & dc, int col)
+{
+    wxGrid::DrawColLabel(dc,col);
 
+    int posStart = GetColLeft(col);
+    int posRight = GetColRight(col);
+
+    int LeftXofRect = posStart +2;
+
+    int LeftXofTriangle = posStart + 4;
+    int MidXofTriangle = posStart + 9;
+    int RightXofTriange = posStart + 14;
+
+/*
+    int LeftXofRect = posRight-18;
+    int LeftXofTriangle = posRight-16;
+    int MidXofTriangle = posRight-11;
+    int RightXofTriange = posRight-6;
+    */
+
+    wxBrush brush(wxColor(0,0,255),wxBRUSHSTYLE_SOLID);
+    dc.SetPen( wxPen( wxColor(45,45,45), 1 ) );
+
+    wxRect up(LeftXofRect,2,15,11);
+    wxRect down(LeftXofRect,14,15,11);
+
+    dc.DrawRectangle(up);
+    dc.DrawRectangle(down);
+
+    dc.DrawLine(LeftXofTriangle,9,RightXofTriange,9);
+    dc.DrawLine(RightXofTriange,9,MidXofTriangle,4);
+    dc.DrawLine(LeftXofTriangle,9,MidXofTriangle,4);
+
+    dc.DrawLine(LeftXofTriangle,17,RightXofTriange,17);
+    dc.DrawLine(LeftXofTriangle,17,MidXofTriangle,22);
+    dc.DrawLine(MidXofTriangle,22,RightXofTriange,17);
+
+
+    //  wxBrush brush(wxColor(0,0,0),wxBRUSHSTYLE_SOLID);
+    // dc.SetBrush(brush); // green filling
+
+    //dc.FloodFill(posRight-11,6,wxColor(0,0,0));
+    //dc.DrawCheckMark(posStart,10,10,15);
+
+}
 //This is used for viewing a query results including the primary keys.
 void DBGrid::CreateFormQueryColumns()
 {
@@ -778,115 +1047,9 @@ wxString DBGrid::getSelectedFieldValue(const wxString& fieldname)
             }
         }
     }
-    
     return "";
-    
-}
-void DBGrid::OnSizeGridSpreadSheet( wxGridEvent& event )
-{
-    //Because we are interupting the base class size event, if we don't call this function to set the widths of the columns, then the cells will not be drawn.
-
-    //Generate the size event for the base class
-    wxSizeEvent sizeEvent;
-    sizeEvent.SetSize(GetVirtualSize());
-    OnSize(sizeEvent);
-
-    ResizeSpreadSheet();
 }
 
-//Adjects the widths of columns to fit the text.
-void DBGrid::ResizeSpreadSheet()
-{
-    // There is a sizing issue if we use this funcition because we are interupting the base class size event.
-    //
-     wxSize sizeOfFrame= GetVirtualSize();
-     
-     int num_cols=GetNumberCols();
-     int width=GetRowLabelSize();
-     int frameSizeWidth=sizeOfFrame.GetWidth();
-     int CurrentWidth=0;
-     int totalGridWidth = num_cols*width;
-
-     // If we can't fit all the columns in the width of the frame by text, then we have to assign a width so each column is visible on the screen.
-     if (frameSizeWidth>totalGridWidth){
-
-         for(int col=0;col<num_cols-1;col++)
-         {
-             bool bHide = false;
-             if(col>0){
-                 bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
-             }
-             
-             if(col>0 && bHide){
-
-                 //Only set it if it's not allready zero, zero width means it's hidden.
-                 int CurrentWidth = GetColumnWidth(col);
-                 if (CurrentWidth>0)
-                     SetColSize(col,0);
-                 
-             }else{
-                 //Auto size the column to the width so we can read the correct width value from getColSize()
-                 AutoSizeColumn(col);
-                 
-                 // Get the column width and make sure it's over 100.
-                 CurrentWidth=GetColSize(col);
-                                 
-                 if(CurrentWidth < Settings.lMinGridColWidth){
-
-                     int CurrentWidth = GetColumnWidth(col);
-                     if (CurrentWidth>0)
-                         SetColSize(col,(int)Settings.lMinGridColWidth);
-                 }
-                  if (CurrentWidth > Settings.lMaxGridColWidth){
-
-                      int CurrentWidth = GetColumnWidth(col);
-                      if (CurrentWidth>0)
-                        SetColSize(col,(int)Settings.lMaxGridColWidth);
-                  }
-                 width+=GetColSize(col);
-             }
-         }
-         
-         // Will set the last column to fit the remaining window.
-         if (num_cols>0)
-         {
-             width=GetClientSize().GetWidth()-width-1;
-             if(width>=Settings.lMinGridColWidth)
-                 SetColSize(num_cols-1,width);
-         }
-     } else{
-
-         if(num_cols>0){
-             int totalWidth = sizeOfFrame.x;
-
-             if(totalWidth>150)
-                 totalWidth =totalWidth - GetRowLabelSize(); //Account for the Row Title field
-
-              if( num_cols>0)
-                width = totalWidth / num_cols;
-              else
-                width=30; // Some default
-
-             //Determine the width of each column by the size of the frame
-             for(int col=0;col<num_cols;col++) {
-
-                 bool bHide = false;
-                 if(col>0){
-                     bHide = Utility::HasFlag(m_GridArray[col-1].Flags,"HIDE");
-                 }
-
-                 if(!bHide){
-                     SetColSize(col,width);
-                     SetColMinimalWidth(col,width);
-                 } else{
-                     int CurrentWidth = GetColumnWidth(col);
-                     if (CurrentWidth>0)
-                         SetColSize(col,0);
-                 }
-             }
-         }
-     }
-}
 
 //Delete all the rows from the grid so it can be repopulated again.
 void DBGrid::DeleteGridRows()
@@ -1197,17 +1360,18 @@ void DBGrid::OnGridDLClick(wxGridEvent& event )
     MyEvent my_event( this );
     my_event.m_iRow = event.GetRow();
     my_event.m_iCol = event.GetCol();
-
+    m_iRow = my_event.m_iRow;
+    m_iCol=my_event.m_iCol;
     if(IsCellHighlighted(my_event.m_iRow,2)){
         wxLogMessage(MSG_FIELD_NOT_CREATED);
         return;
     }
 
     //Change the behaviour of double click cell to view or edit item depending on the system setting.
-    if(m_sTableName==USR_QUERIES){
+    if(m_sTableName==USR_QUERIES || m_sTableName==USR_FILTERS ){
         my_event.m_bOpenQueryGrid = true;
-        my_event.m_sQueryToApply = GetCellValue(my_event.m_iRow,2);
         my_event.m_sTitle = GetCellValue(my_event.m_iRow,1);
+        my_event.m_sQueryToApply = GetCellValue(my_event.m_iRow,2);
     }
     else if(Settings.sDClickGridCell=="VIEW")
         my_event.m_bOpen = true;
@@ -1252,16 +1416,29 @@ void DBGrid::OnOpenFormQuery(wxCommandEvent& event)
     MyEvent my_event( this );
 
     my_event.m_bOpenQueryGrid = true;
-    my_event.m_sTitle = GetCellValue(my_event.m_iRow,1);
-    my_event.m_sQueryToApply = GetCellValue(my_event.m_iRow,2);
-    my_event.m_bOpenQueryGrid = true;
+    my_event.m_sTitle = GetCellValue(m_iRow,1);
+    my_event.m_sQueryToApply = GetCellValue(m_iRow,2);
+
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}
+
+
+void DBGrid::OnRunFilter(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
+
+    my_event.m_bOpenQueryGrid = true; //This works for filters also.
+    my_event.m_sTitle = GetCellValue(m_iRow,1);
+    my_event.m_sQueryToApply = GetCellValue(m_iRow,2);
+
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
 }
 
 //This is actually the starting point to create a grid based on a query including the titles because have
 //no information about the grid until the query is run.
-void DBGrid::CreateFormQuery()
+bool DBGrid::CreateFormQuery(bool bCreateColumns)
 {
 
     wxString database(Settings.sDatabase);
@@ -1278,8 +1455,11 @@ void DBGrid::CreateFormQuery()
                      (const_cast<char*>((const char*)user.mb_str())),
                      (const_cast<char*>((const char*)pass.mb_str())))) {
 
+        //Remove those stupid unicode characters that mySQL doesn't understand.
+        Utility::EscapeAscii(m_sFormQueryTemp);
+
         //SetStatusText("Database Connected");
-        Query query = conn.query(m_sFormQuery);
+        Query query = conn.query(m_sFormQueryTemp);
         StoreQueryResult res = query.store();
 
         // Display results
@@ -1289,14 +1469,16 @@ void DBGrid::CreateFormQuery()
             // Once we have the definition,
            // int RowsInTable = res.num_rows();
 
-            int num_fields = res.num_fields();
-            for (int fieldIndex=0;fieldIndex<num_fields; fieldIndex++){
-                //These are all the field names from our query.
-                wxString sFieldName = res.field_name(fieldIndex);
-                AddItem(sFieldName,sFieldName );
-            }
-            //
-            CreateFormQueryColumns();
+            if(bCreateColumns){
+                int num_fields = res.num_fields();
+                for (int fieldIndex=0;fieldIndex<num_fields; fieldIndex++){
+                    //These are all the field names from our query.
+                    wxString sFieldName = res.field_name(fieldIndex);
+                    AddItem(sFieldName,sFieldName );
+                }
+                CreateFormQueryColumns();
+            } else
+                DeleteGridRows();
 
             int RowsInTable = res.num_rows();
 
@@ -1326,22 +1508,26 @@ void DBGrid::CreateFormQuery()
                 catch (int& num) {
 
                     //f->SetStatusText("Database Connected - Row doesn't exist:");
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
-
+                    wxLogMessage(MSG_FAILED_QUERY_FILTER);
+                    return false;
                 }
             }
         }
         else {
+
             //cerr << "Failed to get stock table: " << query.error() << endl;
             //return 1;
             //f->SetStatusText("Database Connected - Failed to get item list:");
-            wxLogMessage(MSG_FIELD_NOT_CREATED);
-
+            wxLogMessage(MSG_FAILED_QUERY_FILTER);
+            return false;
         }
     }
     else{
+
         wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        return false;
         //f->SetStatusText("Did not connect to database.");
 
     }
+    return true;
 }

@@ -68,6 +68,7 @@ GenericTable::GenericTable( wxWindow* parent, wxWindowID id, const wxString& tit
     m_txtFilter=nullptr;
     m_ComboFilter=nullptr;
     m_pQueryGrid=nullptr;
+    m_pFormItem= nullptr;
     m_sCurrentStoredWhereCondition="";
     m_iTempRowIndex=-1;
     m_sTempFormQuery="";
@@ -164,6 +165,7 @@ bool GenericTable::Create()
     //If we have an error and the grid faled to load, just destroy it.
     if(!m_Grid->LoadGridFromDatabase()){
         m_Grid->Destroy();
+        m_Grid= nullptr;
         return false;
     }
 
@@ -256,6 +258,7 @@ bool GenericTable::Create()
     else
         SetIDTitleName("ID");
 
+
     return true;
     
 }
@@ -327,8 +330,11 @@ void GenericTable::OnbAddItem( wxCommandEvent& event )
 }
 void GenericTable::AddItem(long rowID)
 {
-
-    formItem = new GenericItemForm((wxFrame*) this, -1,"Add Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP| (unsigned)wxRESIZE_BORDER);
+    if(m_pFormItem != nullptr){
+        m_pFormItem->Destroy();
+        m_pFormItem = nullptr;
+    }
+    m_pFormItem = new GenericItemForm((wxFrame*) this, -1,"Add Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP| (unsigned)wxRESIZE_BORDER);
 
 
     int count = m_FieldArray.GetCount();
@@ -336,18 +342,18 @@ void GenericTable::AddItem(long rowID)
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
+            m_pFormItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
     }
 
     //Note: this has to come before CreateField because m_sTableName is referenced in CreateFields() function
-    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+    m_pFormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
 
-    formItem->SetUse("ADD");
-    formItem->CreateFields();
+    m_pFormItem->SetUse("ADD");
+    m_pFormItem->CreateFields();
 
 
 
-    formItem->Show(true);
+    m_pFormItem->Show(true);
     SetStatusText("Add Item.");
 
 }
@@ -364,31 +370,35 @@ void GenericTable::OnbEditItem( wxCommandEvent& event )
 }
 void GenericTable::EditItem(long rowID)
 {
+    if(m_pFormItem != nullptr){
+        m_pFormItem->Destroy();
+        m_pFormItem = nullptr;
+    }
 
     m_iTempRowIndex = rowID; // Save the row so we now what to refresh.
 
-    formItem = new GenericItemForm((wxFrame*) this, -1,"Edit Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
+    m_pFormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
     int count = m_FieldArray.GetCount();
 
     if (count>0){
 
         for(int index=0;index<count;index++)
-            formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull );
+            m_pFormItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull );
     }
 
 
-    formItem->SetUse("UPDATE");
+    m_pFormItem->SetUse("UPDATE");
 
-    formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
-    formItem->CreateFields();
+    m_pFormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+    m_pFormItem->CreateFields();
 
 
     wxString spasswordId = m_Grid->GetCellValue(rowID,0);
     SetStatusText(spasswordId);
 
-    formItem->SetID(spasswordId);
-    formItem->Show(true);
-    formItem->LoadFields();
+    m_pFormItem->SetID(spasswordId);
+    m_pFormItem->Show(true);
+    m_pFormItem->LoadFields();
     SetStatusText("Edit Item");
 
 }
@@ -409,26 +419,26 @@ void GenericTable::ViewItem(long rowID)
 
     // wxPoint(100,100),
     // wxSize(500,410),
-    if(formItem != nullptr){
-        //formItem->Destroy();
-        formItem = nullptr;
+    if(m_pFormItem != nullptr){
+        m_pFormItem->Destroy();
+        m_pFormItem = nullptr;
     }
 
-    formItem = new GenericItemForm((wxFrame*) this, -1,"View Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
+    m_pFormItem = new GenericItemForm((wxFrame*) this, -1,"View Item",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP | (unsigned)wxRESIZE_BORDER);
 
-    if(formItem != nullptr){
+    if(m_pFormItem != nullptr){
         //Define the database
         int count = m_FieldArray.GetCount();
 
         if (count>0){
 
             for(int index=0;index<count;index++)
-                formItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
+                m_pFormItem->AddItem(m_FieldArray[index].Title,m_FieldArray[index].fieldName,m_FieldArray[index].Flags,m_FieldArray[index].fieldType,m_FieldArray[index].fieldDefault,m_FieldArray[index].fieldKey,m_FieldArray[index].fieldExtra,m_FieldArray[index].fieldNull);
         }
 
-        formItem->SetUse("VIEW");
-        formItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
-        formItem->CreateFields();
+        m_pFormItem->SetUse("VIEW");
+        m_pFormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,m_sTableName,m_sTableName+"Id");
+        m_pFormItem->CreateFields();
 
 
 
@@ -436,9 +446,9 @@ void GenericTable::ViewItem(long rowID)
         wxString spasswordId = m_Grid->GetCellValue((int)rowID,0);
         SetStatusText(spasswordId);
 
-        formItem->SetID(spasswordId);
-        formItem->Show(true);
-        formItem->LoadFields();
+        m_pFormItem->SetID(spasswordId);
+        m_pFormItem->Show(true);
+        m_pFormItem->LoadFields();
         SetStatusText("View Item");
     }
 }
@@ -543,6 +553,26 @@ void GenericTable::OnbHelp( wxCommandEvent& event )
     m_HtmlWin->Show(true);
 
 }
+void GenericTable::RunQuery(wxString sTitle, wxString sFormGridQuery)
+{
+    m_pQueryGrid = new GenericQueryGrid((wxFrame*) this, -1,sTitle,wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+
+    if (m_pQueryGrid != nullptr){
+        m_pQueryGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+        m_pQueryGrid->SetFormQuery(sFormGridQuery);
+        if(m_pQueryGrid->Create())
+            m_pQueryGrid->Show(true);
+        else{
+            m_pQueryGrid->Close();
+            m_pQueryGrid= nullptr;
+        }
+    }
+}
+//
+DBGrid* GenericTable::GetGrid()
+{
+    return m_Grid;
+}
 
 //We can send a message to the parent that this window is destroyed.
 bool GenericTable::Destroy()
@@ -560,18 +590,6 @@ bool GenericTable::Destroy()
     return bResult;
 }
 
-void GenericTable::OpenQueryGrid(wxString sTitle, wxString sFormGridQuery)
-{
-    m_pQueryGrid = new GenericQueryGrid((wxFrame*) this, -1,sTitle,wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
-
-    if (m_pQueryGrid != nullptr){
-        m_pQueryGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
-        m_pQueryGrid->SetFormQuery(sFormGridQuery);
-        m_pQueryGrid->Create();// Create the table.
-        m_pQueryGrid->Show(true);
-    }
-}
-
 //We created an event to refresh the grid so we can call it from any frame class.
 void GenericTable::OnMyEvent(MyEvent& event )
 {
@@ -586,13 +604,11 @@ void GenericTable::OnMyEvent(MyEvent& event )
     else if (event.m_bEdit)
         EditItem(event.m_iRow);
     else if(event.m_bDestroyed){
-        if(m_pQueryGrid!= nullptr){
-            //m_pQueryGrid->Destroy();
-            m_pQueryGrid= nullptr;
-        }
+        m_pFormItem= nullptr;
+        m_pQueryGrid= nullptr;
     }
     else if(event.m_bOpenQueryGrid)
-        OpenQueryGrid(event.m_sTitle, event.m_sQueryToApply);
+        RunQuery(event.m_sTitle, event.m_sQueryToApply);
     else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
@@ -600,6 +616,8 @@ void GenericTable::OnMyEvent(MyEvent& event )
         OnParseDocument(event.m_cellValue);
 
     if(event.m_bRefreshDatabase){
+
+        m_pFormItem= nullptr;
 
         if(!event.m_sWhereCondition.IsEmpty()){
             SetCurrentStoredWhereCondition(event.m_sWhereCondition);//Store the where condition from the grid in the mainframe.

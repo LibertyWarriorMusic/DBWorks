@@ -3,14 +3,19 @@ class wxHyperlinkCtrl;
 
 #define FLAG_OPTIONS "SELECTION{MULTILINE;READONLY;HIDE;PASSWORD;WEBLINK;DOCUMENT;SELECTION_ADDITIVE;SELECTION{val1;val2;etc;};SELECTION_LOOKUP_NAME{TableName;FieldName;};SELECTION_LINKED_NAME{TableName;FieldName;};SELECTION_LOOKUP_ID{TableID;ColumnNumber;};SELECTION_LINKED_ID{TableID;ColumnNumber;}}" //The different type of flags you can create with this database.
 #define MYSQL_TYPE_OPTIONS "SELECTION{VARCHAR(255)     [String(0-255 Variable String)];CHAR(255)            [String(0-255) Padded String];TINYTEXT              [String(0-255)];TEXT                      [String(0-65535)];MEDIUMTEXT        [String(0-16777215)];LONGTEXT             [String(0-4294967295)];BINARY                  [0-255];TINYBLOB              [0-255];BLOB                     [0-65535];MEDIUMBLOB         [0-16777215];LONGBLOB          [0-4294967295];TINYINT           [-128 to 127];SMALLINT     [-32768 to 32767];MEDIUMINT     [-8388608 to 8388607];INT                  [-2147483648 to 2147483647];BIGINT            [-9223372036854775808 to 9223372036854775807];FLOAT(p)         [Where p is the precision];DOUBLE(m,d)     [m:total digits d:digits after the decimal];DECIMAL;DATE;TIME;DATETIME;TIMESTAMP;YEAR;ENUM;BOOLEAN;}"
+
 #define SYS_TABLES "sys_tables" //This is the name of the table in the information database that holds all user tables.
 #define SYS_FIELDS "sys_fields"//This is the name of the table in the information database that holds all user fields linked to sys_table.
 #define USR_QUERIES "usr_queries"
+#define USR_FILTERS "usr_filters"
 #define SYS_DOCS "sys_docs" //This is the name of the table in the information database that holds system documents.
-#define MYSQLRESERVEDWORDS "KEY GROUP TABLE DATABASE CHARACTER COLUMN CURRENT_TIME CHECK COLUMNS CROSS CURRENT_TIMESTAMP COLLATE CONSTRAINT CURRENT_DATE ADD ALL ALTER ANALYZE AND AS ASC AUTO_INCREMENT BDB BERKELEYDB BETWEEN BIGINT BINARY BLOB BOTH BTREE BY CASCADE CASE CHANGE CHAR CHARACTER CHECK" // This is all the mysql reserved words.
+
+
+ // This is all the mysql reserved words.
 //Place all global settings here, can be use anywhere in the project.
 //Thse setting are only set from settings.ini file.
 struct  GlobalSettings {
+    wxString sMSQLReservedWords="";
     wxString sMessage="";
     wxString sDatabase="information";
     wxString sDatabaseUser="root";
@@ -52,6 +57,7 @@ extern GlobalSettings Settings;
 #define MSG_ONLY_DATABASE_DEVELOPERS "Only database developers are allowed access to this feature."
 #define MSG_NEED_TO_SELECT_ROW "You need to select a single row first."
 #define MSG_FAILED_TO_CREATE_DATABASE "Failed to create the database, check that you have MySQL running."
+#define MSG_FAILED_QUERY_FILTER "The query or filter you created failed to run, their is an error with your statement"
 
 
 #define TITLE_WIDTH 100
@@ -66,6 +72,8 @@ extern GlobalSettings Settings;
 #define RELATIONSHIP_DIAGRAM_FIELD_HEIGHT 12
 #define RELATIONSHIP_DIAGRAM_TITLE_HEIGHT 12
 #define RELATIONSHIP_DIAGRAM_GAP 3
+#define HEIGHT_QUERY_BUILDER 190
+//#define WIDTH_QUERY_BUILDER 300
 
 //These lo
 enum {
@@ -239,6 +247,39 @@ public:
     };
 };
 
+//This class is used to drag a field name
+class FieldRect
+{
+public:
+    wxRect m_Rect;
+    wxString m_sFieldName;
+    FieldRect(){
+        m_Rect.x=0;
+        m_Rect.y=0;
+        m_Rect.width=0;
+        m_Rect.height=0;
+        m_sFieldName="";
+    };
+
+    //Draw this object to the screen while we drag it.
+    void Draw(wxDC&  dc){
+        wxFontInfo info;
+        info.Italic(true);
+        info.Family(wxFONTFAMILY_ROMAN );
+        wxFont ftItalic(info);
+        dc.SetFont(ftItalic);
+        dc.SetPen( wxPen( wxColor(150,150,150), 1 ) );
+        wxBrush brush(wxColor(150,150,150),wxBRUSHSTYLE_SOLID);
+        dc.SetBrush(brush); // green filling
+        dc.DrawText(m_sFieldName,m_Rect.x,m_Rect.y);
+    };
+    void SetRect(int x, int y){
+        m_Rect.x=x;
+        m_Rect.y=y;
+    };
+};
+
+
 
 WX_DECLARE_OBJARRAY(FieldCtlItem, ArrayFieldItem); //Used in GenericItemForm class
 WX_DECLARE_OBJARRAY(TableField, ArrayTableField); //Used in GenericTable class
@@ -247,3 +288,4 @@ WX_DECLARE_OBJARRAY(FieldCtlItem,ArrayFieldDataCtls); // Used in DialogbaseClass
 WX_DECLARE_OBJARRAY(TableLinkageLine, ArrayTableLinkageLine); //Used in GenericItemForm class
 WX_DECLARE_OBJARRAY(ObTable, ArrayDrawObjects); //Used in ObTablePanel class
 WX_DECLARE_OBJARRAY(TableField, ArrayQueryField); //Used in Generic Query Grid
+WX_DECLARE_OBJARRAY(FieldRect, ArrayFieldRect); //Used in Generic Query Grid

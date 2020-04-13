@@ -8,7 +8,8 @@ class DBGrid :
 private:
     bool bFormQueryMode;
     long m_eventType; // Used to initiate a refresh of the grid
-    wxString m_sFormQuery;
+    wxString m_sFormQueryTemp; //This query may change depending on the asc or desc order.
+    wxString m_sFormQueryOriginal;//This is the form query when the form loads, it doesn't change.
     int m_iRow; //Used when we right click on a cell to store the cell position
     int m_iCol;
     int m_iDocumentColumn; //If we found a DOCUMENT flag, this store the column where the document is located, else it's -1;
@@ -33,9 +34,11 @@ private:
     void OnClickOpen(wxCommandEvent& event);
     void OnOpenFormQuery(wxCommandEvent& event);
     void OnClickOpenDocument(wxCommandEvent& event);
+    void OnGridLabelRightClick(wxGridEvent& event );
     void OnClickEdit(wxCommandEvent& event);
     void OnClickMenuFilter(wxCommandEvent& event);
     void OnClickMenuFilterShowAll(wxCommandEvent& event);
+    void OnRunFilter(wxCommandEvent& event);
 public:
     DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _style);
     ~DBGrid() override;
@@ -48,6 +51,8 @@ public:
     int GetCurrentRowIndex();
     wxString GetCurrentRowValue(int iColumnNumber);
 
+    void DrawCornerLabel(wxDC &dc) override;
+
     void HighlightCell(int iRow, int iCol);
     void UnHighlightCell(int iRow, int iCol);
     bool IsCellHighlighted(int iRow, int iCol);
@@ -56,7 +61,6 @@ public:
     bool LoadGridFromDatabase(bool bCheckTableExists=false, wxString queryToApply=""); //Loads the grid with data from the m_sTableName table;
     bool LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists=false); //Loads the grid with data from the m_sTableName table;
     void ResizeSpreadSheet(); //Resises the fields to the text with respect to max and min size limits.
-
 
 
     void HideColumn(int colNumber);
@@ -71,8 +75,9 @@ public:
     void CreateFormQueryColumns();
 
     //FORM QUERY
-    void CreateFormQuery();
-    
+    bool CreateFormQuery(bool bCreateColumns=true);
+
+    void DrawColLabel(wxDC & dc, int col) override;
 
     wxString getSelectedFieldValue(const wxString& fieldname);
     void SetEventType(long type);

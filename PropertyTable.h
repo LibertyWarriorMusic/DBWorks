@@ -20,10 +20,8 @@ class PropertyTable : public GenericTable
         //Pointers
         HtmlHelp *m_HtmlWin;
 
-
-        void UpdateDatabaseTableDefinitionsToDefinitions();
+        bool UpdateDatabaseTableDefinitionsToDefinitions();
         void AlterTable(int row);
-
 
         wxString PrepareCreateQuery(); //Prepare the creation query
         wxString PrepareDeleteQuery(); //Prepare the delete query
@@ -45,13 +43,10 @@ class PropertyTable : public GenericTable
         void SetSettings(wxString& database, wxString& server, wxString& user, wxString& password) override; // Set Database settings.
         void SetGridTableName(wxString& name) override; //Set the table that this property grid is working on
 
-
-
         virtual bool Destroy() override;
         ~PropertyTable() override;
     
     wxDECLARE_EVENT_TABLE();
 };
-
 
 #endif //DBWORKS_PROPERTYTABLE_H

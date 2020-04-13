@@ -25,7 +25,7 @@ class MyEvent : public wxEvent
     bool m_bShowAll;
     bool m_bImportDatabase;
     bool m_bStatusMessage;
-
+    bool m_bDestroyedPropertyTable;
     bool m_bTableDiagramFrameWasDestroyed;
     bool m_bHelpFrameWasDestroyed;
 

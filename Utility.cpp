@@ -155,6 +155,12 @@ long Utility::StringToLong(const wxString& stringToConvert)
     return  value;
 }
 
+void Utility::FillComboFromStringArray(wxComboBox *pCombo, const wxArrayString sArray)
+{
+    for ( int iIdx=0; iIdx<sArray.GetCount(); iIdx++ )
+        pCombo->Append(sArray[iIdx]);
+}
+
 wxString Utility::IntToString(const int & num)
 {
     wxString sNum;
@@ -218,11 +224,11 @@ bool Utility::CreateSystemTables(wxString sDatabase)
                     " `valfield` varchar(100) NOT NULL,"
                     " `valtype` varchar(100) NOT NULL,"
                     " `valnull` varchar(10) NOT NULL,"
-                    " `valkey` varchar(10) DEFAULT NULL,"
-                    " `valdefault` varchar(255) DEFAULT NULL,"
-                    "`valextra` varchar(255) DEFAULT NULL,"
-                    " `title` varchar(100) DEFAULT NULL,"
-                    " `flags` varchar(200) DEFAULT NULL,"
+                    " `valkey` varchar(10) ,"
+                    " `valdefault` varchar(255) ,"
+                    "`valextra` varchar(255) ,"
+                    " `title` varchar(100) ,"
+                    " `flags` varchar(200) ,"
                     "PRIMARY KEY (`sys_fieldsId`)"
                     ") ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8;";
 
@@ -298,8 +304,8 @@ bool Utility::CreateSystemTables(wxString sDatabase)
                     "`usr_filtersId` int NOT NULL AUTO_INCREMENT,"
                     "`filterName` varchar(255) NOT NULL,"
                     "`queryDefinition` text NOT NULL,"
-                    "`associatedTableId` int,"
-                    "`description` text NOT NULL,"
+                    "`associatedTableId` int NOT NULL,"
+                    "`description` text,"
                     "PRIMARY KEY (`usr_filtersId`)"
                     " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
 
@@ -319,8 +325,28 @@ bool Utility::CreateSystemTables(wxString sDatabase)
                     "`usr_queriesId` int NOT NULL AUTO_INCREMENT,"
                     "`queryName` varchar(255) NOT NULL,"
                     "`queryDefinition` text NOT NULL,"
-                    "`description` text NOT NULL,"
+                    "`description` text,"
                     "PRIMARY KEY (`usr_queriesId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
+
+        if(!DoesTableExist(sDatabase,"usr_forms")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `usr_forms` ("
+                    "`usr_formsId` int NOT NULL AUTO_INCREMENT,"
+                    "`formName` varchar(255) NOT NULL,"
+                    "`formQueryDefinition` text NOT NULL,"
+                    "`description` text NOT NULL,"
+                    "PRIMARY KEY (`usr_formsId`)"
                     " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
 
             if(!query.IsEmpty())
@@ -337,15 +363,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
 }
 
 
-// Th
-void Utility::EscapeAscii(wxString& QueryString)
-{
-    QueryString.Replace("_", "`~!@%$#^%",true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
-    QueryString = QueryString.ToAscii(); //What this is doing is changing the character ‘ to _
-    QueryString.Replace("_", "'", true); //The end result is changing ‘ to '
-    QueryString.Replace("`~!@%$#^%", "_", true);
 
-}
 
 wxString Utility::Replace(wxString searchString, wxString Old, wxString New, bool all)
 {
@@ -603,6 +621,15 @@ bool Utility::LoadBitmap(wxBitmap &image, wxString ImageFileName)
 
     //wxString strExe = "images/"+ImageFileName;
     return image.LoadFile(strExe, wxBITMAP_TYPE_PNG);
+}
+
+void Utility::EscapeAscii(wxString& QueryString)
+{
+    QueryString.Replace("_", "`~!@%$#^%",true);//I use this crazy squence of characters in the hope that nobody will use this in a query.
+    QueryString = QueryString.ToAscii(); //What this is doing is changing the character ‘ to _
+    QueryString.Replace("_", "'", true); //The end result is changing ‘ to '
+    QueryString.Replace("`~!@%$#^%", "_", true);
+
 }
 
 wxString Utility::Escape(wxString & str)
@@ -982,53 +1009,6 @@ wxString Utility::DateNow() {
     return str;
 }
 //DATABASE UTILITY FUNCTIONS:
-/*
-bool Utility::DoesTableExist(wxString sDatabase, wxString sTable)
-{
-
-    wxString QueryString;
-    QueryString = "SELECT * FROM information_schema.tables WHERE table_schema = '" + sDatabase + "' AND table_name = '" +sTable + "' LIMIT 1";
-
-
-    wxString database(Settings.sDatabase);
-    wxString server(Settings.sServer);
-    wxString user(Settings.sDatabaseUser);
-    wxString pass(Settings.sPassword);
-
-
-    // Connect to the sample database.
-    Connection conn(false);
-
-
-    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
-                     (const_cast<char*>((const char*)server.mb_str())),
-                     (const_cast<char*>((const char*)user.mb_str())),
-                     (const_cast<char*>((const char*)pass.mb_str())))) {
-
-        //SetStatusText("Database Connected");
-
-        Query query = conn.query(QueryString);
-        StoreQueryResult res = query.store();
-
-        //First we need to find the table name
-        // Display results
-        if (res) {
-            if( res.num_rows() > 0 )
-                return true;
-            else
-                return false;
-        }
-        else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
-        }
-    }
-    else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
-    }
-
-    return false;
-}
-*/
 bool Utility::DoesDatabaseExist(wxString sDatabase)
 {
     wxString QueryString;
@@ -1064,11 +1044,11 @@ bool Utility::DoesDatabaseExist(wxString sDatabase)
                 return false;
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
     return false;
@@ -1115,17 +1095,17 @@ wxString Utility::GetTableNameFromSYS_TABLESById(wxString sDatabase, wxString sT
                     return strData1;
                 }
                 catch (int& num) {
-                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+                   // wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 }
@@ -1175,17 +1155,17 @@ wxString Utility::GetTableTitleFromSYS_TABLESById(wxString sDatabase, wxString s
                     return strData1;
                 }
                 catch (int& num) {
-                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+                    //wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 }
@@ -1230,17 +1210,17 @@ wxString Utility::GetTableIdFromSYS_TABLESByTableName(wxString sDatabase, wxStri
                     return strData1;
                 }
                 catch (int& num) {
-                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+                   // wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 
@@ -1286,17 +1266,17 @@ wxString Utility::GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString s
                     return strData1;
                 }
                 catch (int& num) {
-                    wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
+                    //wxLogMessage("UTILITY.CPP:GetTableNameFromSYS_TABLES: Row doesn't exist:");
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 
@@ -1347,17 +1327,17 @@ wxString Utility::GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxStr
                     }
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 }
@@ -1408,17 +1388,17 @@ void Utility::LoadStringArrayFromDatabaseTableByID(wxString sDatabase, wxArraySt
                     sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                   // wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
 }
@@ -1460,17 +1440,17 @@ void Utility::LoadStringArrayFromDatabaseTableByName(wxString sDatabase, wxArray
                     sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 }
 
@@ -1510,17 +1490,17 @@ void Utility::GetTableIDFromTableWhereFieldEquals(wxString sDatabase, wxArrayStr
                     sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
 
@@ -1567,17 +1547,17 @@ void Utility::LoadStringArrayWithMySQLTableNames(wxString sDatabase, wxArrayStri
                         sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
 }
@@ -1619,17 +1599,17 @@ void Utility::LoadStringArrayWidthMySQLDatabaseNames(wxArrayString &sArray){
                     sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 }
 
@@ -1673,17 +1653,17 @@ bool Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayStrin
                     return true;
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
     return false;
@@ -1748,19 +1728,19 @@ bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
 
                 }
                 catch (int num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return false;
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
             return false;
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         return false;
     }
 
@@ -1870,7 +1850,7 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTable
                                     return false;
                         }
                         catch (int &num) {
-                            wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                           // wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                         }
                     }
@@ -1878,12 +1858,12 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTable
                 }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
             return false;
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         return false;
     }
 
@@ -1933,19 +1913,19 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName, const wxString& s
 
                 }
                 catch (int num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                   // wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return false;
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
             return false;
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         return false;
     }
 
@@ -2034,17 +2014,17 @@ wxString Utility::LoadSystemDocument(int documentId)
                     return strData1;
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
     return "";
 
@@ -2134,7 +2114,7 @@ void Utility::CreateDatabase(wxString sDatabaseToCreate){
 
 
 
-void Utility::ExecuteQuery(const wxString& QueryString)
+void Utility::ExecuteQueryEscapeAscii(const wxString& QueryString)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
@@ -2151,8 +2131,9 @@ void Utility::ExecuteQuery(const wxString& QueryString)
                          (const_cast<char*>((const char*)user.mb_str())),
                          (const_cast<char*>((const char*)pass.mb_str())))) {
 
-
-            Query query = conn.query(QueryString);
+            wxString sQuery = QueryString;
+            EscapeAscii(sQuery);
+            Query query = conn.query(sQuery);
             query.execute();
 
         }
@@ -2177,7 +2158,7 @@ void Utility::ExecuteQuery(const wxString& QueryString)
 bool Utility::IsReservedMySQLWord(wxString wordToFind)
 {
 
-    wxString reserved = MYSQLRESERVEDWORDS;
+    wxString reserved = Settings.sMSQLReservedWords;
     reserved = reserved.Lower();
     wordToFind = wordToFind.Lower();
     if (reserved.Find(wordToFind)!=wxNOT_FOUND)
@@ -2185,6 +2166,61 @@ bool Utility::IsReservedMySQLWord(wxString wordToFind)
 
     return false;
 }
+
+void Utility::LoadStringArrayAvailableQueriesFromUsrQueries(wxArrayString &sArray ){
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "select queryName from usr_queries";
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow]["queryName"], wxConvUTF8);
+
+                    //NOTE We don't want to load system tables, they will be in the database, however we
+                    // don't wan't the user to see them in the table definitions.
+                    // If we ever create more system tables, we need to reject them here.
+                    sArray.Add(strData);
+                }
+                catch (int& num) {
+                    // wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}
+
+
 //First we need to find the tablename from the SYS_TABLES table having lTableId.
 //Then we need to find the field name correcsponding with lcolumnNumber.
 // Once we have the tablename and field name, we can load the table.
@@ -2226,17 +2262,17 @@ void Utility::LoadStringArrayWithTableIdsFromSysTables(wxString sDatabase, wxArr
                     sArray.Add(strData);
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                   // wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+           // wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
 }
@@ -2296,17 +2332,17 @@ void Utility::LoadStringArrayWithTableNamesFromSysTables(wxString sDatabase, wxA
                     }
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
 }
@@ -2445,17 +2481,17 @@ bool Utility::LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableN
                     }
                 }
                 catch (int& num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                   // wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
         }
         else {
-            wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
  return true;
@@ -2516,7 +2552,7 @@ void Utility::AppendDBWorksDatabases(wxArrayString &arrayToAppend)
 
                 }
                 catch (int num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                    //wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
@@ -2527,26 +2563,28 @@ void Utility::AppendDBWorksDatabases(wxArrayString &arrayToAppend)
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
 
     }
 
 }
 
 //Used to save our imported databases
-void Utility::SaveDatabaseToDBWorks(wxString sDatabaseNameToSave){
+bool Utility::SaveDatabaseToDBWorks(wxString sDatabaseNameToSave){
 
     if(!DoesRecordExist("dbworks","sys_databases","databasename",sDatabaseNameToSave)){
         wxString QueryString = "INSERT INTO sys_databases (databasename,comments) VALUES ('"+sDatabaseNameToSave+"','user_imported')";
         ExecuteQuery("dbworks",QueryString);
+        return true;
     }
+    return false;
 }
 
 //Generic function that checks if a record in the database exists.
 bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue)// Check to see if a record with a particular value exists.
 {
     wxString QueryString;
-    QueryString = "SELECT "+sFieldname+" FROM "+sTable+" WHERE sFieldname = '" + sValue + "' LIMIT 1";
+    QueryString = "SELECT "+sFieldname+" FROM "+sTable+" WHERE " + sFieldname + " = '" + sValue + "' LIMIT 1";
 
 
     wxString database(sDatabase);
@@ -2582,7 +2620,7 @@ bool Utility::DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFie
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+       // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
     return false;
@@ -2638,7 +2676,7 @@ void Utility::LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxStri
 
                 }
                 catch (int num) {
-                    wxLogMessage(MSG_DATABASE_FAIL_ROW);
+                   // wxLogMessage(MSG_DATABASE_FAIL_ROW);
 
                 }
             }
@@ -2649,7 +2687,7 @@ void Utility::LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxStri
         }
     }
     else{
-        wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
 
     }
 }
@@ -2852,6 +2890,89 @@ void Utility::UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxSt
     QueryString="UPDATE "+sTableName+" SET "+sFieldname+" = '"+sValue +"' WHERE "+sTableName+"Id="+ sTableId;
     ExecuteQuery(sDatabase,QueryString);
 
+}
+
+
+
+bool Utility::GetSingleFieldRecords(wxString sQueryString, wxString FieldToGet, wxArrayString& ArrayFieldResults)
+{
+
+    bool bFound = false;
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    wxArrayString ArrayFieldNames; //The
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //Remove those stupid unicode characters that mySQL doesn't understand.
+        Utility::EscapeAscii(sQueryString);
+
+        //SetStatusText("Database Connected");
+        Query query = conn.query(sQueryString);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // The first thing we need to do is read all the fields definitions from the resultant recordset. Then we have to define the m_GridArray and load it with all the field.
+
+            int num_fields = res.num_fields();
+            for (int fieldIndex=0;fieldIndex<num_fields; fieldIndex++){
+                //These are all the field names from our query.
+                wxString sFieldName = res.field_name(fieldIndex);
+                ArrayFieldNames.Add(sFieldName );
+            }
+            int RowsInTable = res.num_rows();
+
+            //int iTracRowIncaseOfSkip = 0;
+            // Get each row in result set, and print its contents
+            for (int indexRow = 0; indexRow < RowsInTable; ++indexRow) {
+
+                try {
+                    int iCount = ArrayFieldNames.GetCount();
+
+                    for(int Colindex=0;Colindex<iCount;Colindex++){
+                        //Get the field from the loaded grid array.
+                        //Get the record data for that field
+                        wxString strData1(res[indexRow][FieldToGet], wxConvUTF8);
+                        ArrayFieldResults.Add(strData1);
+                        bFound=true;
+                    }
+                }
+                catch (int& num) {
+
+                    //f->SetStatusText("Database Connected - Row doesn't exist:");
+                    //wxLogMessage(MSG_FAILED_QUERY_FILTER);
+                    return bFound;
+                }
+            }
+        }
+        else {
+            //cerr << "Failed to get stock table: " << query.error() << endl;
+            //return 1;
+            //f->SetStatusText("Database Connected - Failed to get item list:");
+            //wxLogMessage(MSG_FAILED_QUERY_FILTER);
+            return bFound;
+        }
+    }
+    else{
+
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+        return bFound;
+        //f->SetStatusText("Did not connect to database.");
+
+    }
+    return bFound;
 }
 
 

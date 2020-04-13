@@ -409,8 +409,9 @@ void DialogBaseClass::RenderAllControls()
 
 
                 //Fill the list box with the selection items.
-                for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-                    m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
+                Utility::FillComboFromStringArray(m_CtrlDataItem[index].comCtl,sSelectionItemArray);
+                //for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
+                    //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
 
                 //Make sure you set the default value after you append selection items.
                 if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
@@ -461,8 +462,9 @@ void DialogBaseClass::RenderAllControls()
 
 
                 //Fill the list box with the selection items.
-                for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-                    m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
+                Utility::FillComboFromStringArray(m_CtrlDataItem[index].comCtl,sSelectionItemArray);
+               // for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
+                    //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
 
                 //Make sure you set the default value after you append selection items.
                 if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())

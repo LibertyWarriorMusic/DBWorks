@@ -18,6 +18,8 @@ set(SOURCE_FILES
         TableDefDiagram/ObTablePanel.cpp
         TableDefDiagram/ObTable.cpp
         TableDefDiagram/TableDiagramFrame.cpp
+        Dialog/MultiTextDlg.cpp
+        Dialog/SingleTextDlg.cpp
         Dialog/DialogBaseClass.cpp
         Dialog/ImportMySQLDatabase.cpp
         Dialog/DialogTemplate.cpp

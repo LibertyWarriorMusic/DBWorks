@@ -16,16 +16,11 @@ class MainFrame : public wxFrame
         wxToolBar * m_Toolbar1;
         HtmlHelp *m_HtmlWin;
         TableDiagramFrame *m_pTableDiagaram;
-       // ImportMySQLDatabase *m_ImportMySQLForm;
-        //ObTableDiagram * m_TableDiagramPanel; //Used for drawing
+        GenericTable * m_pFilters;
 
-
-
+        void DestroyOpenWindows();
 
         void AddTableObject(); //Will add a new table object to the DrawPanelTable
-
-        //System and Usr tables;
-        GenericTable * m_pFilters;
 
         bool m_bSettingsLoaded=false;
 
@@ -33,13 +28,11 @@ class MainFrame : public wxFrame
         void SetCurrentStoredWhereCondition(wxString sWhereCondition);
         wxString m_sCurrentStoredWhereCondition;
 
-
-
         wxBoxSizer* mainFormSizerForGrid;
 
         wxString m_sDefaultUsergroupFilterCondition; // Depending on the type of user, you may not have access to certain table types. Example a guest can't see system table types.
 
-        GenericItemForm *m_FormItem{};
+        GenericItemForm *m_pFormItem;
         void OpenForm(wxString sTableName, wxString sTableID); //Open the user data form
         void OpenEditForm(wxString sTableId); //Open the user data form
         bool CheckCreateDatabase(wxString sDatabase);
@@ -63,9 +56,6 @@ class MainFrame : public wxFrame
 
         void SetUsergroupWindowVisibility();
         void LoadDatabaseCombo();
-        void PopulateToolbar();
-
-
 
     protected:
 

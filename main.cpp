@@ -1,6 +1,6 @@
 #include <iostream>
 
-#define MAIN_WIN_TITLE "DBWorks"
+#define MAIN_WIN_TITLE "DBWorks Table Grid"
 #define MAIN_WIN_POSX 200
 #define MAIN_WIN_POSY 200
 
@@ -150,6 +150,17 @@ bool MyApp::LoadAppSettings()
     wxString        str;
     wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
     //wxLogMessage(strExe);
+    strExe.Replace("DBWorks", "mysqlReservedWords.txt"); //For mac and linux
+    strExe.Replace("dbworks", "mysqlReservedWords.txt"); //For mac and linux
+    strExe.Replace("dbworks.exe", "mysqlReservedWords.txt"); // For windows.
+    wxTextFile tfile;
+    if(tfile.Open(strExe)){
+        while(!tfile.Eof())
+            Settings.sMSQLReservedWords += tfile.GetNextLine();
+    }
+
+    strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+    //wxLogMessage(strExe);
     strExe.Replace("DBWorks", "settings.ini"); //For mac and linux
     strExe.Replace("dbworks", "settings.ini"); //For mac and linux
     strExe.Replace("dbworks.exe", "settings.ini"); // For windows.
@@ -159,7 +170,7 @@ bool MyApp::LoadAppSettings()
     //wxString strExe = "/Applications/DatabaseWorks/settings.ini";
     //wxString strExe = "settings.ini";
     // open the file
-    wxTextFile tfile;
+
     if(tfile.Open(strExe)){
         // read the first line
         str = tfile.GetFirstLine();
@@ -349,6 +360,15 @@ void MyApp::onIdle(wxIdleEvent& evt)
                 //If we have a database name supplied, it will create a new database
                 if (!m_NewDatabaseNameToImportInto.IsEmpty()) {
 
+                    //Save the database name to the dbworks database to remember our imported and loaded databases
+                    //The dbworks database only holds names at the moment.
+                    if(!Utility::SaveDatabaseToDBWorks(m_NewDatabaseNameToImportInto)){
+                        wxLogMessage("The new database you tried to create already exists, please choose another database name.");
+                        m_iIdleStep=8;
+                        return;
+                    }
+
+
                     if(m_NewDatabaseNameToImportInto=="information" || m_NewDatabaseNameToImportInto=="dbworks" ){
 
                         wxLogMessage("You can't overwrite a system database, please choose another database name.");
@@ -358,14 +378,12 @@ void MyApp::onIdle(wxIdleEvent& evt)
 
                     //If the database exists, drop it then create it again.
                     if (Utility::DoesDatabaseExist(m_NewDatabaseNameToImportInto))
-                        Utility::ExecuteQuery("DROP DATABASE " + m_NewDatabaseNameToImportInto);
+                        Utility::ExecuteQuery(Settings.sDatabase, "DROP DATABASE " + m_NewDatabaseNameToImportInto);
 
                     Utility::CreateDatabase(m_NewDatabaseNameToImportInto);
 
 
-                    //Save the database name to the dbworks database to remember our imported and loaded databases
-                    //The dbworks database only holds names at the moment.
-                    Utility::SaveDatabaseToDBWorks(m_NewDatabaseNameToImportInto);
+
                 }
                 else
                     // If the user didn't supply a database name, then we are going to import all the tables into this database.
@@ -832,12 +850,11 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_DatabaseCombo= nullptr;
     m_UserGroupCombo= nullptr;
     m_txtCltUserGroup = nullptr;
-    //m_ImportMySQLForm = nullptr;
     m_txtCltCheckTableTxt = nullptr;
     m_AutoCheckDefinitionsCheckCtl = nullptr;
     m_ProgressGauge = nullptr;
     m_txtCltProgressBar = nullptr;
-    //m_TableDiagramPanel = nullptr;
+    m_pFormItem= nullptr;
 
 
     bool b_DatabaseDeveloper=false;
@@ -954,27 +971,26 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         b_DatabaseDeveloper = true;
 
         Utility::LoadBitmap(BitMap,"add.png");
-        m_Toolbar1->AddTool(ID_TOOL_ADD, wxT("Add a new table to the database."), BitMap,
-                           wxT("Add a new table to the database."));
+        m_Toolbar1->AddTool(ID_TOOL_ADD, wxT(""), BitMap,
+                           wxT("Create a new table definition. The table will not be created in the database, you will need to add fields by right clicking on the table in the grid and select field definitions."));
 
         Utility::LoadBitmap(BitMap,"edit.png");
-        m_Toolbar1->AddTool(ID_TOOL_EDIT, wxT("Edit the selected table."), BitMap, wxT("Edit the selected table."));
+        m_Toolbar1->AddTool(ID_TOOL_EDIT, wxT(""), BitMap, wxT("Edit the selected table. This only edits the table title, mysql table name, type of table and comments. If you wish to edit the field, you need to right click on the table in the grid and select field defintions."));
 
 
         Utility::LoadBitmap(BitMap,"delete.png");
-        m_Toolbar1->AddTool(ID_TOOL_DELETE, wxT("Delete the selected table, will also delete all data."), BitMap,
-                           wxT("Delete the selected table, will also delete all data."));
+        m_Toolbar1->AddTool(ID_TOOL_DELETE, wxT(""), BitMap,wxT("Delete the selected table definition, if the table was created in the database and has data, everything will be deleted."));
 
 
         Utility::LoadBitmap(BitMap,"view.png");
-        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), BitMap, wxT("View the selected table."));
+        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT(""), BitMap, wxT("View the selected table."));
 
     }
     else if (Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
         b_DatabaseDeveloper=false;
 
         Utility::LoadBitmap(BitMap,"view.png");
-        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT("View the selected table."), BitMap, wxT("View the selected table."));
+        m_Toolbar1->AddTool(ID_TOOL_VIEW, wxT(""), BitMap, wxT("View the selected table."));
     }
 
     wxStaticText * txtCltDatabase = new wxStaticText( m_Toolbar1, wxID_ANY, "Database ", wxDefaultPosition, wxDefaultSize, 0 );
@@ -1023,17 +1039,18 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         }
 
         Utility::LoadBitmap(BitMap,"filter.png");
-        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters for single table lookups."));
+        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters. Filter are simply mysql query that work on a single table. "
+                                                                              "You can select the table the filter is associated. You can test your query by right clicking in the grid and select, run filter. Make sure you created your table, fields and have it populated with some data."));
 
         Utility::LoadBitmap(BitMap,"formQueries.png");
-        m_Toolbar1->AddTool(ID_TOOL_FORM_QUERIES, wxT("Form Query."), BitMap, wxT("Design queries that forms will be based."));
+        m_Toolbar1->AddTool(ID_TOOL_FORM_QUERIES, wxT(""), BitMap, wxT("Design form queries. A form query is a mysql query that works on one or multiple tables. Simple forms can be automatically generated from a form query. User defined forms will also be based on one of these quiries."));
 
 
         //Create the checkbox for auto check definitions to tables
         if(Utility::IsSystemDatabaseDeveloper()){
 
             Utility::LoadBitmap(BitMap,"tableDiagram.png");
-            m_Toolbar1->AddTool(ID_OPEN_TABLE_DIAGRAM, wxT("Open table definitions diagram."), BitMap, wxT("Open table definitions diagram."));
+            m_Toolbar1->AddTool(ID_OPEN_TABLE_DIAGRAM, wxT(""), BitMap, wxT("Open the table relationships diagram. Tables can be added to the diagram by right clicking on the screen. You can also create queries and forms by simply dragging fields into the form creator area."));
 
             m_txtCltCheckTableTxt = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
             m_txtCltCheckTableTxt->SetLabel("Auto check definitions");
@@ -1055,30 +1072,14 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         //Add a checkbox to enable Refresh
     }
 
-
-
-
-
     m_Toolbar1->Realize();
 
     mainFormSizerForGrid = new wxBoxSizer( wxVERTICAL );
     this->SetToolBar(m_Toolbar1);
-
-    this->SetBackgroundColour(wxColour(70,70,130));
-
-
-
-
-    //
-
+    this->SetBackgroundColour(wxColour(120,120,120));
 
     // Connect Events
-    //m_buttonCalculate->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( MainFrame::OnButtonAction ), NULL, this );
   SetMenuBar( m_Menubar );
-
-  //  wxMenuBar* pMenuBar = GetMenuBar();
-  //  pMenuBar->SetParent(this);
-  //  pMenuBar->SetFocus();
 
     //Load the grid
     LoadGrid();
@@ -1094,16 +1095,12 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
             m_MainGrid->HideColumn(0);
             m_MainGrid->HideColumn(2);
             m_MainGrid->HideColumn(3);
-
         } else
             m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
-
     }
-
 
     m_Menubar->Show();
 }
-
 
 //Loads all the DrawTable Objects and draws them to the screen.
 void MainFrame::LoadTableObjects()
@@ -1132,10 +1129,6 @@ void MainFrame::LoadDatabaseCombo(){
     }
 }
 
-
-
-
-
 void MainFrame::SetProgressLabel(wxString sLabel)
 {
     if(m_ProgressGauge!=nullptr)
@@ -1161,31 +1154,14 @@ void MainFrame::SetUsergroupWindowVisibility() {
 
         } else
             m_MainGrid->HideColumn(2); // For advanced user, we don't want to see the tablename, just show the ID
-
     }
 
     if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator()  ) {
-
-
-
         m_MainGrid->SetColumnWidth(0,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
         m_MainGrid->SetColumnWidth(2,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
         m_MainGrid->SetColumnWidth(3,100); // Set the width to 1 so it's not hidden then the refresh function will correct the width.
-
-
-        //m_Toolbar1->Realize();
     }
-
     Refresh();
-}
-
-void MainFrame::PopulateToolbar()
-{
-   // m_Toolbar->RemoveTool(ID_TOOL_ADD,bt);
-   // m_Toolbar->RemoveTool(ID_TOOL_EDIT,bt);
-   // m_Toolbar->RemoveTool(ID_TOOL_DELETE,bt);
-
-
 }
 
 MainFrame::~MainFrame() = default;
@@ -1286,6 +1262,7 @@ void MainFrame::OnDatabaseComboChange( wxCommandEvent& event )
         wxLogMessage(MSG_DATABASE_DOES_NOT_EXIST);
     }
     else{
+        DestroyOpenWindows();
         Settings.sDatabase = sDatabase;
         LoadGrid();
         //Loads all the DrawTableObjects and draws them to the screen.
@@ -1384,7 +1361,7 @@ void MainFrame::OnbFormQuery( wxCommandEvent& event )
         //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
         m_pFilters->HideIDColumn();
         m_pFilters->Show(true);
-
+        m_pFilters->GetGrid()->ResizeSpreadSheet();
 
     }
 }
@@ -1395,56 +1372,49 @@ void MainFrame::OnbAddItem( wxCommandEvent& event ) {
         wxLogMessage(MSG_ONLY_DATABASE_DEVELOPERS);
     } else {
 
-        m_FormItem = new GenericItemForm((wxFrame *) this, -1, "Add Table", wxDefaultPosition, wxDefaultSize,(unsigned) wxCAPTION | (unsigned) wxSTAY_ON_TOP);
+        m_pFormItem = new GenericItemForm((wxFrame *) this, -1, "Add Table", wxDefaultPosition, wxDefaultSize,(unsigned) wxCAPTION | (unsigned) wxSTAY_ON_TOP);
 
         //m_FormItem->SetDatabaseSettings(Settings.Database, Settings.Server, Settings.User, Settings.Password);
         //Define the database
         //Define the database
-        m_FormItem->AddItem("Title", "title", "", "", "","","","");
-        m_FormItem->AddItem("Tablename", "tablename", "", "", "","","","");
-        m_FormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;development;}", "VARCHAR(255)", "user","","","");
-        m_FormItem->AddItem("Comments", "comments", "MULTILINE", "", "","","","");
-        m_FormItem->SetUse("ADD");
-        m_FormItem->CreateFields();
+        m_pFormItem->AddItem("Title", "title", "", "", "","","","");
+        m_pFormItem->AddItem("Tablename", "tablename", "", "", "","","","");
+        m_pFormItem->AddItem("Type of Table", "tabletype", "SELECTION{system;user;development;}", "VARCHAR(255)", "user","","","");
+        m_pFormItem->AddItem("Comments", "comments", "MULTILINE", "", "","","","");
+        m_pFormItem->SetUse("ADD");
+        m_pFormItem->CreateFields();
 
-        m_FormItem->SetSettings(Settings.sDatabase, Settings.sServer, Settings.sDatabaseUser, Settings.sPassword, SYS_TABLES, "sys_tablesId");
+        m_pFormItem->SetSettings(Settings.sDatabase, Settings.sServer, Settings.sDatabaseUser, Settings.sPassword, SYS_TABLES, "sys_tablesId");
 
-        m_FormItem->Show(true);
+        m_pFormItem->Show(true);
         SetStatusText("Add Table.");
     }
-
-
 }
 void MainFrame::OpenEditForm(wxString sTableId) {
 
     // wxPoint(100,100),
     // wxSize(500,410),
 
-    m_FormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
+    m_pFormItem = new GenericItemForm((wxFrame*) this, -1,"Edit Table",wxDefaultPosition,wxDefaultSize,(unsigned)wxCAPTION | (unsigned)wxSTAY_ON_TOP);
 
     //Define the database
-    m_FormItem->AddItem("Title","title","","","","","","");
-    m_FormItem->AddItem("Tablename *","tablename","","","","","","");
-    m_FormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user","","","");
-    m_FormItem->AddItem("Comments","comments","MULTILINE","","","","","");
+    m_pFormItem->AddItem("Title","title","","","","","","");
+    m_pFormItem->AddItem("Tablename *","tablename","","","","","","");
+    m_pFormItem->AddItem("Type of Table","tabletype","SELECTION{system;user;development;}","VARCHAR(255)","user","","","");
+    m_pFormItem->AddItem("Comments","comments","MULTILINE","","","","","");
 
-    m_FormItem->SetUse("UPDATE");
-    m_FormItem->CreateFields();
-    m_FormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
+    m_pFormItem->SetUse("UPDATE");
+    m_pFormItem->CreateFields();
+    m_pFormItem->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword,SYS_TABLES,"sys_tablesId");
 
 
     SetStatusText(sTableId);
 
-    m_FormItem->SetID(sTableId);
-    m_FormItem->Show(true);
-    m_FormItem->LoadFields();
+    m_pFormItem->SetID(sTableId);
+    m_pFormItem->Show(true);
+    m_pFormItem->LoadFields();
     SetStatusText("Edit Item");
 }
-
-
-
-
-
 
 void MainFrame::OnbEditItem( wxCommandEvent& event )
 {
@@ -1486,7 +1456,7 @@ void MainFrame::OnDeleteCurrentDatabase( wxCommandEvent& event )
 
     if ( dlg->ShowModal() == wxID_YES ){
         if(m_DatabaseCombo->GetCount()>0){
-            Utility::ExecuteQuery("DROP DATABASE "+Settings.sDatabase);
+            Utility::ExecuteQuery(Settings.sDatabase,"DROP DATABASE "+Settings.sDatabase);
             Utility::ExecuteQuery("dbworks","delete from sys_databases where databasename='"+Settings.sDatabase+"';");
             //Get the first selection, this will be the default
             m_DatabaseCombo->Select(0);
@@ -1524,8 +1494,11 @@ void MainFrame::OnbViewItem( wxCommandEvent& event )
 
     // We don't want the user to have more than one properties window open at once, it becomes very confusing if you do.
     // Also, you loose track of the pointer and the window doesn't get deleted properly when you close the application.
-    if (m_TableForm!=nullptr)
+    if (m_TableForm!=nullptr){
         m_TableForm->Destroy();
+        m_TableForm= nullptr;
+    }
+
 
     wxString FormName = "";
 
@@ -1772,7 +1745,7 @@ void MainFrame::OnbFilter( wxCommandEvent& event ) {
         //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
         m_pFilters->HideIDColumn();
         m_pFilters->Show(true);
-
+        m_pFilters->GetGrid()->ResizeSpreadSheet();
 
     }
 }
@@ -1810,7 +1783,6 @@ void MainFrame::SetGridWhereCondition(wxString whereToBlend)
 
 }
 
-
 void MainFrame::OnbHelp( wxCommandEvent& event )
 {
     //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
@@ -1821,32 +1793,6 @@ void MainFrame::OnbHelp( wxCommandEvent& event )
     m_HtmlWin = new HtmlHelp((wxFrame*) this, -1, "Help", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
     m_HtmlWin->SetPage(2); //
     m_HtmlWin->Show(true);
-}
-
-
-//We can send a message to the parent that this window is destroyed.
-bool MainFrame::Destroy()
-{
-    //Safely destroy any window that are open so your program doesn't crash on close.
-    // If you have a frames window open and you close the main app window, the program will crash on close because
-    // you need to destroy all the open windows before you destroy the main frame.
-
-    //This is where we need to shut down any windows that are open.
-    if (m_TableForm != nullptr)
-        m_TableForm->Destroy();
-
-    if (m_HtmlWin != nullptr)
-        m_HtmlWin->Destroy();
-
-    if(m_pFilters != nullptr)
-        m_pFilters->Destroy();
-
-    if(m_pTableDiagaram != nullptr)
-        m_pTableDiagaram->Destroy();
-
-    //Always do this last, only destroy the main frame when all open windows are destroyed. 
-    bool bResult = wxFrame::Destroy();
-    return bResult;
 }
 
 void MainFrame::Refresh(bool bReloadTableDiagram)
@@ -1860,7 +1806,7 @@ void MainFrame::Refresh(bool bReloadTableDiagram)
     if(Settings.bAutoCheckDefinitions)
         wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable();
 
-    if(bReloadTableDiagram)
+    if(bReloadTableDiagram && m_pTableDiagaram!= nullptr)
         LoadTableObjects();
 
     this->Layout();
@@ -1952,11 +1898,52 @@ void MainFrame::OpenTableDefinitions(wxString sTableName)
         //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
         m_TableForm->HideIDColumn();
         m_TableForm->Show(true);
-
-
     }
 
 
+}
+void MainFrame::DestroyOpenWindows()
+{
+
+    //Safely destroy any window that are open so your program doesn't crash on close.
+    // If you have a frames window open and you close the main app window, the program will crash on close because
+    // you need to destroy all the open windows before you destroy the main frame.
+
+    //This is where we need to shut down any windows that are open.
+    if (m_TableForm != nullptr){
+        m_TableForm->Destroy();
+        m_TableForm= nullptr;
+    }
+
+    if(m_pFormItem != nullptr){
+        m_pFormItem->Destroy();
+        m_pFormItem= nullptr;
+    }
+
+    if (m_HtmlWin != nullptr){
+        m_HtmlWin->Destroy();
+        m_HtmlWin= nullptr;
+    }
+
+    if(m_pFilters != nullptr){
+        m_pFilters->Destroy();
+        m_pFilters= nullptr;
+    }
+
+    if(m_pTableDiagaram != nullptr){
+        m_pTableDiagaram->Destroy();
+        m_pTableDiagaram= nullptr;
+    }
+}
+
+//We can send a message to the parent that this window is destroyed.
+bool MainFrame::Destroy()
+{
+
+    DestroyOpenWindows();
+    //Always do this last, only destroy the main frame when all open windows are destroyed.
+    bool bResult = wxFrame::Destroy();
+    return bResult;
 }
 
 //CONTEXT MENU EVENT and REFRESH EVENTS
@@ -1974,8 +1961,9 @@ void MainFrame::OnMyEvent(MyEvent& event)
     else if(event.m_bEdit){
         OpenEditForm(event.m_sTableId);
     }
-    else if(event.m_bHelpFrameWasDestroyed){
-        m_pTableDiagaram = nullptr;
+    else if(event.m_bDestroyedPropertyTable){
+        m_TableForm = nullptr;
+        Refresh(true);
     }
     else if(event.m_bDestroyed){
 
@@ -1988,18 +1976,12 @@ void MainFrame::OnMyEvent(MyEvent& event)
         //This needs to be changed because you might have two or more windows open, a help, table definitions, a table diagram and you don't want to null all of them.
         //What you need is extra flags in the event to identify which pointers you need to null.
 
-
-
         m_TableForm = nullptr;
-
-
-        //m_ImportMySQLForm = nullptr; // This if fine here, you don't want to keep this window open after you import it.
+        m_pFormItem = nullptr;
         m_pFilters = nullptr;
         
         if(Settings.bAutoCheckDefinitions)
             wxGetApp().StartCheckIfTableDefinitionsMatchDatabaseTable(); //When we close the definition grid view, we need to reflect changes made to the definitions
-
-
 
     }
     else if(event.m_bTableDiagramFrameWasDestroyed){

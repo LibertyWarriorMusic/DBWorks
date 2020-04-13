@@ -22,6 +22,7 @@ MyEvent::MyEvent( wxWindow* win )
 
     //Indicators for frames being destroyed.
     m_bTableDiagramFrameWasDestroyed=false;
+    m_bDestroyedPropertyTable=false;
     m_bHelpFrameWasDestroyed=false;
 
     m_sTableName="";

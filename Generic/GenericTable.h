@@ -39,7 +39,7 @@ class GenericTable : public wxFrame
         void Refresh();
 
         void OnParseDocument(wxString sDocument);
-        void OpenQueryGrid(wxString sTitle, wxString sFormGridQuery);
+        void RunQuery(wxString sTitle, wxString sFormGridQuery);
 
     void OnButtonAction( wxCommandEvent& event );
       
@@ -51,7 +51,9 @@ class GenericTable : public wxFrame
         wxImagePanel * m_DrawPane;
         wxToolBar * m_Toolbar;
         wxBoxSizer* m_MainFormSizer;
-    
+        GenericItemForm *m_pFormItem;
+
+
         ArrayTableField m_FieldArray;
 
         void SetGridWhereCondition(wxString whereToBlend="");
@@ -75,7 +77,7 @@ class GenericTable : public wxFrame
 
         virtual void OnbDeleteItem( wxCommandEvent& event );
         void SetTableDefinition(const wxString tableName, const wxString title, const wxString comments, const wxString whereCondition);
-        GenericItemForm *formItem{};
+
     
         void AddField(const wxString& title, const wxString& field, const wxString& type, const wxString& flag,const wxString& defaultVal, const wxString& KeyVal, const wxString& ExtraVal, const wxString &nullVal);
         explicit GenericTable( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
@@ -83,7 +85,7 @@ class GenericTable : public wxFrame
         virtual bool Create();
         virtual void SetSettings(wxString& database, wxString& server, wxString& user, wxString& password){};
         virtual void SetGridTableName(wxString& name){};
-
+        DBGrid * GetGrid();
         bool Destroy() override;
         void HideIDColumn();
         void SetIDTitleName(wxString sTitle);
