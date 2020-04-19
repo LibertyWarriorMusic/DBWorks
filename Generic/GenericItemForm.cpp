@@ -6,8 +6,6 @@
 ///////////////////////////////////////////////////////////////////////////
 
 
-
-
 ///////////////////////////////////////////////////////////////////////////
 // C++ code generated with wxFormBuilder (version 3.9.0 Feb 26 2020)
 // http://www.wxformbuilder.org/
@@ -27,16 +25,12 @@
 #include <wx/frame.h>
 #include <wx/dynarray.h>
 
-
-
-
 #include <mysql.h>
 #include <mysql++.h>
 
 #include "../MyEvent.h"
 #include "../global.h"
 #include "../Utility.h"
-
 
 #include "GenericItemForm.h"
 
@@ -59,13 +53,11 @@ GenericItemForm::GenericItemForm( wxWindow* parent, wxWindowID id, const wxStrin
     m_sUse = "";
     m_sOldSelectionText="";
 	this->SetSizeHints( wxDefaultSize, wxDefaultSize );
-
 }
 
 //We can send a message to the parent that this window is destroyed.
 bool GenericItemForm::Destroy()
 {
-
     MyEvent my_event( this );
     my_event.m_bDestroyed=true;
     GetParent()->ProcessWindowEvent( my_event );
@@ -349,7 +341,7 @@ void GenericItemForm::CreateFields()
                                    gSizer1->Add( itemArray[i].datePickerCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
                                    //gSizer1->Add( itemArray[i].textCtl, 0, 0, BORDER_WIDTH );
 
-                                   if(!itemArray[i].fieldDefault.IsEmpty())
+                                   if(!itemArray[i].fieldDefault.IsEmpty() && itemArray[i].fieldDefault!="NULL")
                                        itemArray[i].datePickerCtl->SetValue(Utility::StringToDate(itemArray[i].fieldDefault));
                                    else if(itemArray[i].fieldType == "DATE") { //Check to see if the type is date, then set with current date.
                                        itemArray[i].datePickerCtl->SetValue(wxDateTime::Now());
@@ -527,7 +519,6 @@ void GenericItemForm::OnComboCloseUp( wxCommandEvent& event )
 
 GenericItemForm::~GenericItemForm()
 {
-   
     if (m_OK != nullptr){
         m_OK->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericItemForm::OnbOK ), nullptr, this );
         //m_OK->Destroy();
@@ -536,9 +527,7 @@ GenericItemForm::~GenericItemForm()
         m_Cancel->Disconnect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( GenericItemForm::OnbCancel ), nullptr, this );
         //m_Cancel->Destroy();
     }
-
     itemArray.Empty();
-    
 }
 
 void GenericItemForm::AddItem(const wxString& fieldTitle, const wxString& field, const wxString& flag,const wxString& type, const wxString& defaultVal, const wxString& keyVal, const wxString& extraVal, const wxString& nullVal)
@@ -593,7 +582,6 @@ void GenericItemForm::OnbCancel( wxCommandEvent& event )
     GetParent()->ProcessWindowEvent( my_event );
 
     Close(TRUE);
-
 }
 
 
@@ -643,12 +631,18 @@ void GenericItemForm::InsertItem(){
                 queryString = "INSERT INTO " +m_sTableName + " (";
                 
                 for(int i=0;i<count;i++){
+
+                    if(Utility::IsReservedMySQLWord(itemArray[i].fieldName)){
+                        wxString msg = "The field is a mysql reserved word: "+itemArray[i].fieldName;
+                        wxLogMessage(msg);
+                        return;
+                    }
+
                     if (i == count-1)
                         queryString = queryString + itemArray[i].fieldName;
                     else
                         queryString = queryString + itemArray[i].fieldName + ",";
                 }
-                    
                 queryString = queryString + ") VALUES (";
                 
                 for(int i=0;i<count;i++){
@@ -728,11 +722,10 @@ void GenericItemForm::InsertItem(){
             }
 
             Query query = conn.query(queryString);
-            query.execute();
+            if(!query.execute()){
+                wxLogMessage("Failed to insert.");
+            }
 
-            //wxMessageBox(queryString);
-
-            StoreQueryResult res = query.store();
         }
         
     }catch (BadQuery& er) { // handle any connection or
@@ -853,14 +846,9 @@ void GenericItemForm::UpdateItem(){
             }
             
             queryString = queryString + "WHERE " + m_sKeyName + " = " + m_sId;
-
             Query query = conn.query(queryString);
             query.execute();
-
-            StoreQueryResult res = query.store();
-    
         }
-
         
     }catch (BadQuery& er) { // handle any connection or
         // query errors that may come up

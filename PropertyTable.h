@@ -20,7 +20,7 @@ class PropertyTable : public GenericTable
         //Pointers
         HtmlHelp *m_HtmlWin;
 
-        bool UpdateDatabaseTableDefinitionsToDefinitions();
+        bool SynFieldDefinitionToTable();
         void AlterTable(int row);
 
         wxString PrepareCreateQuery(); //Prepare the creation query

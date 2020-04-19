@@ -106,7 +106,7 @@ void PropertyTable::SetGridTableName(wxString& name)
 
     if (Utility::DoesTableExist(Settings.sDatabase,m_sGridTableName))
     {
-        if(!UpdateDatabaseTableDefinitionsToDefinitions())
+        if(!SynFieldDefinitionToTable())
             wxLogMessage("The table exists and the definition are up to date");
         return;
     }
@@ -123,20 +123,24 @@ void PropertyTable::SetGridTableName(wxString& name)
 }
 //This function needs more work.
 //We have to iterate through our grid and see if each field exits in the database.
-bool PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
+bool PropertyTable::SynFieldDefinitionToTable()
 {
-
-    int num_rows=m_Grid->GetNumberRows();
-
     wxString fieldName;
+    wxString sTableId = Utility::GetTableIdFromSYS_TABLESByTableName(Settings.sDatabase,m_sGridTableName);
+    //for (int row = 0 ; row < num_rows; row++){
 
-    for (int row = 0 ; row < num_rows; row++){
+        ArrayTableFields fieldList;// We need to get the field array.
+        if(Utility::GetFieldListFromSysFieldsByTableId(fieldList,sTableId)){ // This is all the fields for that table from sys_fields
+           if(!Utility::SynFieldDefinitionToTable(m_sGridTableName,fieldList))
+               wxLogMessage("There was an error, failed to syn fields, check definitions and try again.");
+        }
 
-        //Reset
-        //buildString="";
-        fieldName=m_Grid->GetCellValue(row,2); //Column 2 is the fieldname;
-        if(Utility::DoesFieldExitInTable(m_sGridTableName,fieldName)){
-            return false;
+
+
+
+
+ /*       if(Utility::DoesFieldExitInTable(m_sGridTableName,fieldName)){
+            //return false;WHY ARE WE RETURN FALSE AlterTable will not run
 
         } else{
             // The field does not exist, we need to create it.
@@ -144,8 +148,8 @@ bool PropertyTable::UpdateDatabaseTableDefinitionsToDefinitions()
             //
             AlterTable(row);
 
-        }
-    }
+        }*/
+   // }
     return true;
 }
 

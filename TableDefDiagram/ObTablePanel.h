@@ -14,9 +14,6 @@ class ObTable;
 class TableField;
 class TableLinkageLine;
 
-
-
-
 //Declare an array of drawing objects. This respresents all our defined tables as an object that will be drawn on the screen.
 //WX_DECLARE_OBJARRAY(ObTable, ArrayDrawObjects);
 
@@ -38,6 +35,10 @@ private:
     wxRect m_SaveQueryRect;
 
     wxRect m_queryBuilderRect;
+
+    wxRect m_rectInsert;
+    wxRect m_rectUpdate;
+
     wxRect m_rectLeftJoin;
     wxRect m_rectInnerJoin;
     wxRect m_rectRightJoin;
@@ -46,6 +47,9 @@ private:
     wxRect m_rectOn;
     wxRect m_rectEquals;
 
+    wxRect m_rectAnd;
+    wxRect m_rectOr;
+
     wxString m_sBuildQuery;
     bool bHitClear;
     bool bHitRunQuery;
@@ -53,7 +57,7 @@ private:
     bool bHitSave;
 
 
-    wxString sPrevTableName;
+   // wxString sPrevTableName;
     wxTextCtrl *textValue;
     wxButton *AddValue;
     wxComboBox *QueryCombo;
@@ -63,6 +67,8 @@ private:
     wxCheckBox *m_ChkLike;
     void LoadQueryCombo();
 
+    void CreateInsertQuery(wxString sTableName, wxString sFieldName="");
+    void CreateUpdateQuery(wxString sTableName, wxString sFieldName="");
 
     wxButton *RemoveValue;
     void DetermineQuery(wxString sTableName, wxString sFieldName, wxPoint mousePt);

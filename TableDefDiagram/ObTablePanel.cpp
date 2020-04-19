@@ -93,14 +93,13 @@ ObTablePanel::~ObTablePanel()
     m_ChkAS->Destroy();
     m_ChkEql->Destroy();
     QueryCombo->Destroy();
-    m_bDrawDraggedField=false;
-    m_sLastDraggedFieldType="";
 
-    if(m_pFieldDragged!= nullptr)
-        delete m_pFieldDragged;
 
-    if(m_pObCurrentTable!= nullptr)
-        delete m_pObCurrentTable;
+  //  if(m_pFieldDragged!= nullptr)
+    //    delete m_pFieldDragged;
+
+   // if(m_pObCurrentTable!= nullptr)
+      //  delete m_pObCurrentTable;
 }
 
 void ObTablePanel::OnChkAs(wxCommandEvent& event)
@@ -132,9 +131,11 @@ ObTablePanel::ObTablePanel(wxFrame* parent) : wxPanel(parent)
     m_MouseMoveOffset.y=0;
     m_sizeWinObjectsExtend.x=0;
     m_sizeWinObjectsExtend.y=0;
+    m_bDrawDraggedField=false;
+    m_sLastDraggedFieldType="";
 
     m_sBuildQuery="";
-    sPrevTableName="";
+    //sPrevTableName="";
     bHitClear=false;
     bHitRunQuery=false;
 
@@ -169,6 +170,17 @@ ObTablePanel::ObTablePanel(wxFrame* parent) : wxPanel(parent)
 
     //----------------------
 
+    m_rectInsert.x=5;
+    m_rectInsert.y=HEIGHT_QUERY_BUILDER-34;
+    m_rectInsert.width=80;
+    m_rectInsert.height=20;
+
+    m_rectUpdate.x=84;
+    m_rectUpdate.y=HEIGHT_QUERY_BUILDER-34;
+    m_rectUpdate.width=80;
+    m_rectUpdate.height=20;
+
+
     m_rectLeftJoin.x=5;
     m_rectLeftJoin.y=HEIGHT_QUERY_BUILDER-15;
     m_rectLeftJoin.width=80;
@@ -194,6 +206,16 @@ ObTablePanel::ObTablePanel(wxFrame* parent) : wxPanel(parent)
     m_rectOn.width=80;
     m_rectOn.height=20;
 
+    m_rectAnd.x=300;
+    m_rectAnd.y=HEIGHT_QUERY_BUILDER-34;
+    m_rectAnd.width=80;
+    m_rectAnd.height=20;
+
+    m_rectOr.x=379;
+    m_rectOr.y=HEIGHT_QUERY_BUILDER-34;
+    m_rectOr.width=80;
+    m_rectOr.height=20;
+
     m_rectEquals.x=458;
     m_rectEquals.y=HEIGHT_QUERY_BUILDER-15;
     m_rectEquals.width=80;
@@ -203,15 +225,14 @@ ObTablePanel::ObTablePanel(wxFrame* parent) : wxPanel(parent)
     AddValue = new wxButton( this, ID_BUTTON_ADD_VALUE, "Add Value", wxPoint(810,HEIGHT_QUERY_BUILDER-18), wxSize(100,20), wxTB_DEFAULT_STYLE);
     RemoveValue = new wxButton( this, ID_BUTTON_REMOVE_LAST, "Undo", wxPoint(920,HEIGHT_QUERY_BUILDER-18), wxSize(80,20), wxTB_DEFAULT_STYLE);
 
-
     QueryCombo = new wxComboBox( this, wxID_ANY, "Saved queries will appear here.", wxPoint(1090,HEIGHT_QUERY_BUILDER-18), wxSize(250,25), 0,0,wxCB_READONLY);
     QueryCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( ObTablePanel::OnDatabaseComboChange ), nullptr, this );
     LoadQueryCombo();
     QueryCombo->SetSelection(0);
 
-    m_ChkAS = new wxCheckBox(this,ID_CHK_AS,"AS", wxPoint(470,HEIGHT_QUERY_BUILDER-18) );
-    m_ChkLike = new wxCheckBox(this,ID_CHK_LIKE,"LIKE", wxPoint(510,HEIGHT_QUERY_BUILDER-18) );
-    m_ChkEql = new wxCheckBox(this,ID_CHK_EQUAL,"=", wxPoint(560,HEIGHT_QUERY_BUILDER-18) );
+    m_ChkAS = new wxCheckBox(this,ID_CHK_AS,"AS", wxPoint(595,HEIGHT_QUERY_BUILDER-38) );
+    m_ChkLike = new wxCheckBox(this,ID_CHK_LIKE,"LIKE", wxPoint(645,HEIGHT_QUERY_BUILDER-38) );
+    m_ChkEql = new wxCheckBox(this,ID_CHK_EQUAL,"=", wxPoint(705,HEIGHT_QUERY_BUILDER-38) );
 
     m_ChkEql->SetValue(true);
 }
@@ -286,6 +307,17 @@ void ObTablePanel::DrawQueryBuilderArea(wxDC& dc)
     wxBrush brush2(wxColor(255,255,255),wxBRUSHSTYLE_SOLID);
     dc.SetBrush(brush2); // green filling
 
+    txt="INSERT";
+    txtExtent = dc.GetTextExtent(txt);
+    dc.DrawRectangle(m_rectInsert);
+    dc.DrawText(txt,(m_rectInsert.width - txtExtent.x)/2,HEIGHT_QUERY_BUILDER-30);
+
+    txt="UPDATE";
+    txtExtent = dc.GetTextExtent(txt);
+    dc.DrawRectangle(m_rectUpdate);
+    dc.DrawText(txt,((m_rectUpdate.width - txtExtent.x)/2) + 84,HEIGHT_QUERY_BUILDER-30);
+
+
     txt="LEFT JOIN";
     txtExtent = dc.GetTextExtent(txt);
     dc.DrawRectangle(m_rectLeftJoin);
@@ -310,6 +342,18 @@ void ObTablePanel::DrawQueryBuilderArea(wxDC& dc)
     txtExtent = dc.GetTextExtent(txt);
     dc.DrawRectangle(m_rectOn);
     dc.DrawText(txt,((m_rectOn.width - txtExtent.x)/2) + 379,HEIGHT_QUERY_BUILDER-11);
+
+    txt="AND";
+    txtExtent = dc.GetTextExtent(txt);
+    dc.DrawRectangle(m_rectAnd);
+    dc.DrawText(txt,((m_rectAnd.width - txtExtent.x)/2) + 300,HEIGHT_QUERY_BUILDER-30);
+
+    txt="OR";
+    txtExtent = dc.GetTextExtent(txt);
+    dc.DrawRectangle(m_rectOr);
+    dc.DrawText(txt,((m_rectOr.width - txtExtent.x)/2) + 379,HEIGHT_QUERY_BUILDER-30);
+
+
 /*
     txt="EQUALS";
     txtExtent = dc.GetTextExtent(txt);
@@ -336,15 +380,17 @@ void ObTablePanel::DetermineQuery(wxString sTableName, wxString sFieldName, wxPo
     bool bDoesNotHaveInnorJoin = (m_sBuildQuery.Find(" INNER JOIN ")==wxNOT_FOUND);
     bool bDoesNotHaveRightJoin = (m_sBuildQuery.Find(" RIGHT JOIN ")==wxNOT_FOUND);
     bool bDoesNotHaveAstroFrom = (m_sBuildQuery.Find(" * FROM ")==wxNOT_FOUND);
-    bool bDoesNotHaveSelect = (m_sBuildQuery.Find(" SELECT ")==wxNOT_FOUND);
 
+    bool bHasSelect = (m_sBuildQuery.Find(" SELECT ")!=wxNOT_FOUND);
+    bool bHasUpdate  = (m_sBuildQuery.Find(" UPDATE ")!=wxNOT_FOUND);
+    bool bHasInsert = (m_sBuildQuery.Find(" INSERT ")!=wxNOT_FOUND);
     bool bHasOn = (m_sBuildQuery.Find(" ON ")!=wxNOT_FOUND);
-    bool bHasEquals = (m_sBuildQuery.Find(" = ")!=wxNOT_FOUND);
+    bool bHasOnFromRight = (Utility::GetFirstStringFromRight(m_sBuildQuery).Find(" ON ")!=wxNOT_FOUND);
+    bool bHasEqualsFromRight = (Utility::GetFirstStringFromRight(m_sBuildQuery).Find(" = ")!=wxNOT_FOUND);
     bool bHasWhere = (m_sBuildQuery.Find(" WHERE ")!=wxNOT_FOUND);
+    bool bHasWhereFromRight = (Utility::GetFirstStringFromRight(m_sBuildQuery).Find(" WHERE ")!=wxNOT_FOUND);
+    //If has an equals, then that overrides an on
 
-    int posOfFrom = m_sBuildQuery.Find(" FROM ")+1; //account for the space at the front
-    int posOfOn = m_sBuildQuery.Find(" ON ")+1; //account for the space at the front
-    int QueryLength = m_sBuildQuery.Length();
 
     int MaxQueryWidth = GetRect().width-100;
 
@@ -356,71 +402,90 @@ void ObTablePanel::DetermineQuery(wxString sTableName, wxString sFieldName, wxPo
                 //Left Join
                 if(Utility::IsPointInRect(m_MousePos,m_rectLeftJoin)) {
                     m_sBuildQuery = " SELECT * FROM " + sTableName + "\n LEFT JOIN ";
-                    sPrevTableName=sTableName;
+                    //sPrevTableName=sTableName;
                 }
                 else if(Utility::IsPointInRect(m_MousePos,m_rectInnerJoin)) {
 
                     m_sBuildQuery = " SELECT * FROM " + sTableName + "\n INNER JOIN ";
-                    sPrevTableName=sTableName;
+                    //sPrevTableName=sTableName;
                 }
                 else if(Utility::IsPointInRect(m_MousePos,m_rectRightJoin)) {
 
                     m_sBuildQuery = " SELECT * FROM " + sTableName + "\n RIGHT JOIN ";
-                    sPrevTableName=sTableName;
+                    //sPrevTableName=sTableName;
+                }
+                else if(Utility::IsPointInRect(m_MousePos,m_rectInsert) || bHasInsert) {
+
+                    CreateInsertQuery(sTableName);
+                }
+                else if(Utility::IsPointInRect(m_MousePos,m_rectUpdate) || bHasUpdate) {
+
+                    CreateUpdateQuery(sTableName);
                 }
                 else{
                     m_sBuildQuery = " SELECT * FROM " + sTableName;
-                    sPrevTableName=sTableName;
+                    //sPrevTableName=sTableName;
                 }
             }
             else{
                 if(Utility::IsPointInRect(m_MousePos,m_rectLeftJoin)) {
-                    m_sBuildQuery += " LEFT JOIN " + sTableName;
-                    sPrevTableName=sTableName;
+                    int posOfFrom = m_sBuildQuery.Find(" FROM ");//+1; //account for the space at the front
+                    int QueryLength = m_sBuildQuery.Length();
+                    //Check to see how many tables are after the FROM and remove the tablename that we placing as a left join
+                    if(posOfFrom!=wxNOT_FOUND){
+                        m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName); //If the select query if based on multiple tables, will remove sTableName
+                        m_sBuildQuery += " \n LEFT JOIN " + sTableName;
+                    }else{
+
+                        //m_sBuildQuery += " LEFT JOIN " + sTableName;
+                    }
                 }
                 else if(Utility::IsPointInRect(m_MousePos,m_rectInnerJoin)) {
-
-                    m_sBuildQuery += " INNER JOIN " + sTableName;
-                    sPrevTableName=sTableName;
+                    m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName);
+                    m_sBuildQuery += " \n INNER JOIN " + sTableName;
                 }
                 else if(Utility::IsPointInRect(m_MousePos,m_rectRightJoin)) {
-
-                    m_sBuildQuery += " RIGHT JOIN " + sTableName;
-                    sPrevTableName=sTableName;
+                    m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName);
+                    m_sBuildQuery += " \n RIGHT JOIN " + sTableName;
                 }
                 else if(!bDoesNotHaveLeftJoin || !bDoesNotHaveInnorJoin || !bDoesNotHaveRightJoin){
                     //We have a join and dropped an *, this means at the table
                     m_sBuildQuery += " " + sTableName;
+                }
+                else if(Utility::IsPointInRect(m_MousePos,m_rectInsert) || bHasInsert) {
+
+                    CreateInsertQuery(sTableName);
+                }
+                else if(Utility::IsPointInRect(m_MousePos,m_rectUpdate) || bHasUpdate) {
+
+                    CreateUpdateQuery(sTableName);
                 }
             }
         }
         else
         {
             if(Utility::IsPointInRect(m_MousePos,m_rectLeftJoin) && bDoesNotHaveLeftJoin ) {
-                //m_sBuildQuery = " SELECT "+sTableName+"."+sFieldName+"\n FROM " + sTableName + " LEFT JOIN ";
+                m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName);
                 m_sBuildQuery = m_sBuildQuery + " LEFT JOIN " + sTableName + " \n" + " ON " + sTableName +"." + sFieldName;
-                sPrevTableName=sTableName;
             }
             else if(Utility::IsPointInRect(m_MousePos,m_rectInnerJoin) && bDoesNotHaveInnorJoin) {
-                //m_sBuildQuery = " SELECT "+sTableName+"."+sFieldName+"\n FROM " + sTableName + " INNER JOIN ";
-                m_sBuildQuery = m_sBuildQuery + " INNER JOIN " + sTableName + " \n" + " ON " + sTableName +"." + sFieldName;
-                sPrevTableName=sTableName;
-
+                m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName);
+                m_sBuildQuery = m_sBuildQuery + " LEFT JOIN " + sTableName + " \n" + " ON " + sTableName +"." + sFieldName;
+                m_sBuildQuery += " INNER JOIN " + sTableName + " \n" + " ON " + sTableName + "." + sFieldName;
             }
             else if(Utility::IsPointInRect(m_MousePos,m_rectRightJoin) && bDoesNotHaveRightJoin) {
-                //m_sBuildQuery = " SELECT "+sTableName+"."+sFieldName+"\n FROM " + sTableName + " RIGHT JOIN ";
-                m_sBuildQuery = m_sBuildQuery + " RIGHT JOIN " + sTableName + " \n" + " ON " + sTableName +"." + sFieldName;
-                sPrevTableName=sTableName;
+                m_sBuildQuery = Utility::RemoveTableFromSelectQuery(m_sBuildQuery,sTableName);
+                m_sBuildQuery += " RIGHT JOIN " + sTableName + " \n" + " ON " + sTableName +"." + sFieldName;
             }
-            else if(Utility::IsPointInRect(m_MousePos,m_rectOn) || bHasOn) {
-                if(bHasOn && !bHasEquals && m_sBuildQuery.Right(3)!= "ON ")
+            else if(Utility::IsPointInRect(m_MousePos,m_rectOn) || (bHasOn && bHasOnFromRight)) {
+                if(bHasOn && !bHasEqualsFromRight && m_sBuildQuery.Right(3)!= "ON ")
                 {
                     m_sBuildQuery += " = " + sTableName + "." + sFieldName;
                 }else if(m_sBuildQuery.Right(3)== "ON ")
                 {
                     m_sBuildQuery += sTableName + "." + sFieldName;
                 }
-                else if(bHasOn && bHasEquals)
+                else if(bHasOn && bHasEqualsFromRight)
                 {
                     m_sBuildQuery += " " + sTableName + "." + sFieldName;
                 }
@@ -428,32 +493,50 @@ void ObTablePanel::DetermineQuery(wxString sTableName, wxString sFieldName, wxPo
                     m_sBuildQuery += "\n ON " + sTableName + "." + sFieldName;
                 }
             }
-            else if(Utility::IsPointInRect(m_MousePos,m_rectWhere) || bHasWhere) {
-                if(bHasWhere && !bHasEquals){
+            else if(Utility::IsPointInRect(m_MousePos,m_rectAnd) ) {
+                m_sBuildQuery += "\n AND " + sTableName + "." + sFieldName;
+            }
+            else if(Utility::IsPointInRect(m_MousePos,m_rectOr) ) {
+                m_sBuildQuery += "\n OR " + sTableName + "." + sFieldName;
+            }
+            else if(Utility::IsPointInRect(m_MousePos,m_rectWhere) &&!bHasWhere) {
+                m_sBuildQuery += "\n WHERE " + sTableName + "." + sFieldName;
+            }
+            else if(bHasWhere) {
+                if(bHasWhere && !bHasEqualsFromRight && !bHasWhereFromRight){
                     m_sBuildQuery += " = " + sTableName + "." + sFieldName;
-
                 }
-                else if (bHasWhere && bHasEquals){
+                else if (bHasWhere && bHasWhereFromRight){
                     m_sBuildQuery += sTableName + "." + sFieldName;
-                }else{
-                    m_sBuildQuery += "\n WHERE " + sTableName + "." + sFieldName;
                 }
+            }
+            else if(Utility::IsPointInRect(m_MousePos,m_rectInsert) || bHasInsert) {
+
+                CreateInsertQuery(sTableName,sFieldName);
+            }
+            else if(Utility::IsPointInRect(m_MousePos,m_rectUpdate) || bHasUpdate) {
+
+                CreateUpdateQuery(sTableName,sFieldName);
             }
             else if(!bDoesNotHaveLeftJoin || !bDoesNotHaveInnorJoin || !bDoesNotHaveRightJoin){//We already have a join, append the field name to it
 
-                if(m_sBuildQuery.Find(sTableName+"."+sFieldName)==wxNOT_FOUND && bDoesNotHaveAstroFrom && !bHasOn){ // Don't add the same field twice
-
+                if(m_sBuildQuery.Find(sTableName+"."+sFieldName)==wxNOT_FOUND && bHasOn && !bHasOnFromRight && !bHasEqualsFromRight){
+                    m_sBuildQuery += " = " + sTableName + "." + sFieldName;
+                }
+                else if(m_sBuildQuery.Find(sTableName+"."+sFieldName)==wxNOT_FOUND && bDoesNotHaveAstroFrom && !bHasOn){ // Don't add the same field twice
+                    int posOfFrom = m_sBuildQuery.Find(" FROM ");//+1; //account for the space at the front
+                    int QueryLength = m_sBuildQuery.Length();
                     if(posOfFrom!=wxNOT_FOUND){
-                        wxString sLeft = m_sBuildQuery.Left(posOfFrom-2);
-                        wxString sRight = m_sBuildQuery.Right(QueryLength-posOfFrom);
+                        wxString sLeft = m_sBuildQuery.Left(posOfFrom-1);
+                        wxString sRight = m_sBuildQuery.Right(QueryLength-posOfFrom+1);
                         m_sBuildQuery = sLeft + ", " + sTableName + "." + sFieldName + " \n "+ sRight;
                         //m_sBuildQuery = sLeft + +",\n " + sTableName + "." + sFieldName + " \n "+ sRight;
-                        sPrevTableName=sTableName;
+                        //sPrevTableName=sTableName;
                     }
                     else{
                         m_sBuildQuery = m_sBuildQuery.Right(m_sBuildQuery.Length() - 7); // Chop off select
                         m_sBuildQuery = " SELECT " + sTableName + "." + sFieldName + " ,\n " + m_sBuildQuery;
-                        sPrevTableName=sTableName;
+                        //sPrevTableName=sTableName;
                     }
 
                 }
@@ -464,28 +547,207 @@ void ObTablePanel::DetermineQuery(wxString sTableName, wxString sFieldName, wxPo
             }
             else {
                 if(m_sBuildQuery.IsEmpty()){
+                    // A simple select
                     m_sBuildQuery = " SELECT " + sTableName+"."+sFieldName  +"\n FROM " + sTableName;
-                    sPrevTableName=sTableName;
-                }else{
+                }
+                else
+                {
                     if(m_sBuildQuery.Find(sTableName+"."+sFieldName)==wxNOT_FOUND && bDoesNotHaveAstroFrom) { // Don't add the same field twice
+                        /*
+                        if(bHasEqualsFromRight)
+                            m_sBuildQuery += " = " + sTableName + "." + sFieldName;
+                        else
+                            m_sBuildQuery += " " + sTableName + "." + sFieldName;
+*/
+
+                        //Adding a new field to our select query.
+
+                        wxArrayString sArray;
+                        wxString strQ = Utility::EscapeRemove(m_sBuildQuery);
+
+                        int len = strQ.Length();
+                        int pos = strQ.Find( " WHERE " );
+                        wxString sLeft = strQ.Left(pos);
+
+                        Utility::LoadStringArrayWithTableNamesFromSelectQuery(m_sBuildQuery, sArray);
+                        int posOfFrom = strQ.Find(" FROM ");//+1; //account for the space at the front
+                        int QueryLength = strQ.Length();
 
                        if(posOfFrom!=wxNOT_FOUND){
-                           wxString sLeft = m_sBuildQuery.Left(posOfFrom-2);//The -2 is to remove the /n
-                           wxString sRight = m_sBuildQuery.Right(QueryLength-posOfFrom);
-                           m_sBuildQuery = sLeft.Trim(true)  +", " + sTableName + "." + sFieldName + " \n "+ sRight;
-                           sPrevTableName=sTableName;
-                           //Place a new line if too long
-                           //m_sBuildQuery = sLeft  +",\n " + sTableName + "." + sFieldName + " \n "+ sRight;
+                           wxString sLeft = strQ.Left(posOfFrom);//The -2 is to remove the /n
+                           wxString sRight = strQ.Right(QueryLength-posOfFrom-1);
+
+                           if(Utility::DoesStringExistInStringArray(sTableName,sArray)){
+                               m_sBuildQuery = sLeft.Trim(true)  +", " + sTableName + "." + sFieldName + " \n "+ sRight;
+                           } else{
+                               m_sBuildQuery = sLeft.Trim(true)  +", " + sTableName + "." + sFieldName + " \n "+ sRight + ", " + sTableName;
+                           }
                        }
                        else{
+                           // If we are here, we don't have a from
                            m_sBuildQuery = m_sBuildQuery.Right(m_sBuildQuery.Length() - 7); // Chop off select
-                           m_sBuildQuery = " SELECT " + sTableName + "." + sFieldName + " ,\n " + m_sBuildQuery;
-                           sPrevTableName=sTableName;
+                           m_sBuildQuery = " SELECT " + sTableName + "." + sFieldName + " \n FROM " + "\n " + sTableName;
                        }
                     }
                 }
             }
-        }           //Left Join
+        }
+    }
+}
+
+void ObTablePanel::CreateInsertQuery(wxString sTableName, wxString sFieldName)
+{
+    if(sFieldName==sTableName+"Id")
+        return;
+    
+    if(sFieldName.IsEmpty()){
+        m_sBuildQuery.Trim();
+
+        //Insert all the records
+        if(m_sBuildQuery.IsEmpty()){
+            //This is an insert everything from sTableName
+            wxArrayString ArrayFieldNames;
+            Utility::GetFieldListByQuery(ArrayFieldNames,"SELECT * FROM " + sTableName);
+
+            m_sBuildQuery = " INSERT INTO "+sTableName+ "\n (";
+            for (int index=1;index<ArrayFieldNames.GetCount();index++){
+
+                if(index==1)
+                    m_sBuildQuery += sTableName+"."+ArrayFieldNames[index];
+                else
+                    m_sBuildQuery += ", " +sTableName+"."+ArrayFieldNames[index];
+
+            }
+            m_sBuildQuery += " )\n VALUES\n (";
+            for (int index=1;index<ArrayFieldNames.GetCount();index++){
+
+                if(index==1)
+                    m_sBuildQuery += "'[VALUE" + Utility::IntToString(index) + "]'";
+                else
+                    m_sBuildQuery += ",'[VALUE" + Utility::IntToString(index) + "]'";
+            }
+            m_sBuildQuery += ")";
+        }
+    }
+    else{
+        // Append field to INSERT
+        if(m_sBuildQuery.IsEmpty()){
+            m_sBuildQuery = " INSERT INTO "+sTableName+ "\n (";
+            m_sBuildQuery +=sTableName+"."+sFieldName;
+            m_sBuildQuery += ")\n VALUES\n (";
+            m_sBuildQuery += "'[VALUE1]')";
+        }
+        else
+        {
+            if(m_sBuildQuery.Find(sTableName+"."+sFieldName)== wxNOT_FOUND && Utility::GetTableNamesFromInsertQuery(m_sBuildQuery)==sTableName)
+            {
+                //Append the new field
+                int sLen = m_sBuildQuery.length();
+                int pos = m_sBuildQuery.Find(")\n VALUES\n (");
+                wxString sLeft = m_sBuildQuery.Left(pos);
+                m_sBuildQuery = sLeft + ", " + sTableName+"."+sFieldName + m_sBuildQuery.Right(sLen-pos);
+
+                //Append the value, but first we need to find what value we are upto
+                //Extract the latest [VALUExx], increase it by 1, and turn it back into a string
+                sLen = m_sBuildQuery.length();
+                int posAsBracket = sLen - 3;
+                int findIndex=1;
+                while(m_sBuildQuery.GetChar(posAsBracket-findIndex)!='E')
+                    findIndex++;
+
+                int PosValueIndex = posAsBracket-findIndex + 1;
+                wxString sNum = m_sBuildQuery.Mid(PosValueIndex, (sLen-3) - PosValueIndex);
+                int Num = Utility::StringToInt(sNum);
+                Num++;
+                sNum = Utility::IntToString(Num); //We now have our new number
+
+                sLeft = m_sBuildQuery.Left(sLen-1);
+                m_sBuildQuery += ", '[VALUE" + sNum +"]')";
+            }
+        }
+    }
+}
+
+void ObTablePanel::CreateUpdateQuery(wxString sTableName, wxString sFieldName)
+{
+    if(sFieldName.IsEmpty()){
+        //Update all the records
+        if(m_sBuildQuery.IsEmpty()){
+            //This is an insert everything from sTableName
+            wxArrayString ArrayFieldNames;
+            Utility::GetFieldListByQuery(ArrayFieldNames,"SELECT * FROM " + sTableName);
+
+            m_sBuildQuery = " UPDATE "+sTableName+ "\n SET \n ";
+            for (int index=1;index<ArrayFieldNames.GetCount();index++){
+
+                if(index==1)
+                    m_sBuildQuery += ArrayFieldNames[index] + "='[VALUE" + Utility::IntToString(index) +"]'";
+                else
+                    m_sBuildQuery += ", " + ArrayFieldNames[index] + "='[VALUE" + Utility::IntToString(index) +"]'";
+
+            }
+            m_sBuildQuery += "\n WHERE \n" + sTableName+"Id=[KEY]";
+
+        }
+    }
+    else{
+        if(m_sBuildQuery.IsEmpty()){
+
+            if(sFieldName.IsEmpty())
+                m_sBuildQuery = " UPDATE "+sTableName+ "\n SET \n ";
+            else {
+                m_sBuildQuery = " UPDATE "+sTableName+ "\n SET \n ";
+                m_sBuildQuery += sTableName+ "." +sFieldName + "='[VALUE1]'";
+            }
+        }
+        else
+        {
+
+            if(m_sBuildQuery.Find(sTableName+"."+sFieldName)== wxNOT_FOUND){
+
+                wxArrayString sArray;
+                wxString strQ = m_sBuildQuery;
+                strQ.Replace("\r","");
+                strQ.Replace("\n","");
+                strQ.Replace("\"","'");
+
+                int len = strQ.Length();
+                int pos = strQ.Find( " SET " );
+                wxString sLeft = strQ.Left(pos);
+
+                Utility::LoadStringArrayWithTableNamesFromUpdateQuery(strQ, sArray);
+                if(!Utility::DoesStringExistInStringArray(sTableName,sArray)){
+                    //Only add the table name if it doesn't exist in the list.
+
+                    //ADD NAME NOW>
+
+                    wxString sRight = strQ.Right(len-pos);
+                    m_sBuildQuery = sLeft + ", " + sTableName + "\n " + sRight;
+
+                    pos = strQ.Find( " SET " );
+                    sLeft = strQ.Left(pos);
+                }
+
+                int sLen = m_sBuildQuery.length();
+                int posAsBracket = sLen - 2;
+                int findIndex=1;
+                while(m_sBuildQuery.GetChar(posAsBracket-findIndex)!='E')
+                    findIndex++;
+
+                int PosValueIndex = posAsBracket-findIndex + 1;
+                wxString sNum = m_sBuildQuery.Mid(PosValueIndex, (sLen-2) - PosValueIndex);
+                int Num = Utility::StringToInt(sNum);
+                int NumSaved = Num;
+                Num++;
+                sNum = Utility::IntToString(Num); //We now have our new number
+
+                sLeft = m_sBuildQuery.Left(sLen-1);
+                if(Utility::IsExactlyDivisable(NumSaved,4))
+                    m_sBuildQuery += ",\n " + sTableName+ "." +sFieldName + "='[VALUE" + sNum +"]'";
+                else
+                    m_sBuildQuery += ", " + sTableName+ "." +sFieldName + "='[VALUE" + sNum +"]'";
+            }
+        }
     }
 }
 
@@ -495,13 +757,18 @@ void ObTablePanel::OnAddValue(wxCommandEvent& event)
     bool IsString=false;
 
     if(!m_sLastDraggedFieldType.IsEmpty()){
-        m_sLastDraggedFieldType.Lower(); // this is ok, it can stay lower.
+        m_sLastDraggedFieldType=m_sLastDraggedFieldType.Lower(); // this is ok, it can stay lower.
         if(m_sLastDraggedFieldType.find("varchar")!=wxNOT_FOUND || m_sLastDraggedFieldType.find("text")!=wxNOT_FOUND)
             IsString=true;
     }
 
     if(m_ChkEql->GetValue()){
-        bool bHasEquals = (m_sBuildQuery.Find(" = ")!=wxNOT_FOUND || m_sBuildQuery.Find(" =")!=wxNOT_FOUND);
+
+        //NOT it need to have equals on the last few characters.
+        wxString sFindEquals = Utility::GetFirstStringFromRight(m_sBuildQuery);
+
+        bool bHasEquals = (sFindEquals.Find("=")!=wxNOT_FOUND);
+
         wxString sValue = textValue->GetValue();
         if(!sValue.IsEmpty()){
 
@@ -558,17 +825,9 @@ void ObTablePanel::OnAddValue(wxCommandEvent& event)
             render(dc);
         }
     }
-
 }
 
 void ObTablePanel::OnRemoveValue(wxCommandEvent& event) {
-/*    int posOfEquals = m_sBuildQuery.Find(" = ");
-    if(posOfEquals!= wxNOT_FOUND){
-        m_sBuildQuery = m_sBuildQuery.Left(posOfEquals);
-
-        wxClientDC dc(this);
-        render(dc);
-    }*/
 
     m_sBuildQuery.Trim(true);
     char spaceCH = 32; // Look for a space starting from the end.
@@ -576,8 +835,6 @@ void ObTablePanel::OnRemoveValue(wxCommandEvent& event) {
     int posOfEquals = m_sBuildQuery.Find(spaceCH,true);
     if(posOfEquals!= wxNOT_FOUND){
         m_sBuildQuery = m_sBuildQuery.Left(posOfEquals) + " ";
-
-
     }
     else
         m_sBuildQuery="";
@@ -585,6 +842,7 @@ void ObTablePanel::OnRemoveValue(wxCommandEvent& event) {
     wxClientDC dc(this);
     render(dc);
 }
+
 //===================
 //MENU EVENT FUNCTIONS
 void ObTablePanel::OnMenuAddTable(wxCommandEvent& event)
@@ -677,7 +935,6 @@ void ObTablePanel::mouseDown(wxMouseEvent& event) {
     else if(Utility::IsPointInRect(m_MousePos,m_RunQueryRect))
         bHitRunQuery=true;
 
-
     MyEvent my_event( this );
     my_event.m_bStatusMessage=true;
     my_event.m_sData="mouseDown";
@@ -691,7 +948,6 @@ void ObTablePanel::mouseMoved(wxMouseEvent& event)
     if (m_pObjectToDrawTEMP != nullptr){
 
         wxPoint pos;
-
         pos.x = m_MousePos.x - m_MouseMoveOffset.x;
         pos.y = m_MousePos.y - m_MouseMoveOffset.y;
 
@@ -767,8 +1023,7 @@ void ObTablePanel::mouseReleased(wxMouseEvent& event)
     else if(Utility::IsPointInRect(m_MousePos,m_ClearBuilderRect) && bHitClear){
         bHitClear=false;
         m_sBuildQuery="";
-        sPrevTableName="";
-        QueryCombo->SetSelection(0);
+        //QueryCombo->SetSelection(0);
         textValue->SetValue("");
         wxClientDC dc(this);
         render(dc);
@@ -786,11 +1041,11 @@ void ObTablePanel::mouseReleased(wxMouseEvent& event)
         if(pDlg->ShowModal()==wxOK) {
 
             m_sBuildQuery = pDlg->GetDataValue("ID_TEXT");
+            m_sBuildQuery.Replace("\r","\n");
             wxClientDC dc(this);
             render(dc);
         }
         pDlg->Destroy();
-
 
     }
     else if(Utility::IsPointInRect(m_MousePos,m_SaveQueryRect)){
@@ -830,6 +1085,7 @@ void ObTablePanel::mouseReleased(wxMouseEvent& event)
             else{
                 //Updating
                 wxString sQueryString = "UPDATE usr_queries SET queryDefinition = '"+m_sBuildQuery+"' WHERE   queryName = '"+sQueryName +"'";
+                sQueryString.Replace("\r","");
                 Utility::ExecuteQueryEscapeAscii(sQueryString);
             }
 
@@ -840,36 +1096,44 @@ void ObTablePanel::mouseReleased(wxMouseEvent& event)
         if(bFail){
             wxLogMessage("Failed to save because you changed the name to an existing saved query. Either change the name or select the query from the selection box and try again.");
         }
-
     }
     bHitClear=false;
-
 
     MyEvent my_event( this );
     my_event.m_bStatusMessage=true;
     my_event.m_sData="mouseReleased";
     GetParent()->ProcessWindowEvent( my_event );
 }
-
 //Run the query for testing.
-
 void ObTablePanel::RunQuery(wxString sTitle, wxString sFormGridQuery)
 {
-
-    //Remove the /n
+    sFormGridQuery.Replace("\r","");
     sFormGridQuery.Replace("\n","");
     sFormGridQuery.Replace("\"","'");
 
-    GenericQueryGrid * m_pQueryGrid = new GenericQueryGrid((wxFrame*) this, -1,sTitle,wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+    wxString str = sFormGridQuery.Left(8);
+    //If it's an update or insert query, we don't want to open the form until we run the query.
+    if(str.Find("INSERT ")!=wxNOT_FOUND || str.Find("UPDATE ")!=wxNOT_FOUND ){
+        if(Utility::ExecuteQueryEscapeAscii(sFormGridQuery)) {
+            if (str.Find("INSERT ") != wxNOT_FOUND)
+                wxLogMessage("An item was inserted into the table.");
+            else if (str.Find("UPDATE ") != wxNOT_FOUND)
+                wxLogMessage("An item was updated into the table.");
+        }
+    }
+    else{
+        //Remove the /n
+        GenericQueryGrid * m_pQueryGrid = new GenericQueryGrid((wxFrame*) this, -1,sTitle,wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
 
-    if (m_pQueryGrid != nullptr){
-        m_pQueryGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
-        m_pQueryGrid->SetFormQuery(sFormGridQuery);
-        if(m_pQueryGrid->Create())
-            m_pQueryGrid->Show(true);
-        else{
-            m_pQueryGrid->Close();
-            m_pQueryGrid= nullptr;
+        if (m_pQueryGrid != nullptr){
+            m_pQueryGrid->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+            m_pQueryGrid->SetFormQuery(sFormGridQuery);
+            if(m_pQueryGrid->Create())
+                m_pQueryGrid->Show(true);
+            else{
+                m_pQueryGrid->Close();
+                m_pQueryGrid= nullptr;
+            }
         }
     }
 }
@@ -886,7 +1150,6 @@ void ObTablePanel::DeleteDrawObject()
      */
 }
 
-
 wxSize ObTablePanel::GetSizeDiagramExtend()
 {
     wxSize size = m_sizeWinObjectsExtend;
@@ -894,6 +1157,7 @@ wxSize ObTablePanel::GetSizeDiagramExtend()
     size.y = m_sizeWinObjectsExtend.y + 300;
     return size;
 }
+
 void ObTablePanel::rightClick(wxMouseEvent& event)
 {
     m_pObCurrentTable= nullptr;
@@ -923,7 +1187,6 @@ void ObTablePanel::rightClick(wxMouseEvent& event)
     //Tell the parent to add a table to the drawing at the mouse point.
     MyEvent my_event( this );
     my_event.m_bStatusMessage=true;
-//    my_event.m_sData = "Current mouse position: x="+m_MousePos.x" + " y="+m_MousePos.y;
     my_event.m_pMousePoint=m_MousePos;
     GetParent()->ProcessWindowEvent( my_event );
 
@@ -1198,8 +1461,8 @@ bool ObTablePanel::Destroy()
     my_event.m_bDestroyed=true;
     GetParent()->ProcessWindowEvent( my_event );
 
-    bool bResult = wxPanel::Destroy();
-    return bResult;
+    //bool bResult = wxPanel::Destroy();
+    return true;
 }
 
 void ObTablePanel::GetSelectedFieldItemListDB(ArrayTableField& fieldItemList, wxString TableID, wxArrayString &linkageFlags)

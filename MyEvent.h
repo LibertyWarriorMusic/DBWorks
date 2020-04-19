@@ -18,6 +18,9 @@ class MyEvent : public wxEvent
     bool m_bTableFieldDefinitions;
     bool m_bOpen;
     bool m_bOpenQueryGrid;
+    bool m_bOpenDesignPage;
+    bool m_bOpenDesignForm;
+
     bool m_bEdit;
     bool m_bRefreshDatabase; //Refresh the entire grid reloading every record.
     bool m_bDestroyed;
@@ -26,7 +29,12 @@ class MyEvent : public wxEvent
     bool m_bImportDatabase;
     bool m_bStatusMessage;
     bool m_bDestroyedPropertyTable;
+
     bool m_bTableDiagramFrameWasDestroyed;
+    bool m_bMainRunPageWasDestroyed;
+    bool m_bDesignFormWasDestroyed;
+    bool m_bDesignPageWasDestroyed;
+
     bool m_bHelpFrameWasDestroyed;
 
     wxString m_sData;//Generic data that can be used for anything

@@ -154,6 +154,20 @@ long Utility::StringToLong(const wxString& stringToConvert)
     }
     return  value;
 }
+bool Utility::IsExactlyDivisable(double num, double div)
+{
+    if(div !=0){
+
+        int result = num / div;
+
+        int check = result * div;
+
+        if ((check-num)==0)
+            return true;
+    }
+    return false;
+}
+
 
 void Utility::FillComboFromStringArray(wxComboBox *pCombo, const wxArrayString sArray)
 {
@@ -344,8 +358,13 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query = "CREATE TABLE `usr_forms` ("
                     "`usr_formsId` int NOT NULL AUTO_INCREMENT,"
                     "`formName` varchar(255) NOT NULL,"
-                    "`formQueryDefinition` text NOT NULL,"
-                    "`description` text NOT NULL,"
+                    "`description` text,"
+                    "`usr_pagesId` int NOT NULL,"
+                    "`usr_queriesId` int NOT NULL,"
+                    "`xPosition` int default '100' ,"
+                    "`yPosition` int default '100',"
+                    "`width` int default '600',"
+                    "`height` int default '300',"
                     "PRIMARY KEY (`usr_formsId`)"
                     " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
 
@@ -354,6 +373,23 @@ bool Utility::CreateSystemTables(wxString sDatabase)
 
         }
 
+        if(!DoesTableExist(sDatabase,"usr_pages")){
+
+            //We can load from a file or write in code here. I think it's better to write it code or have it in the sys_docs, much better I think.
+            wxString query="";
+
+
+            //Option 3 DIRECTLY IN CODE. I think this is the best
+            query = "CREATE TABLE `usr_pages` ("
+                    "`usr_pagesId` int NOT NULL AUTO_INCREMENT,"
+                    "`pageName` varchar(255) NOT NULL,"
+                    "PRIMARY KEY (`usr_pagesId`)"
+                    " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
+
+            if(!query.IsEmpty())
+                ExecuteQuery(sDatabase,query);
+
+        }
     }
     else{
         return false;
@@ -361,9 +397,6 @@ bool Utility::CreateSystemTables(wxString sDatabase)
 
     return true;
 }
-
-
-
 
 wxString Utility::Replace(wxString searchString, wxString Old, wxString New, bool all)
 {
@@ -411,7 +444,14 @@ double Utility::CalculateProgressStepsforImport(int iCount)
     return ProgressStep;
 }
 
-
+wxString Utility::GetFirstStringFromRight(wxString str)
+{
+    str.Trim(true);
+    char space = 32;
+    int posSpace = str.Find(space,true);
+    int len = str.Length();
+    return str.Right(len-posSpace-1);
+}
 wxString Utility::PassHTMLDocument(wxString sDocument)
 {
 
@@ -642,6 +682,41 @@ wxString Utility::Escape(wxString & str)
     return strToRetur;
 }
 
+wxString Utility::EscapeRemove(wxString & str){
+    wxString strToRetur;
+    strToRetur = str;
+    strToRetur.Replace("\r","");
+    strToRetur.Replace("\n","");
+    strToRetur.Replace("\"","'");
+    return strToRetur;
+}
+
+wxString Utility::RemoveTableFromSelectQuery(wxString sQuery, wxString sTableName)
+{
+    int posOfFrom = sQuery.Find(" FROM ");//+1; //account for the space at the front
+    wxString strQ = EscapeRemove(sQuery);
+    wxArrayString sArray;
+    Utility::LoadStringArrayWithTableNamesFromSelectQuery(strQ, sArray);
+    if(Utility::DoesStringExistInStringArray(sTableName,sArray)) {
+        //Remove Rebuild the requery with a left join
+        sQuery = strQ.Left(posOfFrom);
+        sQuery += "\n FROM ";
+        bool bFirst = true;
+        for (int index = 0; index < sArray.GetCount(); index++) {
+            if (sArray[index] != sTableName) {
+                if (bFirst) {
+                    bFirst = false;
+                    sQuery += " " + sArray[index];
+                } else {
+                    sQuery += ", " + sArray[index];
+                }
+            }
+        }
+        //Now add the left join
+
+    }
+    return sQuery;
+}
 // System database developers can do everything.
 bool Utility::IsSystemDatabaseDeveloper()
 {
@@ -1665,14 +1740,11 @@ bool Utility::GetFieldFromTableWhereFieldEquals(wxString sDatabase, wxArrayStrin
     else{
        // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
-
     return false;
 }
 
-
-
 // Gets a list of TableFieldItems given table from the sys_fields table given a table ID.
-bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
+bool Utility::GetFieldListFromSysFieldsByTableId(ArrayTableFields &fieldList, wxString TableId)
 {
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
@@ -1682,7 +1754,6 @@ bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
     bool bFoundRecord=false;
     // Connect to the sample database.
     Connection conn(false);
-
 
     if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
                      (const_cast<char*>((const char*)server.mb_str())),
@@ -1695,18 +1766,14 @@ bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
         Query query = conn.query(QueryString);
         StoreQueryResult res = query.store();
 
-
         // Display results
         if (res) {
-
 
             // Get each row in result set, and print its contents
             for (size_t currentRow = 0; currentRow < res.num_rows(); ++currentRow) {
 
                 try {
                     //Add a new row to the grid control.
-
-
                     TableFieldItem * fieldItem = new TableFieldItem();
 
                     wxString valfield(res[currentRow]["valfield"], wxConvUTF8);
@@ -1730,7 +1797,6 @@ bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
                 catch (int num) {
                     //wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return false;
-
                 }
             }
         }
@@ -1745,25 +1811,368 @@ bool Utility::GetFieldList(ArrayTableFields &fieldList, wxString TableId)
     }
 
     return bFoundRecord;
-
 }
+//Test to see if this field definition exists in our table: name, type, null, key, default, extra
+bool Utility::SynFieldDefinitionToTable(const wxString& sTableName,  const ArrayTableFields& fieldItemList){
+
+    DropFieldsInTableThatAreNotInTableDefinition(sTableName,fieldItemList);
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    //bool bEverythingMatches = true;// We are looking for a false
+
+    // Connect to the sample database.
+    Connection conn(false);
 
 
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
 
-/* //NOT SURE YET
-void Utility::DestroyFieldItemList(ArrayTableFields &fieldList) // Runs through the list and destroys all the items.
-{
-    for (int index=0; index<fieldList.Count();index++){
-        TableFieldItem  item;
-        item = fieldList[index];
+        //SetStatusText("Database Connected");
+
+        // Query query = conn.query("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema='"+database+"' AND table_name='"+sTableName+"'; ");
+
+        wxString QueryString = "DESCRIBE "+sTableName+";";
+        Query query = conn.query( QueryString);
 
 
+        StoreQueryResult res = query.store();
 
+
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                if( currentRow > 0 ) {
+
+                    //Note: Fields may not be in the save order, so need to search for the field
+
+                    //Find the field item in the list that has a maching feildname.
+
+                    //We don't need to test the primary key as it's set automatically and we don't save it in the fields item list.
+                    try {
+
+                        wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                        bool bFoundField=true;
+                        TableFieldItem fieldItem;
+
+                        for(int index=0;index<fieldItemList.GetCount();index++){
+                            fieldItem = fieldItemList[index];
+
+                            if(fieldItem.fieldName==sField)
+                                break; //
+
+                            if(index==fieldItemList.GetCount()-1){
+
+                                //The field doesn't exist, do you want to add it.
+                                auto *dlg = new wxMessageDialog(nullptr, "The field " + sField +" will be droped from the table, do you want to continue? \n\n", wxT("Drop Field"), wxYES_NO | wxICON_EXCLAMATION);
+
+                                if ( dlg->ShowModal() == wxID_YES ){
+                                    wxString dropQuery= "ALTER TABLE `"+sTableName+"` DROP COLUMN "+sField;
+                                    bFoundField=false;
+                                    if(!ExecuteQuery(Settings.sDatabase,dropQuery)){
+                                        dlg->Destroy();
+                                    }
+                                    dlg->Destroy();
+                                }
+                            }
+                        }
+                        if(bFoundField) {
+
+
+                            wxString sType(res[currentRow]["Type"], wxConvUTF8);
+                            wxString sNull(res[currentRow]["Null"], wxConvUTF8);
+                            wxString sKey(res[currentRow]["Key"], wxConvUTF8);
+                            wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
+                            wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
+
+                            //A default value of NULL means nothing
+                            if (sDefault == "NULL")
+                                sDefault = "";
+
+                            fieldItem.fieldType = fieldItem.fieldType.Lower();
+                            sType = sType.Lower();
+
+                            //NOTE: You only need to say NOT NULL in the query, so any YES (can be NULL) is the default
+                            // and doesn't need to be in the statement.
+                            sNull = sNull.Lower();
+                            fieldItem.fieldNull = fieldItem.fieldNull.Lower();
+
+                            if (sNull == "yes")
+                                sNull = "";
+
+                            if (fieldItem.fieldNull == "yes")
+                                fieldItem.fieldNull = "";
+
+                            if (sDefault == "NULL")
+                                sDefault = "";
+
+                            if (fieldItem.fieldDefault == "NULL")
+                                fieldItem.fieldDefault = "";
+
+                            if (sField != fieldItem.fieldName ||
+                                sType != fieldItem.fieldType ||
+                                sNull != fieldItem.fieldNull ||
+                                sKey != fieldItem.fieldKey ||
+                                sDefault != fieldItem.fieldDefault ||
+                                sExtra != fieldItem.fieldExtra) {
+
+                                //We found something that doesn't match, make it match.
+
+                                if (!fieldItem.fieldNull.IsEmpty())
+                                    sNull = "NOT NULL";
+                                else if (fieldItem.fieldNull.IsEmpty())
+                                    sNull = "";
+
+                                if (!fieldItem.fieldDefault.IsEmpty()) {
+                                    fieldItem.fieldDefault = "DEFAULT '" + fieldItem.fieldDefault + "'";
+                                }
+
+                                wxString altQuery =
+                                        "ALTER TABLE `" + sTableName + "` CHANGE COLUMN `" + fieldItem.fieldName +
+                                        "` `" + fieldItem.fieldName + "` " + fieldItem.fieldType + " " + sNull + " " +
+                                        fieldItem.fieldDefault;
+
+                                auto *dlg = new wxMessageDialog(nullptr,
+                                                                "You are about the execute the following command, continue? \n\n" +
+                                                                altQuery, wxT("Update Column"),
+                                                                wxYES_NO | wxICON_EXCLAMATION);
+
+                                if (dlg->ShowModal() == wxID_YES) {
+                                    if (!ExecuteQuery(Settings.sDatabase, altQuery)) {
+                                        dlg->Destroy();
+                                        break;
+                                    }
+                                }
+                                dlg->Destroy();
+                            }
+                        }
+                    }
+                    catch (int &num) {
+
+                    }
+                }
+            }
+            /*
+            //CHECK to see if we have any fields to add.
+            int fieldDefCount = fieldItemList.GetCount(); //NOTE doesn't hold the primaray key.
+            if( (fieldDefCount+1) > RowsInTable ){
+                //We have more table definition than fields in database table.
+
+                //Now we first run through all the definitions and see if we have table row match
+                //If we don't have one, then we need to create the field.
+                for(int index=0;index<fieldItemList.GetCount();index++){
+
+                    for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+                        wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                        if(fieldItemList[index].fieldName==sField)
+                            break;
+
+                        if(currentRow==RowsInTable-1){
+                            //We have a new field, prompt to create it.
+                            auto *dlg = new wxMessageDialog(nullptr, "There is a new field that doesn't exist in the table. \n Do you want to add it?", wxT("Add Column"), wxYES_NO | wxICON_EXCLAMATION);
+
+                            if ( dlg->ShowModal() == wxID_YES ){
+
+                                TableFieldItem fieldItem = fieldItemList[index];
+
+                                wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                                wxString sType(res[currentRow]["Type"], wxConvUTF8);
+                                wxString sNull(res[currentRow]["Null"], wxConvUTF8);
+                                wxString sKey(res[currentRow]["Key"], wxConvUTF8);
+                                wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
+                                wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
+
+                                //A default value of NULL means nothing
+                                if (sDefault=="NULL")
+                                    sDefault="";
+
+                                fieldItem.fieldType = fieldItem.fieldType.Lower();
+                                sType = sType.Lower();
+
+                                //NOTE: You only need to say NOT NULL in the query, so any YES (can be NULL) is the default
+                                // and doesn't need to be in the statement.
+                                sNull=sNull.Lower();
+                                fieldItem.fieldNull = fieldItem.fieldNull.Lower();
+
+                                if(sNull=="yes")
+                                    sNull="";
+
+                                if(fieldItem.fieldNull=="yes")
+                                    fieldItem.fieldNull="";
+
+                                if(sDefault=="NULL")
+                                    sDefault="";
+
+                                if(fieldItem.fieldDefault=="NULL")
+                                    fieldItem.fieldDefault="";
+                                //We found something that doesn't match, make it match.
+
+                                if(!fieldItem.fieldNull.IsEmpty())
+                                    sNull="NOT NULL";
+                                else if (fieldItem.fieldNull.IsEmpty())
+                                    sNull="";
+
+                                if(!fieldItem.fieldDefault.IsEmpty()){
+                                    fieldItem.fieldDefault = "DEFAULT '" + fieldItem.fieldDefault + "'";
+                                }
+
+                                wxString AddQuery= "ALTER TABLE `"+sTableName+"` ADD `"+fieldItem.fieldName+"` "+fieldItem.fieldType+" "+sNull+" " + fieldItem.fieldDefault;
+
+                                if(!ExecuteQuery(Settings.sDatabase,AddQuery)){
+                                    dlg->Destroy();
+                                    return false;
+                                }
+                            }
+                            dlg->Destroy();
+                        }
+                    }
+                }
+            }*/
+        }
+        else {
+            return false;
+        }
+    }
+    else{
+        return false;
     }
 
-}*/
+    return true;
+}
+bool Utility::DropFieldsInTableThatAreNotInTableDefinition(const wxString& sTableName,  const ArrayTableFields& fieldItemList)
+{
+
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    //bool bEverythingMatches = true;// We are looking for a false
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+
+        // Query query = conn.query("SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema='"+database+"' AND table_name='"+sTableName+"'; ");
+
+        wxString QueryString = "DESCRIBE " + sTableName + ";";
+        Query query = conn.query(QueryString);
+
+
+        StoreQueryResult res = query.store();
+
+
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+
+            //CHECK to see if we have any fields to add.
+            int fieldDefCount = fieldItemList.GetCount(); //NOTE doesn't hold the primaray key.
+            if ((fieldDefCount + 1) > RowsInTable) {
+                //We have more table definition than fields in database table.
+
+                //Now we first run through all the definitions and see if we have table row match
+                //If we don't have one, then we need to create the field.
+                for (int index = 0; index < fieldItemList.GetCount(); index++) {
+
+                    for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+                        wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                        if (fieldItemList[index].fieldName == sField)
+                            break;
+
+                        if (currentRow == RowsInTable - 1) {
+                            //We have a new field, prompt to create it.
+                            auto *dlg = new wxMessageDialog(nullptr,
+                                                            "There is a new field that doesn't exist in the table. \n Do you want to add it?",
+                                                            wxT("Add Column"), wxYES_NO | wxICON_EXCLAMATION);
+
+                            if (dlg->ShowModal() == wxID_YES) {
+
+                                TableFieldItem fieldItem = fieldItemList[index];
+
+                                wxString sField(res[currentRow]["Field"], wxConvUTF8);
+                                wxString sType(res[currentRow]["Type"], wxConvUTF8);
+                                wxString sNull(res[currentRow]["Null"], wxConvUTF8);
+                                wxString sKey(res[currentRow]["Key"], wxConvUTF8);
+                                wxString sDefault(res[currentRow]["Default"], wxConvUTF8);
+                                wxString sExtra(res[currentRow]["Extra"], wxConvUTF8);
+
+                                //A default value of NULL means nothing
+                                if (sDefault == "NULL")
+                                    sDefault = "";
+
+                                fieldItem.fieldType = fieldItem.fieldType.Lower();
+                                sType = sType.Lower();
+
+                                //NOTE: You only need to say NOT NULL in the query, so any YES (can be NULL) is the default
+                                // and doesn't need to be in the statement.
+                                sNull = sNull.Lower();
+                                fieldItem.fieldNull = fieldItem.fieldNull.Lower();
+
+                                if (sNull == "yes")
+                                    sNull = "";
+
+                                if (fieldItem.fieldNull == "yes")
+                                    fieldItem.fieldNull = "";
+
+                                if (sDefault == "NULL")
+                                    sDefault = "";
+
+                                if (fieldItem.fieldDefault == "NULL")
+                                    fieldItem.fieldDefault = "";
+                                //We found something that doesn't match, make it match.
+
+                                if (!fieldItem.fieldNull.IsEmpty())
+                                    sNull = "NOT NULL";
+                                else if (fieldItem.fieldNull.IsEmpty())
+                                    sNull = "";
+
+                                if (!fieldItem.fieldDefault.IsEmpty()) {
+                                    fieldItem.fieldDefault = "DEFAULT '" + fieldItem.fieldDefault + "'";
+                                }
+
+                                wxString AddQuery =
+                                        "ALTER TABLE `" + sTableName + "` ADD `" + fieldItem.fieldName + "` " +
+                                        fieldItem.fieldType + " " + sNull + " " + fieldItem.fieldDefault;
+
+                                if (!ExecuteQuery(Settings.sDatabase, AddQuery)) {
+                                    dlg->Destroy();
+                                    return false;
+                                }
+                            }
+                            dlg->Destroy();
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 //Test to see if this field definition exists in our table: name, type, null, key, default, extra
-bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTableFields& fieldItemList){
+bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTableFields& fieldItemList)
+{
 
     wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
@@ -1802,13 +2211,31 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTable
 
                     if( currentRow > 0 ) {
 
-                        //Get the Field Item
-                        TableFieldItem fieldItem = fieldItemList[currentRow-1];
+                        //Note: Fields may not be in the save order, so need to search for the field
 
+                        //Get the Field Item
+
+
+                        //Find the field item in the list that has a maching feildname.
 
                         //We don't need to test the primary key as it's set automatically and we don't save it in the fields item list.
                         try {
+
                             wxString sField(res[currentRow]["Field"], wxConvUTF8);
+
+                            TableFieldItem fieldItem;
+
+                            for(int index=0;index<fieldItemList.GetCount();index++){
+                                fieldItem = fieldItemList[index];
+                                if(fieldItem.fieldName==sField)
+                                    break; //
+
+                                if(index==fieldItemList.GetCount()-1)
+                                    return false; //We didn't even find a field match, return false;
+                            }
+
+
+
                             wxString sType(res[currentRow]["Type"], wxConvUTF8);
                             wxString sNull(res[currentRow]["Null"], wxConvUTF8);
                             wxString sKey(res[currentRow]["Key"], wxConvUTF8);
@@ -2032,9 +2459,52 @@ wxString Utility::LoadSystemDocument(int documentId)
 
 
 
-void Utility::ExecuteQuery(const wxString& sDatabase , const wxString& QueryString )
+bool Utility::ExecuteQuery(const wxString& sDatabase , const wxString& QueryString )
 {
     wxString database(sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    try{
+        // Connect to the sample database.
+        Connection conn(false);
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+
+            Query query = conn.query(QueryString);
+            bool OK = query.execute();
+            if(!OK){
+                wxMessageBox("There is an error with the MySQL statement");
+                return false;
+            }
+        }
+        //else SetStatusText("Did not connect to database.");
+
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
+    } catch (const Exception& er) {
+        // Catch-all for any other MySQL++ exceptions
+        wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
+    }
+    return true;
+}
+
+
+bool Utility::ExecuteQueryEscapeAscii(const wxString& QueryString)
+{
+    wxString database(Settings.sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
     wxString pass(Settings.sPassword);
@@ -2049,9 +2519,14 @@ void Utility::ExecuteQuery(const wxString& sDatabase , const wxString& QueryStri
                          (const_cast<char*>((const char*)user.mb_str())),
                          (const_cast<char*>((const char*)pass.mb_str())))) {
 
-
-            Query query = conn.query(QueryString);
-            query.execute();
+            wxString sQuery = QueryString;
+            EscapeAscii(sQuery);
+            Query query = conn.query(sQuery);
+            bool OK = query.execute();
+            if(!OK){
+                wxMessageBox("There is an error with the MySQL statement");
+                return false;
+            }
 
         }
         //else SetStatusText("Did not connect to database.");
@@ -2059,17 +2534,26 @@ void Utility::ExecuteQuery(const wxString& sDatabase , const wxString& QueryStri
     }catch (BadQuery& er) { // handle any connection or
         // query errors that may come up
         wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
         //f->SetStatusText("Error: "+ wxString(er.what()));
     } catch (const BadConversion& er) {
         // Handle bad conversions
         wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
         //f->SetStatusText("Error: "+ wxString(er.what()));
     } catch (const Exception& er) {
         wxMessageBox( "Error: "+ wxString(er.what()));
+        return false;
         // Catch-all for any other MySQL++ exceptions
         //f->SetStatusText("Error: "+ wxString(er.what()));
     }
+    return true;
 }
+
+
+
+
+
 void Utility::CreateDatabase(wxString sDatabaseToCreate){
 
     wxString database("INFORMATION_SCHEMA");
@@ -2098,66 +2582,30 @@ void Utility::CreateDatabase(wxString sDatabaseToCreate){
     }catch (BadQuery& er) { // handle any connection or
         // query errors that may come up
         wxMessageBox( "Error: "+ wxString(er.what()));
+
         //f->SetStatusText("Error: "+ wxString(er.what()));
     } catch (const BadConversion& er) {
         // Handle bad conversions
         wxMessageBox( "Error: "+ wxString(er.what()));
+
         //f->SetStatusText("Error: "+ wxString(er.what()));
     } catch (const Exception& er) {
         wxMessageBox( "Error: "+ wxString(er.what()));
+
         // Catch-all for any other MySQL++ exceptions
         //f->SetStatusText("Error: "+ wxString(er.what()));
     }
+
 }
 
 
 
 
-
-void Utility::ExecuteQueryEscapeAscii(const wxString& QueryString)
-{
-    wxString database(Settings.sDatabase);
-    wxString server(Settings.sServer);
-    wxString user(Settings.sDatabaseUser);
-    wxString pass(Settings.sPassword);
-
-
-    try{
-        // Connect to the sample database.
-        Connection conn(false);
-
-        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
-                         (const_cast<char*>((const char*)server.mb_str())),
-                         (const_cast<char*>((const char*)user.mb_str())),
-                         (const_cast<char*>((const char*)pass.mb_str())))) {
-
-            wxString sQuery = QueryString;
-            EscapeAscii(sQuery);
-            Query query = conn.query(sQuery);
-            query.execute();
-
-        }
-        //else SetStatusText("Did not connect to database.");
-
-    }catch (BadQuery& er) { // handle any connection or
-        // query errors that may come up
-        wxMessageBox( "Error: "+ wxString(er.what()));
-        //f->SetStatusText("Error: "+ wxString(er.what()));
-    } catch (const BadConversion& er) {
-        // Handle bad conversions
-        wxMessageBox( "Error: "+ wxString(er.what()));
-        //f->SetStatusText("Error: "+ wxString(er.what()));
-    } catch (const Exception& er) {
-        wxMessageBox( "Error: "+ wxString(er.what()));
-        // Catch-all for any other MySQL++ exceptions
-        //f->SetStatusText("Error: "+ wxString(er.what()));
-    }
-}
 
 // Place all the mySQL reserved where
 bool Utility::IsReservedMySQLWord(wxString wordToFind)
 {
-
+    wordToFind = wordToFind.Lower();
     wxString reserved = Settings.sMSQLReservedWords;
     reserved = reserved.Lower();
     wordToFind = wordToFind.Lower();
@@ -2812,7 +3260,6 @@ void Utility::SaveTableData(const wxString& sDatabase, const wxString& sTableNam
 
     //STEP 2 If it exists, we will amend the string, if not, add the new data to the end of the string.
     //STEP 3 Write the string back to sys_tables.
-
 }
 
 //The key data combination example  <key:keyname1>data1</key><key:keyname2>data2</key><key:keyname3>data3</key>
@@ -2823,13 +3270,11 @@ void Utility::SaveTableDataBulk(wxString sDatabase,wxString sTableName, wxString
     //STEP 2 Get the entire data string from the sys_tables.
     //STEP 3 If it exists, we will amend the string, if not, add the new data to the end of the string.
     //STEP 4 Write the string back to sys_tables.
-
 }
 
 //Get the entire data string
 wxString Utility::GetTableDataString(wxString sDatabase, wxString sTableId)
 {
-
     wxString database(sDatabase);
     wxString server(Settings.sServer);
     wxString user(Settings.sDatabaseUser);
@@ -2861,13 +3306,10 @@ wxString Utility::GetTableDataString(wxString sDatabase, wxString sTableId)
                         return "";
 
                     return data;
-
-
                 }
                 catch (int num) {
                     //wxLogMessage(MSG_DATABASE_FAIL_ROW);
                     return "";
-
                 }
             }
         }
@@ -2883,16 +3325,57 @@ wxString Utility::GetTableDataString(wxString sDatabase, wxString sTableId)
     return "";
 }
 
-
 void Utility::UpdateTableFieldById(wxString sDatabase, wxString sTableName, wxString sTableId, wxString sFieldname, wxString sValue)
 {
     wxString QueryString="";
     QueryString="UPDATE "+sTableName+" SET "+sFieldname+" = '"+sValue +"' WHERE "+sTableName+"Id="+ sTableId;
     ExecuteQuery(sDatabase,QueryString);
-
 }
 
+bool Utility::GetFieldListByQuery(wxArrayString &ArrayFieldNames, wxString sQueryString)
+{
+    bool bFound = false;
 
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //Remove those stupid unicode characters that mySQL doesn't understand.
+        Utility::EscapeAscii(sQueryString);
+
+        //SetStatusText("Database Connected");
+        Query query = conn.query(sQueryString);
+        StoreQueryResult res = query.store();
+
+        // Display results
+        if (res) {
+
+            // The first thing we need to do is read all the fields definitions from the resultant recordset. Then we have to define the m_GridArray and load it with all the field.
+            int num_fields = res.num_fields();
+            for (int fieldIndex=0;fieldIndex<num_fields; fieldIndex++){
+                //These are all the field names from our query.
+                wxString sFieldName = res.field_name(fieldIndex);
+                ArrayFieldNames.Add(sFieldName );
+            }
+        }
+        else {
+            return bFound;
+        }
+    }
+    else{
+        return bFound;
+    }
+    return bFound;
+}
 
 bool Utility::GetSingleFieldRecords(wxString sQueryString, wxString FieldToGet, wxArrayString& ArrayFieldResults)
 {
@@ -2966,13 +3449,111 @@ bool Utility::GetSingleFieldRecords(wxString sQueryString, wxString FieldToGet, 
         }
     }
     else{
-
         //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         return bFound;
         //f->SetStatusText("Did not connect to database.");
-
     }
     return bFound;
 }
 
 
+void Utility::LoadStringArrayWithTableNamesFromUpdateQuery(wxString sQuery, wxArrayString &sArray){
+
+    sQuery = sQuery.Lower();
+
+    int pos = sQuery.Find( " set " );
+    sQuery = sQuery.Left(pos);
+
+    int len = sQuery.Length();
+    pos = sQuery.Find("update");
+
+    sQuery = sQuery.Right(len-pos-6);
+    sQuery.Trim(true);
+    sQuery.Trim(false);
+    //A this point, we have all the table names seperated by spaces.
+//    product , jhfghj, ghfdfg , dfgdfgdfgs
+    pos = 0;
+    pos = sQuery.Find(",");
+    while (pos  != wxNOT_FOUND){
+        len = sQuery.Length();
+        wxString extract = sQuery.Left(pos);
+        extract.Trim(true);
+        extract.Trim(false);
+        sArray.Add(extract);
+        sQuery = sQuery.Right(len-pos-1); // -1 is the remove the comma, before we search for more
+
+
+        pos = sQuery.Find(",");
+    }
+
+    //We should have a last entry because you don't put a , at the end.
+    sQuery.Trim(true);
+    sQuery.Trim(false);
+    if(!sQuery.IsEmpty())
+        sArray.Add(sQuery);
+
+
+}
+
+void Utility::LoadStringArrayWithTableNamesFromSelectQuery(wxString sQuery, wxArrayString &sArray){
+
+    sQuery = sQuery.Lower();
+
+    int len = sQuery.Length();
+    int pos = sQuery.Find("from");
+
+    sQuery = sQuery.Right(len-pos-4);
+    sQuery.Trim(true);
+    sQuery.Trim(false);
+    //A this point, we have all the table names seperated by spaces.
+//    product , jhfghj, ghfdfg , dfgdfgdfgs
+    pos = 0;
+    pos = sQuery.Find(",");
+    while (pos  != wxNOT_FOUND){
+        len = sQuery.Length();
+        wxString extract = sQuery.Left(pos);
+        extract.Trim(true);
+        extract.Trim(false);
+        sArray.Add(extract);
+        sQuery = sQuery.Right(len-pos-1); // -1 is the remove the comma, before we search for more
+
+
+        pos = sQuery.Find(",");
+    }
+
+    //We should have a last entry because you don't put a , at the end.
+    sQuery.Trim(true);
+    sQuery.Trim(false);
+    if(!sQuery.IsEmpty())
+        sArray.Add(sQuery);
+
+
+
+}
+
+wxString Utility::GetTableNamesFromInsertQuery(wxString sQuery){
+
+    sQuery = sQuery.Lower();
+    int pos = sQuery.Find( " insert into " );
+    int len = sQuery.Length();
+    sQuery = sQuery.Right(len-pos-13);
+    sQuery.Trim(false);
+    pos = sQuery.Find(" ");
+    sQuery = sQuery.Left(pos);
+    sQuery.Trim(false);
+    sQuery.Trim(true);
+
+    return sQuery;
+}
+
+bool Utility::DoesStringExistInStringArray(const wxString& sToCheck, const wxArrayString &sArray)
+{
+    wxString str = sToCheck.Lower();
+    wxString strCompare;
+    for(int index=0; index<sArray.Count();index++){
+        strCompare = sArray[index].Lower();
+        if (strCompare==str)
+            return true;
+    }
+    return false;
+}

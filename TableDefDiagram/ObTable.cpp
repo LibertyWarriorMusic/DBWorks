@@ -22,12 +22,13 @@ ObTable::ObTable()
     m_bShowTable=true;
     m_TableRect.x=0;
     m_TableRect.y=0;
+    m_ObPosition.x=0;
+    m_ObPosition.y=0;
 }
 
 ObTable::~ObTable()
 {
-    m_ObPosition.x=0;
-    m_ObPosition.y=0;
+
 }
 
 wxString ObTable::GetFieldTypeByFieldName(wxString sFieldName)

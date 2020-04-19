@@ -607,6 +607,16 @@ void GenericTable::OnMyEvent(MyEvent& event )
         m_pFormItem= nullptr;
         m_pQueryGrid= nullptr;
     }
+    else if(event.m_bOpenDesignForm)
+    {
+        Close(true); //Close this window.
+        GetParent()->ProcessWindowEvent( event );
+    }
+    else if(event.m_bOpenDesignPage)
+    {
+        Close(true); //Close this window.
+        GetParent()->ProcessWindowEvent( event );
+    }
     else if(event.m_bOpenQueryGrid)
         RunQuery(event.m_sTitle, event.m_sQueryToApply);
     else if(event.m_bHelpFrameWasDestroyed){

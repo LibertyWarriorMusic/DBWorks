@@ -22,10 +22,12 @@
 #include <wx/toolbar.h>
 #include <wx/checkbox.h>
 
-
 #include "Utility.h"
 #include "global.h"
 #include "MyEvent.h"
+#include "RunPages/MainRunPage.h"
+#include "DesignPages/DesignForm.h"
+#include "DesignPages/DesignPage.h"
 #include "Generic/GenericItemForm.h"
 #include "Generic/DBGrid.h"
 #include "Generic/GenericTable.h"
@@ -34,12 +36,8 @@
 #include "Dialog/ImportMySQLDatabase.h"
 #include "TableDefDiagram/TableDiagramFrame.h"
 
-
-//#include "ObTableDiagram.h"
-
 #include <mysql.h>
 #include <mysql++.h>
-
 
 using namespace mysqlpp;
 //Add my own classes here
@@ -69,7 +67,10 @@ enum {
     ID_TOOL_FORM_QUERIES,
     ID_HELP,
     ID_AUTO_CHECK_DEFINITION,
-    ID_OPEN_TABLE_DIAGRAM
+    ID_OPEN_TABLE_DIAGRAM,
+    ID_OPEN_PAGES,
+    ID_OPEN_FORMS,
+    ID_RUN_DATABASE
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -90,6 +91,9 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
     EVT_TOOL(ID_HELP, MainFrame::OnbHelp)
     EVT_TOOL(ID_AUTO_CHECK_DEFINITION, MainFrame::OnAutoCheckDefinitions)
     EVT_TOOL(ID_OPEN_TABLE_DIAGRAM, MainFrame::OnOpenTableDiagram)
+    EVT_TOOL(ID_OPEN_PAGES, MainFrame::OnOpenPages)
+    EVT_TOOL(ID_OPEN_FORMS, MainFrame::OnOpenForms)
+    EVT_TOOL(ID_RUN_DATABASE, MainFrame::OnRunDatabase)
     EVT_MYEVENT(MainFrame::OnMyEvent)
 wxEND_EVENT_TABLE()
 
@@ -124,8 +128,6 @@ bool MyApp::OnInit()
                                   );
     
     m_MainFrame->Show(true);
-
-
     m_MainFrame->SetSettingsLoaded(bSettingLoaded);
 
     return true;
@@ -155,6 +157,7 @@ bool MyApp::LoadAppSettings()
     strExe.Replace("dbworks.exe", "mysqlReservedWords.txt"); // For windows.
     wxTextFile tfile;
     if(tfile.Open(strExe)){
+        Settings.sMSQLReservedWords += tfile.GetFirstLine();
         while(!tfile.Eof())
             Settings.sMSQLReservedWords += tfile.GetNextLine();
     }
@@ -785,10 +788,9 @@ void MyApp::CheckCellTableDefinitionsMatchDatabaseTable(const wxString& sTable, 
         m_MainFrame->GetMainGrid()->HighlightCell(iRowIndex, 2);
     }
     else{
-
         m_MainFrame->GetMainGrid()->UnHighlightCell(iRowIndex, 2);
         ArrayTableFields fieldList;// We need to get the field array.
-        if(Utility::GetFieldList(fieldList,iTableId)){ // This is all the fields for that table from sys_fields
+        if(Utility::GetFieldListFromSysFieldsByTableId(fieldList,iTableId)){ // This is all the fields for that table from sys_fields
 
             //Now we have a list of all the table field names, we can check the database for the list
             //for(int index=0;index<fieldList.GetCount();index++){
@@ -801,7 +803,6 @@ void MyApp::CheckCellTableDefinitionsMatchDatabaseTable(const wxString& sTable, 
     }
 }
 
-
 void MyApp::UpdateProgressBar()
 {
     m_ProgessCount+=m_ProgressStep;
@@ -813,34 +814,35 @@ void MyApp::UpdateProgressBar()
 //
 void MainFrame::OnButtonAction( wxCommandEvent& event )
 {
-
     SetStatusText(_("Status Text"));
-    
-    
 }
 
 wxComboBox * MainFrame::GetDatabaseComboBox()
 {
     return m_DatabaseCombo;
 }
+
 DBGrid* MainFrame::GetMainGrid()
 {
     return m_MainGrid;
 
 }
+
 void MainFrame::SetSettingsLoaded(bool bSettingsLoadedFlag)
 {
     m_bSettingsLoaded=bSettingsLoadedFlag;
 
 }
 
-
-
-
 MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
     m_TableForm = nullptr;
+    m_pForms = nullptr;
+    m_pPages = nullptr;
     m_HtmlWin = nullptr;
+    m_pDesignForm = nullptr;
+    m_pDesignPage = nullptr;
+    m_pMainRunPage = nullptr;
     m_pTableDiagaram = nullptr;
     m_pFilters = nullptr;
     m_MainGrid = nullptr;
@@ -855,7 +857,6 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_ProgressGauge = nullptr;
     m_txtCltProgressBar = nullptr;
     m_pFormItem= nullptr;
-
 
     bool b_DatabaseDeveloper=false;
     m_sCurrentStoredWhereCondition="";
@@ -1000,20 +1001,12 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_DatabaseCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnDatabaseComboChange ), nullptr, this );
     m_DatabaseCombo->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( MainFrame::OnDatabaseComboDropDown ), nullptr, this );
 
-
     m_Toolbar1->AddControl(txtCltDatabase);
     m_Toolbar1->AddControl(m_DatabaseCombo);
 
-
-
-
     LoadDatabaseCombo();
 
-
-
-
     m_DatabaseCombo->SetStringSelection(Settings.sDatabase);
-
     m_txtCltUserGroup = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
 
     if (Utility::IsSystemDatabaseDeveloper() || Utility::IsSystemDatabaseAdministrator()  ) {
@@ -1039,18 +1032,25 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
         }
 
         Utility::LoadBitmap(BitMap,"filter.png");
-        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters. Filter are simply mysql query that work on a single table. "
-                                                                              "You can select the table the filter is associated. You can test your query by right clicking in the grid and select, run filter. Make sure you created your table, fields and have it populated with some data."));
+        m_Toolbar1->AddTool(ID_TOOL_FILTER, wxT("User Filters."), BitMap, wxT("Define user filters. Filter are simply mysql queries that work on a single table. ""You can select the table the filter is associated. You can test your query by right clicking in the grid and select, run filter. Make sure you created your table, fields and have it populated with some data."));
 
         Utility::LoadBitmap(BitMap,"formQueries.png");
         m_Toolbar1->AddTool(ID_TOOL_FORM_QUERIES, wxT(""), BitMap, wxT("Design form queries. A form query is a mysql query that works on one or multiple tables. Simple forms can be automatically generated from a form query. User defined forms will also be based on one of these quiries."));
 
+        Utility::LoadBitmap(BitMap,"forms.png");
+        m_Toolbar1->AddTool(ID_OPEN_FORMS, wxT(""), BitMap, wxT("Open forms. Forms are used to hold controls that are linked to field data. Forms can be used in any page you create. "));
+
+        Utility::LoadBitmap(BitMap,"pages.png");
+        m_Toolbar1->AddTool(ID_OPEN_PAGES, wxT(""), BitMap, wxT("Open pages. Pages are used to hold database information for your users. Pages hold forms that hold controls that are linked to data fields."));
+
+        Utility::LoadBitmap(BitMap,"run.png");
+        m_Toolbar1->AddTool(ID_RUN_DATABASE, wxT(""), BitMap, wxT("Run your database. The database runs opening the main page as the starting point."));
 
         //Create the checkbox for auto check definitions to tables
         if(Utility::IsSystemDatabaseDeveloper()){
 
             Utility::LoadBitmap(BitMap,"tableDiagram.png");
-            m_Toolbar1->AddTool(ID_OPEN_TABLE_DIAGRAM, wxT(""), BitMap, wxT("Open the table relationships diagram. Tables can be added to the diagram by right clicking on the screen. You can also create queries and forms by simply dragging fields into the form creator area."));
+            m_Toolbar1->AddTool(ID_OPEN_TABLE_DIAGRAM, wxT(""), BitMap, wxT("Open table relationships - query builder. Tables can be added to the diagram by right clicking on the screen. You can also create queries and forms by simply dragging fields into the query builder area."));
 
             m_txtCltCheckTableTxt = new wxStaticText( m_Toolbar1, wxID_ANY, Settings.sUsergroup, wxDefaultPosition, wxDefaultSize, 0 );
             m_txtCltCheckTableTxt->SetLabel("Auto check definitions");
@@ -1067,9 +1067,7 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
                 m_AutoCheckDefinitionsCheckCtl->SetValue(true);
 
             m_Toolbar1->AddControl(m_ProgressGauge);
-
         }
-        //Add a checkbox to enable Refresh
     }
 
     m_Toolbar1->Realize();
@@ -1337,34 +1335,7 @@ void MainFrame::Quit(wxCommandEvent& WXUNUSED(event))
     Close(TRUE); // Close the window
 }
 
-void MainFrame::OnbFormQuery( wxCommandEvent& event )
-{
-    m_pFilters = new GenericTable((wxFrame*) this, -1,"Form Query Definitions",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
-    m_pFilters->SetTableDefinition("usr_queries", "User Queries", "","");// We will grab this from our form.
 
-    if (m_pFilters != nullptr){
-
-        //m_pFilters->SetGridTableName("usr_filters");
-
-        // wxString linkID;
-        // linkID << event.m_lTableID;
-
-        m_pFilters->SetTableDefinition("usr_queries", "User Queries", "Select a query.","");
-        //Add the field items
-        m_pFilters->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
-
-        m_pFilters->AddField("Form Query Name *","queryName","varchar(255)","","","","","");
-        m_pFilters->AddField("Query Definition","queryDefinition","text","MULTILINE","","","","");
-        m_pFilters->AddField("Description","description","text","MULTILINE","","","","");
-
-        m_pFilters->Create();// Create the table.
-        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
-        m_pFilters->HideIDColumn();
-        m_pFilters->Show(true);
-        m_pFilters->GetGrid()->ResizeSpreadSheet();
-
-    }
-}
 
 void MainFrame::OnbAddItem( wxCommandEvent& event ) {
 
@@ -1723,7 +1694,7 @@ void MainFrame::OnbFilter( wxCommandEvent& event ) {
 
 
     m_pFilters = new GenericTable((wxFrame*) this, -1,"Table Filter Definitions",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
-    m_pFilters->SetTableDefinition("usr_filters", "User Filters", "","");// We will grab this from our form.
+   // m_pFilters->SetTableDefinition("usr_filters", "User Filters", "","");// We will grab this from our form.
 
     if (m_pFilters != nullptr){
 
@@ -1780,6 +1751,88 @@ void MainFrame::SetGridWhereCondition(wxString whereToBlend)
     }
     else
         m_MainGrid->SetGridWhereCondition(""); // Make sure we clear it or once we select a filter, it will remain that way even after you show all.
+
+}
+
+void MainFrame::OnbFormQuery( wxCommandEvent& event )
+{
+    m_pFilters = new GenericTable((wxFrame*) this, -1,"Form Query Definitions",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+    m_pFilters->SetTableDefinition("usr_queries", "User Queries", "","");// We will grab this from our form.
+
+    if (m_pFilters != nullptr){
+
+        //m_pFilters->SetGridTableName("usr_filters");
+
+        // wxString linkID;
+        // linkID << event.m_lTableID;
+
+        m_pFilters->SetTableDefinition("usr_queries", "User Queries", "Select a query.","");
+        //Add the field items
+        m_pFilters->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_pFilters->AddField("Form Query Name *","queryName","varchar(255)","","","","","");
+        m_pFilters->AddField("Query Definition","queryDefinition","text","MULTILINE","","","","");
+        m_pFilters->AddField("Description","description","text","MULTILINE","","","","");
+
+        m_pFilters->Create();// Create the table.
+        //m_TableForm->SetIDTitleName(event.m_sTableName+"Id"); Don't do this here
+        m_pFilters->HideIDColumn();
+        m_pFilters->Show(true);
+        m_pFilters->GetGrid()->ResizeSpreadSheet();
+
+    }
+}
+
+void MainFrame::OnOpenForms( wxCommandEvent& event )
+{
+    m_pForms = new GenericTable((wxFrame*) this, -1,"Forms",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+
+    if (m_pForms != nullptr){
+
+        m_pForms->SetTableDefinition("usr_forms", "Forms", "Select a form","");
+        //Add the field items
+        m_pForms->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_pForms->AddField("Form Name *","formName","varchar(255)","","","","","");
+        m_pForms->AddField("Description","description","text","MULTILINE","","","","");
+        m_pForms->AddField("Page","usr_pagesId","int","SELECTION_LINKED_NAME{usr_pages;pageName;} - READONLY","","","","");
+        m_pForms->AddField("Associated Query","usr_queriesId","int","SELECTION_LINKED_NAME{usr_queries;queryName;} - READONLY","","","","");
+
+        m_pForms->Create();// Create the table.
+        m_pForms->HideIDColumn();
+        m_pForms->Show(true);
+        m_pForms->GetGrid()->ResizeSpreadSheet();
+    }
+
+}
+void MainFrame::OnOpenPages( wxCommandEvent& event )
+{
+    m_pPages = new GenericTable((wxFrame*) this, -1,"Pages",wxDefaultPosition,wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+
+    if (m_pPages != nullptr){
+
+        m_pPages->SetTableDefinition("usr_pages", "Define Pages", "Select a page","");
+        m_pPages->SetSettings(Settings.sDatabase,Settings.sServer,Settings.sDatabaseUser,Settings.sPassword);
+
+        m_pPages->AddField("Page Name *","pageName","varchar(255)","","","","","");
+
+        m_pPages->Create();// Create the table.
+        m_pPages->HideIDColumn();
+        m_pPages->Show(true);
+        m_pPages->GetGrid()->ResizeSpreadSheet();
+
+    }
+
+}
+void MainFrame::OnRunDatabase( wxCommandEvent& event )
+{
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+    if(m_pMainRunPage != nullptr)
+        m_pMainRunPage->Destroy();
+
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pMainRunPage->Show(true);
 
 }
 
@@ -1910,9 +1963,34 @@ void MainFrame::DestroyOpenWindows()
     // you need to destroy all the open windows before you destroy the main frame.
 
     //This is where we need to shut down any windows that are open.
+    if (m_pMainRunPage != nullptr){
+        m_pMainRunPage->Destroy();
+        m_pMainRunPage= nullptr;
+    }
+
+    if (m_pDesignForm != nullptr){
+        m_pDesignForm->Destroy();
+        m_pDesignForm= nullptr;
+    }
+
+    if (m_pDesignPage != nullptr){
+        m_pDesignPage->Destroy();
+        m_pDesignPage= nullptr;
+    }
+
     if (m_TableForm != nullptr){
         m_TableForm->Destroy();
         m_TableForm= nullptr;
+    }
+
+    if (m_pPages != nullptr){
+        m_pPages->Destroy();
+        m_pPages= nullptr;
+    }
+
+    if (m_pForms != nullptr){
+        m_pForms->Destroy();
+        m_pForms= nullptr;
     }
 
     if(m_pFormItem != nullptr){
@@ -1946,6 +2024,27 @@ bool MainFrame::Destroy()
     return bResult;
 }
 
+void MainFrame::OpenDesignForm(wxString sTableId, wxString sTableName)
+{
+    if(m_pDesignForm != nullptr)
+        m_pDesignForm->Destroy();
+
+    m_pDesignForm = new DesignForm((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pDesignForm->SetFormID(sTableId); //
+    m_pDesignForm->Show(true);
+
+}
+
+void MainFrame::OpenDesignPage(wxString sTableId, wxString sTableName)
+{
+    if(m_pDesignPage != nullptr)
+        m_pDesignPage->Destroy();
+
+    m_pDesignPage = new DesignPage((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pDesignPage->SetPageID(sTableId); //
+    m_pDesignPage->Show(true);
+}
+
 //CONTEXT MENU EVENT and REFRESH EVENTS
 //We created an event to refresh the grid so we can call it from any frame class.
 void MainFrame::OnMyEvent(MyEvent& event)
@@ -1957,6 +2056,14 @@ void MainFrame::OnMyEvent(MyEvent& event)
     }
     else if(event.m_bOpen){
         OpenForm(event.m_sTableName,event.m_sTableId);
+    }
+    else if(event.m_bOpenDesignForm)
+    {
+        OpenDesignForm(event.m_sTableId,event.m_sTableName);
+    }
+    else if(event.m_bOpenDesignPage)
+    {
+        OpenDesignPage(event.m_sTableId,event.m_sTableName);
     }
     else if(event.m_bEdit){
         OpenEditForm(event.m_sTableId);
@@ -1977,6 +2084,8 @@ void MainFrame::OnMyEvent(MyEvent& event)
         //What you need is extra flags in the event to identify which pointers you need to null.
 
         m_TableForm = nullptr;
+        m_pPages = nullptr;
+        m_pForms = nullptr;
         m_pFormItem = nullptr;
         m_pFilters = nullptr;
         
@@ -1986,6 +2095,15 @@ void MainFrame::OnMyEvent(MyEvent& event)
     }
     else if(event.m_bTableDiagramFrameWasDestroyed){
         m_pTableDiagaram = nullptr; //NOT SURE YET, you might want to keep it open
+    }
+    else if(event.m_bDesignFormWasDestroyed){
+        m_pDesignForm = nullptr;
+    }
+    else if(event.m_bDesignPageWasDestroyed){
+        m_pDesignPage= nullptr;
+    }
+    else if(event.m_bMainRunPageWasDestroyed){
+        m_pMainRunPage = nullptr;
     }
     else if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.

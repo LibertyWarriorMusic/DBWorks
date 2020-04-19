@@ -7,6 +7,46 @@
 ///////////////////////////////////////////////////////////////////////////////
 class MainFrame : public wxFrame
 {
+
+public:
+    myProgressControl *GetProgressControlPointer();
+    void Refresh(bool bReloadTableDiagram=false);
+    void UpdateProgressBar(int val);
+    explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
+    void SetProgressLabel(wxString sLabel);
+    void OpenTableDefinitions(wxString sTableName);
+    //Event functions
+    void Quit( wxCommandEvent& event );
+    void NewFile( wxCommandEvent& event );
+    void OpenFile( wxCommandEvent& event );
+    void SaveFile( wxCommandEvent& event );
+    void SaveFileAs( wxCommandEvent& event);
+    void CloseFile( wxCommandEvent& event );
+    void OnbAddItem( wxCommandEvent& event );
+    void OnbEditItem( wxCommandEvent& event );
+    void OnbDeleteItem( wxCommandEvent& event );
+    void OnbViewItem( wxCommandEvent& event );
+    void OnbFilter( wxCommandEvent& event );
+    void OnAutoCheckDefinitions(wxCommandEvent& event);
+    void OnOpenTableDiagram(wxCommandEvent& event);
+    void OnbHelp( wxCommandEvent& event );
+    void OnbFormQuery( wxCommandEvent& event );
+    void OnDeleteCurrentDatabase( wxCommandEvent& event );
+    static void CreateToolBars();
+    void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);
+    wxComboBox * GetDatabaseComboBox();
+    void SetStateOfAutoCheckDefinitions(bool bOnIsTrue = true);
+    DBGrid* GetMainGrid();
+    void SetSettingsLoaded(bool bSettingsLoadedFlag);
+    void OnImportDatabase( wxCommandEvent& event );
+
+
+    bool Destroy() override;
+
+    void OnMyEvent(MyEvent& event);
+    ~MainFrame() override;
+
+
     private:
     wxDECLARE_EVENT_TABLE();
 
@@ -15,6 +55,9 @@ class MainFrame : public wxFrame
         DBGrid* m_MainGrid;
         wxToolBar * m_Toolbar1;
         HtmlHelp *m_HtmlWin;
+        MainRunPage *m_pMainRunPage;
+        DesignForm * m_pDesignForm;
+        DesignPage * m_pDesignPage;
         TableDiagramFrame *m_pTableDiagaram;
         GenericTable * m_pFilters;
 
@@ -45,6 +88,9 @@ class MainFrame : public wxFrame
         void OnDatabaseComboChange(wxCommandEvent& event);
         void OnDatabaseComboDropDown( wxCommandEvent& event );
 
+        void OnOpenPages( wxCommandEvent& event );
+        void OnOpenForms( wxCommandEvent& event );
+        void OnRunDatabase( wxCommandEvent& event );
 
         void LoadGrid(); //Load or reload the grid from the database.
         void LoadTableObjects(); //Reload all the drawing objects
@@ -57,12 +103,17 @@ class MainFrame : public wxFrame
         void SetUsergroupWindowVisibility();
         void LoadDatabaseCombo();
 
+        void OpenDesignForm(wxString sTableId, wxString sTableName);
+        void OpenDesignPage(wxString sTableId, wxString sTableName);
+
     protected:
 
         wxStatusBar* m_StatusBar;
         wxMenuBar* m_Menubar;
         wxMenu *m_FileMenu;
         GenericTable * m_TableForm;
+        GenericTable * m_pPages;
+        GenericTable * m_pForms;
         wxComboBox * m_DatabaseCombo;
         wxComboBox * m_UserGroupCombo;
         wxStaticText * m_txtCltUserGroup;
@@ -70,44 +121,7 @@ class MainFrame : public wxFrame
         wxStaticText * m_txtCltProgressBar;
         wxCheckBox * m_AutoCheckDefinitionsCheckCtl;
         myProgressControl * m_ProgressGauge;
-    public:
-        myProgressControl *GetProgressControlPointer();
-        void Refresh(bool bReloadTableDiagram=false);
-        void UpdateProgressBar(int val);
-        explicit MainFrame( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 500,300 ), long style = wxDEFAULT_FRAME_STYLE|wxTAB_TRAVERSAL );
-        void SetProgressLabel(wxString sLabel);
-        void OpenTableDefinitions(wxString sTableName);
-        //Event functions
-        void Quit( wxCommandEvent& event );
-        void NewFile( wxCommandEvent& event );
-        void OpenFile( wxCommandEvent& event );
-        void SaveFile( wxCommandEvent& event );
-        void SaveFileAs( wxCommandEvent& event);
-        void CloseFile( wxCommandEvent& event );
-        void OnbAddItem( wxCommandEvent& event );
-        void OnbEditItem( wxCommandEvent& event );
-        void OnbDeleteItem( wxCommandEvent& event );
-        void OnbViewItem( wxCommandEvent& event );
-        void OnbFilter( wxCommandEvent& event );
-        void OnAutoCheckDefinitions(wxCommandEvent& event);
-        void OnOpenTableDiagram(wxCommandEvent& event);
-        void OnbHelp( wxCommandEvent& event );
-        void OnbFormQuery( wxCommandEvent& event );
-        void OnDeleteCurrentDatabase( wxCommandEvent& event );
-        static void CreateToolBars();
-        void CreateTableDefinitions(wxString sDatabase, wxString sTableName, ArrayTableFields tableFieldItemArray);
-        wxComboBox * GetDatabaseComboBox();
-        void SetStateOfAutoCheckDefinitions(bool bOnIsTrue = true);
-        DBGrid* GetMainGrid();
-        void SetSettingsLoaded(bool bSettingsLoadedFlag);
-        void OnImportDatabase( wxCommandEvent& event );
 
-
-        bool Destroy() override;
-
-    
-        void OnMyEvent(MyEvent& event);
-        ~MainFrame() override;
 
 };
 

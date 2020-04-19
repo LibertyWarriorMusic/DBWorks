@@ -9,6 +9,10 @@ set(SOURCE_FILES
         PropertyTable.cpp
         Utility.cpp
         HtmlHelp.cpp
+        DesignPages/TemplateFrame.cpp
+        DesignPages/DesignForm.cpp
+        DesignPages/DesignPage.cpp
+        RunPages/MainRunPage.cpp
         Generic/DBGrid.cpp
         Generic/GenericItemForm.cpp
         Generic/GenericTable.cpp
@@ -27,7 +31,12 @@ set(SOURCE_FILES
 
 #Un-comment for dynamic linking
 find_package(wxWidgets REQUIRED)
+find_package(PNG REQUIRED)
+find_package(JPEG REQUIRED)
+
+
 include(${wxWidgets_USE_FILE})
+
 
 #SET(CMAKE_PREFIX_PATH /usr/local/opt/mysql++/include/mysql++)
 #find_package(mysqlpp REQUIRED)
@@ -39,8 +48,8 @@ include(${wxWidgets_USE_FILE})
 #Leave uncommented for both static and dynamic linking
 add_executable(DBWorks ${SOURCE_FILES})
 target_link_libraries(DBWorks ${LIBS} ${wxWidgets_LIBRARIES})
-
-
+target_link_libraries(DBWorks PNG::PNG)
+target_link_libraries(DBWorks JPEG::JPEG)
 
 
 # We don't want to use these funcions

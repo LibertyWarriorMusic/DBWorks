@@ -51,14 +51,13 @@ TableDiagramFrame::TableDiagramFrame( DiagramFrame* parent, wxWindowID id, const
 
     m_Toolbar1->Realize();
     this->SetToolBar(m_Toolbar1);
-
 }
 
 TableDiagramFrame::~TableDiagramFrame()
 {
-    m_TableDiagramPanel->Destroy();
+    if(m_TableDiagramPanel!= nullptr)
+        m_TableDiagramPanel->Destroy();
 }
-
 
 bool TableDiagramFrame::Destroy()
 {
@@ -118,7 +117,6 @@ void TableDiagramFrame::AddDrawObject( const wxString& sTableID, const wxString&
 {
     m_TableDiagramPanel->AddTableObject( sTableID, sTableName);
 }
-
 
 void TableDiagramFrame::OnMyEvent(MyEvent& event) {
 

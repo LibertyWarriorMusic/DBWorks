@@ -32,7 +32,9 @@ enum {
     ID_MENU_EDIT,
     ID_MENU_FILTER,
     ID_MENU_FILTER_SHOW_ALL,
-    ID_MENU_DOCUMENT
+    ID_MENU_DOCUMENT,
+    ID_MENU_DESIGN_FORMS,
+    ID_MENU_DESIGN_PAGES
 };
 
 wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
@@ -44,6 +46,8 @@ wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
     EVT_MENU(ID_MENU_FILTER, DBGrid::OnClickMenuFilter)
     EVT_MENU(ID_MENU_FILTER_SHOW_ALL, DBGrid::OnClickMenuFilterShowAll)
     EVT_MENU(ID_MENU_OPEN_FORM_QUERY, DBGrid::OnOpenFormQuery)
+    EVT_MENU(ID_MENU_DESIGN_FORMS, DBGrid::OnDesignForm)
+    EVT_MENU(ID_MENU_DESIGN_PAGES, DBGrid::OnDesignPage)
 wxEND_EVENT_TABLE()
 
 using namespace mysqlpp;
@@ -172,8 +176,6 @@ void DBGrid::ResizeSpreadSheet()
             else
                 width=30; // Some default
 
-
-
             //Determine the width of each column by the size of the frame
             for(int col=0;col<num_cols;col++) {
 
@@ -274,7 +276,6 @@ void DBGrid::OnGridLabelRightClick(wxGridEvent& event )
     }
 }
 
-
 // ADD MENU ITEM TO CONTEXT MENU
 void DBGrid::OnGridRClick(wxGridEvent& event )
 {
@@ -304,6 +305,10 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
                 menu->Append(ID_MENU_RUN_FILTER, wxT("Run Filter"), wxT("Run the filter to view the records."));
             else if(m_sTableName==SYS_TABLES)
                 menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
+            else if(m_sTableName=="usr_forms")
+                menu->Append(ID_MENU_DESIGN_FORMS, wxT("Design Form"), wxT("Design forms that are used to populate pages."));
+            else if(m_sTableName=="usr_pages")
+                menu->Append(ID_MENU_DESIGN_PAGES, wxT("Design Page"), wxT("Design the page."));
             else{
                 menu->Append(ID_MENU_OPEN, wxT("View Record"), wxT("View record."));
 
@@ -318,7 +323,8 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
             if(m_sTableName==SYS_TABLES)
                 menu->Append(ID_MENU_PROPERTIES, wxT("Field Definitions"), wxT("Edit the field definitions."));
 
-            menu->AppendSeparator();
+
+            //menu->AppendSeparator();
             menu->Append(ID_MENU_EDIT, wxT("Edit Record"), wxT("Edit Record."));
         }
         else if(Utility::IsSystemDatabaseAdministrator() || Utility::IsAdvancedUser() || Utility::IsStandardUser() || Utility::IsGuest()){
@@ -339,7 +345,7 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
 
         menu->AppendSeparator();
 
-        if(m_sTableName!=SYS_FIELDS)
+        if(m_sTableName!=SYS_FIELDS || Settings.sDatabase=="dbworkssystem")
             menu->Append(ID_MENU_FILTER_SHOW_ALL,  wxT("Filter: Show All Records."), wxT("Filter Show all recordsRecords."));
 
 
@@ -348,7 +354,7 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
             menuLabel = menuLabel.Left(100);
             menuLabel << " ....";
         }
-        if(m_sTableName!=SYS_FIELDS)
+        if(m_sTableName!=SYS_FIELDS || Settings.sDatabase=="dbworkssystem")
             menu->Append(ID_MENU_FILTER, menuLabel, wxT("Filter Records."));
 
         PopupMenu( menu, point);
@@ -1422,7 +1428,28 @@ void DBGrid::OnOpenFormQuery(wxCommandEvent& event)
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
 }
+void DBGrid::OnDesignPage(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
 
+    my_event.m_bOpenDesignPage = true;
+    my_event.m_sTableId = GetCellValue(m_iRow,0); //This will be usr_pagesId
+    my_event.m_sTableName = GetCellValue(m_iRow,1);
+
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}
+void DBGrid::OnDesignForm(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
+
+    my_event.m_bOpenDesignForm = true;
+    my_event.m_sTableId = GetCellValue(m_iRow,0); //This will be usr_formsId
+    my_event.m_sTableName = GetCellValue(m_iRow,1);
+
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}
 
 void DBGrid::OnRunFilter(wxCommandEvent& event)
 {
@@ -1514,20 +1541,15 @@ bool DBGrid::CreateFormQuery(bool bCreateColumns)
             }
         }
         else {
+                wxLogMessage(MSG_FAILED_QUERY_FILTER);
+                return false;
 
-            //cerr << "Failed to get stock table: " << query.error() << endl;
-            //return 1;
-            //f->SetStatusText("Database Connected - Failed to get item list:");
-            wxLogMessage(MSG_FAILED_QUERY_FILTER);
-            return false;
         }
     }
     else{
-
         wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
         return false;
         //f->SetStatusText("Did not connect to database.");
-
     }
     return true;
 }

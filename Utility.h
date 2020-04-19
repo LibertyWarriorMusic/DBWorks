@@ -51,9 +51,15 @@ public:
     //Unicode and wxString Conversions
     static void EscapeAscii(wxString& QueryString);
     static wxString Escape(wxString & str);
+    static wxString EscapeRemove(wxString & str);
     static int StringToInt(const wxString& stringToConvert);
     static wxString IntToString(const int & num);
     static long StringToLong(const wxString& stringToConvert);
+
+
+
+    //Number Functions
+    static bool IsExactlyDivisable(double num, double div);
 
     //Combo loading functions
     static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
@@ -106,6 +112,7 @@ public:
     static wxString GetTableIdFromSYS_TABLESByTitle(wxString sDatabase, wxString sTableTitle);
     static wxString GetTableIdFromSYS_TABLESByTableName(wxString sDatabase, wxString sTableName); // Will return the table ID given the table name
     static wxString GetTableFieldNameFromMySQLInfoSchema(wxString sDatabase, wxString sTableName, wxString sColumnNumber); //Get a table fieldname given the TableName and ColumnNumber
+    static bool GetFieldListFromSysFieldsByTableId(ArrayTableFields &fieldList, wxString TableId); // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
 
 
 
@@ -118,14 +125,26 @@ public:
     static void LoadStringArrayWidthMySQLDatabaseNames( wxArrayString &sArray);
     static void LoadStringArrayWithMySQLTableNames(wxString sDatabase, wxArrayString &sArray );
     static void LoadStringArrayAvailableQueriesFromUsrQueries(wxArrayString &sArray );
-    static void ExecuteQueryEscapeAscii(const wxString& QueryString); //Execute a query string
-    static void ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
+    static bool ExecuteQueryEscapeAscii(const wxString& QueryString); //Execute a query string
+    static bool ExecuteQuery(const wxString& sDatabase , const wxString& QueryString);
     static bool DoesTableExist(wxString sDatabase, wxString sTableName);
     static bool DoesRecordExist(wxString sDatabase, wxString sTable, wxString sFieldname, wxString sValue);// Check to see if a record with a particular value exists.
     static bool DoesFieldExitInTable(const wxString& sTableName, const ArrayTableFields& fieldItemList); //Checks all the mysql field data, name, type , null ,key, default, extra
+    static bool SynFieldDefinitionToTable(const wxString& sTableName,  const ArrayTableFields& fieldItemList);
+    static bool DropFieldsInTableThatAreNotInTableDefinition(const wxString& sTableName,  const ArrayTableFields& fieldItemList);
     static bool DoesFieldExitInTable(const wxString& sTableName, const wxString& sFieldName);// Only checks the fieldname
     static bool IsEmpty(wxString str); // This function will remove any white spaces in the string before testing if empty.
-    static bool GetFieldList(ArrayTableFields &fieldList, wxString TableId); // Gets a list of all the fields from a given table from the sys_fields table given a table ID.
+
+    //Query Builder Helper functions
+    static wxString RemoveTableFromSelectQuery(wxString sQuery, wxString sTableName);
+    static void LoadStringArrayWithTableNamesFromUpdateQuery(wxString sQuery, wxArrayString &sArray);
+    static void LoadStringArrayWithTableNamesFromSelectQuery(wxString sQuery, wxArrayString &sArray);
+    static wxString GetTableNamesFromInsertQuery(wxString sQuery);
+    static bool DoesStringExistInStringArray(const wxString& sToCheck, const wxArrayString &sArray);
+    static wxString GetFirstStringFromRight(wxString str);
+
+    static bool GetFieldListByQuery(wxArrayString &ArrayFieldNames, wxString sQueryString);
+
     static wxString LoadSystemDocument(int documentId);
     static wxString CreateTable(wxString sDatabase, wxString sTableName, ArrayTableFields m_Fields );
     static bool LoadFieldArrayWithTableFields(wxString sDatabase, wxString sTableName, ArrayTableFields &m_Fields );

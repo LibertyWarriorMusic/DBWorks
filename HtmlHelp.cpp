@@ -5,11 +5,9 @@
 #include<wx/wx.h>
 
 #include "MyEvent.h"
-#include "HtmlHelp.h"
-
 #include "Utility.h"
 
-
+#include "HtmlHelp.h"
 
 
 HtmlHelp::HtmlHelp( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )

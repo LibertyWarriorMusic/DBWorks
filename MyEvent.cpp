@@ -19,11 +19,16 @@ MyEvent::MyEvent( wxWindow* win )
     m_bImportDatabase=false;
     m_bStatusMessage=false;
     m_bOpenQueryGrid=false;
+    m_bOpenDesignPage=false;
+    m_bOpenDesignForm=false;
 
     //Indicators for frames being destroyed.
     m_bTableDiagramFrameWasDestroyed=false;
     m_bDestroyedPropertyTable=false;
     m_bHelpFrameWasDestroyed=false;
+    m_bMainRunPageWasDestroyed=false;
+    m_bDesignFormWasDestroyed=false;
+    m_bDesignPageWasDestroyed=false;
 
     m_sTableName="";
     m_sDatabaseName="";

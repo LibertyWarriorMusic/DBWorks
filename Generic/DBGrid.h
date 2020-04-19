@@ -39,6 +39,8 @@ private:
     void OnClickMenuFilter(wxCommandEvent& event);
     void OnClickMenuFilterShowAll(wxCommandEvent& event);
     void OnRunFilter(wxCommandEvent& event);
+    void OnDesignPage(wxCommandEvent& event);
+    void OnDesignForm(wxCommandEvent& event);
 public:
     DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _style);
     ~DBGrid() override;
