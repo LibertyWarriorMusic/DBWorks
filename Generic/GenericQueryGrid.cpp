@@ -17,14 +17,15 @@
 #include <wx/dynarray.h>
 
 
-#include "../global.h"
+#include "../Shared/global.h"
+
 #include "../HtmlHelp.h"
 
 
 //Add my own classes here
 #include "GenericItemForm.h"
 #include "../MyEvent.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 
 #include "DBGrid.h"
 #include "GenericQueryGrid.h"

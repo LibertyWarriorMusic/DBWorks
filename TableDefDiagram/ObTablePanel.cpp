@@ -26,8 +26,8 @@
 #include "wx/sizer.h"
 
 
-#include "../global.h"
-#include "../Utility.h"
+#include "../Shared/global.h"
+#include "../Shared/Utility.h"
 #include "../MyEvent.h"
 #include "../Dialog/DlgTableSelect.h"
 #include "../Dialog/MultiTextDlg.h"
@@ -243,7 +243,7 @@ void ObTablePanel::LoadQueryCombo()
     QueryCombo->Append(" -- QUERIES ARE SAVED HERE --");
     wxArrayString sSelectionItemArray;
     Utility::LoadStringArrayAvailableQueriesFromUsrQueries(sSelectionItemArray);
-    Utility::FillComboFromStringArray(QueryCombo,sSelectionItemArray);
+    Utility::LoadComboFromStringArray(QueryCombo,sSelectionItemArray);
 
 }
 
@@ -866,7 +866,8 @@ void ObTablePanel::OnMenuAddTable(wxCommandEvent& event)
 void ObTablePanel::OnMenuRemoveTable(wxCommandEvent& event)
 {
     if(m_pObCurrentTable!= nullptr){
-        Utility::SaveTableData(Settings.sDatabase,m_pObCurrentTable->GetTableName(),"ObTableShow","no");
+        Utility::SaveTableData(Settings.sDatabase,"sys_tables",m_pObCurrentTable->GetTableID(),"ObTableShow","no");
+        //Utility::SaveSysTableData(Settings.sDatabase,m_pObCurrentTable->GetTableName(),"ObTableShow","no");
         RemoveObjectFromDiagramByTableName(m_pObCurrentTable->GetTableName());
     }
 }
@@ -1392,11 +1393,11 @@ void ObTablePanel::LoadTableObjects(const wxString& sDatabase)
             wxString sData="";
             wxString sKey="ObTableShow";
             wxString TableName = saTableNames[index];
-            Utility::LoadTableData(sDatabase,TableName,sKey,sData);
+            wxString sTableID = Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,saTableNames[index]);
+            Utility::LoadTableData(sDatabase,"sys_tables",sTableID,sKey,sData);
+
             if(sData=="yes"){
                 //Load the data and create the table object.
-                wxString sTableID = Utility::GetTableIdFromSYS_TABLESByTableName(sDatabase,saTableNames[index]);
-
 
 
                 //The table doesn't exist, so add it.
@@ -1411,8 +1412,8 @@ void ObTablePanel::LoadTableObjects(const wxString& sDatabase)
 
                 wxString xPos = "";
                 wxString yPos = "";
-                Utility::LoadTableData(sDatabase,saTableNames[index],wxT("ObTablePositionX"),xPos);
-                Utility::LoadTableData(sDatabase,saTableNames[index],wxT("ObTablePositionY"),yPos);
+                Utility::LoadTableData(sDatabase,"sys_tables",sTableID,wxT("ObTablePositionX"),xPos);
+                Utility::LoadTableData(sDatabase,"sys_tables",sTableID,wxT("ObTablePositionY"),yPos);
 
                 int lxPos = Utility::StringToInt(xPos);
                 int lyPos = Utility::StringToInt(yPos);
@@ -1655,6 +1656,7 @@ void ObTablePanel::GetSelectedFieldItemListDB(ArrayTableField& fieldItemList, wx
 
 void ObTablePanel::DrawTableLinkageLines(wxDC& dc)
 {
+
     GenerateLinkageLineArrayForDrawing();
 
     int flatLinelength=RELATIONSHIP_DIAGRAM_FIELD_HEIGHT;

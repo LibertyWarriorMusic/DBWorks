@@ -5,7 +5,7 @@
 #include<wx/wx.h>
 
 #include "MyEvent.h"
-#include "Utility.h"
+#include "Shared/Utility.h"
 
 #include "HtmlHelp.h"
 

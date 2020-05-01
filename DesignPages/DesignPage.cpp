@@ -6,7 +6,7 @@
 
 #include "../HtmlHelp.h"
 #include "../MyEvent.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 
 #include "DesignPage.h"
 

@@ -7,9 +7,9 @@
 #include<wx/wx.h>
 
 #include "../MyEvent.h"
-#include "../global.h"
+#include "../Shared/global.h"
 #include "../Dialog/DlgTableSelect.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 
 #include "../HtmlHelp.h"
 #include "ObTablePanel.h"// This is the panel attached to this object
@@ -105,7 +105,6 @@ void TableDiagramFrame::OnbHelp( wxCommandEvent& event )
     m_HtmlWin->Show(true);
 }
 
-//Not Working
 void TableDiagramFrame::LoadTableObjects(const wxString& sDatabase)
 {
    m_TableDiagramPanel->LoadTableObjects(sDatabase);

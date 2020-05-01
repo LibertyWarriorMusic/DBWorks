@@ -130,6 +130,7 @@ class MyApp: public wxApp
 {
 private:
     MainFrame *m_MainFrame;
+    MainRunPage *m_MainRunPageFrame;
     static bool LoadAppSettings();
     static void ProcessLine(wxString line);
 

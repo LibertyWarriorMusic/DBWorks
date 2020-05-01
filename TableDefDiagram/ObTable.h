@@ -19,19 +19,14 @@ private:
     wxString m_sTableId;
 
     ArrayFieldRect m_FieldRectList; //This list is generated  at drawing and used for the field hit test.
-
     ArrayTableField m_TableFieldList; //Store the list of fields for this table
-    wxPoint m_ObPosition; // Stores the position on the screen the object will be drawn
-
 
     bool m_bShowTable;
 
     bool m_bSnapToGrid; // Will snap each object to a grid value; DEFAULT true
     bool m_SnapToGridRememberState; // Used if we want.
     wxSize m_gridDistance; //The distance between grid lines.  DEFAULT 1
-
     wxRect m_TableRect; // This store this objects rect screen position
-
 
    public:
     ObTable();
@@ -41,7 +36,6 @@ private:
     wxArrayString m_aListOfLinkageFlags;
 
     int GetFieldIndexByFieldName(wxString sFieldName);
-
 
     void SaveDB(); //Save this table to the database;
     wxString GetTableName(); //Return the name of this table.

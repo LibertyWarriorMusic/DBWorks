@@ -13,6 +13,7 @@ private:
     wxBoxSizer* m_MainFormSizer;
     wxButton* m_Cancel;
     wxButton* m_bOk;
+    wxArrayString m_asSelectionItemArray;
 
     wxPoint m_Winpos;
     FieldCtlItem* NewFieldDataCtrl();// Creates a new FieldCtlItem in the list and returns a point to that control
@@ -38,6 +39,8 @@ public:
 
     void SetOkLabel(wxString label);
 
+    wxArrayString* GetSelectionArrayString();
+
     void* GetControl(wxString sIdentifier);
     wxString GetDataValue(wxString sIdentifier); //Used to get the data for this control
     void SetDataValue(wxString sIdentifier,wxString sData); //Used to set the data for this control.
@@ -47,7 +50,7 @@ public:
     void SetCheckState(wxString sIdentifier, bool bCheckState); //Used to get the data for this control
 
     //USER FUNCTIONS
-    void AddCtlItem(int iTypeOfControl, wxString TitleName, wxString Description, wxString sIdentifier);
+    void AddCtlItem(int iTypeOfControl, wxString TitleName, wxString Description, wxString sIdentifier, int ID = wxID_ANY);
     void RenderAllControls();
 
     //We are overriding the Destroy function so we can send a message to the parent that this window has been destroyed.

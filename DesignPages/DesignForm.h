@@ -6,27 +6,54 @@
 #define DBWORKS_DesignForm_H
 #include<wx/wxhtml.h>
 class HtmlHelp;
+class DiagaramFrame;
+class DesignFormPanel;
+class RunForm;
+class GenericQueryGrid;
 
-class DesignForm : public wxFrame{
+#include "../TableDefDiagram/DiagramFrame.h"
+
+class DesignForm : public DiagramFrame
+{
     wxDECLARE_EVENT_TABLE();
 private:
-    wxBoxSizer* m_MainFormSizer;
-    wxToolBar * m_Toolbar;
-    wxStatusBar* m_StatusBar;
 
+    wxToolBar * m_pToolbar;
+    wxStatusBar* m_pStatusBar;
+    wxComboBox * m_pComboSelectCtl;
+    RunForm * m_pRunForm;
+    HtmlHelp *m_pHtmlWin;
+    GenericQueryGrid * m_pQueryGrid;
+
+
+    DesignFormPanel * m_pDesignFormDiagramPanel; //Used for drawing
+
+
+
+    void AddDrawObject( const wxString& sTableID);
+
+    int iOldComboIndex;
     wxString m_sFormId;
-    HtmlHelp *m_HtmlWin;
+    wxString m_sBuildQuery;
+    wxString m_usr_queriesId;
+
     void OnMyEvent(MyEvent& event );
     void OnbHelp( wxCommandEvent& event );
+    void OnSelectCtlChange( wxCommandEvent& event );
+    void OnSelectCtlDropDown( wxCommandEvent& event );
+    void OnbAddItem( wxCommandEvent& event );
+    void OnEditQuery( wxCommandEvent& event );
+    void OnRunForm( wxCommandEvent& event );
 
 public:
     explicit DesignForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
     ~DesignForm() override;
-
+    void LoadControlObjects(); //Reload all the drawing objects
     //We are overriding the Destroy function so we can send a message to the parent that this window has been destroyed.
     // This is needed if the parent can null any pointers to this class so they can be tested for null condition.
     bool Destroy() override;
-    void SetFormID(wxString sPageId);
+    void SetFormID(wxString sFormId);
+    void RunQuery();
 };
 
 

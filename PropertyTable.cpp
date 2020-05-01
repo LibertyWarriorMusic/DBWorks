@@ -13,8 +13,8 @@
 #include <wx/toolbar.h>
 
 
-#include "global.h"
-#include "Utility.h"
+#include "Shared/global.h"
+#include "Shared/Utility.h"
 #include "Generic/GenericTable.h"
 #include "Generic/DBGrid.h"
 #include "MyEvent.h"

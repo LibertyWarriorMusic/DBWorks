@@ -13,10 +13,9 @@
 #include "../Shared/Utility.h"
 #include "../Shared/global.h"
 
+#include "SetFlagsDlg.h"
 
-#include "SingleTextDlg.h"
-
-SingleTextDlg::SingleTextDlg(wxWindow* parent, wxString sDialogTitle, wxString sFieldTitle) : DialogBaseClass( parent, wxID_ANY, sDialogTitle, wxDefaultPosition, wxSize( 1000,900 ),  wxSTAY_ON_TOP | wxID_OK )
+SetFlagsDlg::SetFlagsDlg(wxWindow* parent, wxString sDialogTitle, wxString sFieldTitle) : DialogBaseClass( parent, wxID_ANY, sDialogTitle, wxDefaultPosition, wxSize( 1000,900 ), wxDEFAULT_FRAME_STYLE | wxID_OK | wxSTAY_ON_TOP)
 {
 
     wxBoxSizer *sizer1 = new wxBoxSizer( wxHORIZONTAL );
@@ -24,9 +23,8 @@ SingleTextDlg::SingleTextDlg(wxWindow* parent, wxString sDialogTitle, wxString s
     this->SetLabel(sDialogTitle);
     //------------------------------------------------
     // AVAILABLE DATABASES COMBO
-    AddCtlItem(CTL_TEXT, sFieldTitle, "", "ID_TEXT");
-
-    //Render all the controls to the mainframe sizer.
+    AddCtlItem(CTL_SELECTION, sFieldTitle, "", "ID_FLAGS");
+    wxArrayString* arraySelectionString = GetSelectionArrayString();
+    Utility::ExtractSelectionItems(*arraySelectionString,FLAG_OPTIONS);
     RenderAllControls();
-
 }

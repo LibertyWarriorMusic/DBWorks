@@ -6,8 +6,8 @@
 #include<wx/wx.h>
 
 #include "../MyEvent.h"
-#include "../Utility.h"
-#include "../global.h"
+#include "../Shared/Utility.h"
+#include "../Shared/global.h"
 
 #include "DlgTableSelect.h"
 
@@ -17,7 +17,7 @@ DlgTableSelect::DlgTableSelect( wxWindow* parent, wxWindowID id, const wxString&
     SetOkLabel("Select Table");
     //------------------------------------------------
     // AVAILABLE DATABASES COMBO
-    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Tables", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
+    AddCtlItem(CTL_SELECTION_LOOKUP_NAME, "Available Tables", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
     SetFlags("ID_SELECT_TABLE","SYS_HIDDEN_TABLES");
 
     //Render all the controls to the mainframe sizer.

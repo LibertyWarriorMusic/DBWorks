@@ -5,8 +5,8 @@
 #include <wx/wxprec.h>
 #include<wx/wx.h>
 #include "../MyEvent.h"
-#include "../global.h"
-#include "../Utility.h"
+#include "../Shared/global.h"
+#include "../Shared/Utility.h"
 
 #include "DiagramFrame.h"
 

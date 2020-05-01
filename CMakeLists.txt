@@ -4,24 +4,33 @@ project(DBWorks)
 set(CMAKE_CXX_STANDARD 14)
 
 set(SOURCE_FILES
+        RuntimeEngine/MainRunPage.cpp
+        RuntimeEngine/RunForm.cpp
+        Shared/Utility.cpp
         main.cpp
         MyEvent.cpp
         PropertyTable.cpp
-        Utility.cpp
         HtmlHelp.cpp
+        DesignPages/ObControl.cpp
+        DesignPages/DesignFormPanel.cpp
         DesignPages/TemplateFrame.cpp
         DesignPages/DesignForm.cpp
         DesignPages/DesignPage.cpp
-        RunPages/MainRunPage.cpp
         Generic/DBGrid.cpp
         Generic/GenericItemForm.cpp
         Generic/GenericTable.cpp
         Generic/GenericQueryGrid.cpp
         CustomControls/myProgressControl.cpp
+        CustomControls/ListBoxManager.cpp
+        CustomControls/MyTextCtrl.cpp
         TableDefDiagram/DiagramFrame.cpp
         TableDefDiagram/ObTablePanel.cpp
         TableDefDiagram/ObTable.cpp
         TableDefDiagram/TableDiagramFrame.cpp
+        Dialog/SelectionFieldQueryDlg.cpp
+        Dialog/ListBoxDlg.cpp
+        Dialog/LinkedTableDlg.cpp
+        Dialog/SetFlagsDlg.cpp
         Dialog/MultiTextDlg.cpp
         Dialog/SingleTextDlg.cpp
         Dialog/DialogBaseClass.cpp

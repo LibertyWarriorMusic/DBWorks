@@ -17,7 +17,7 @@
 #include <wx/dynarray.h>
 
 
-#include "../global.h"
+#include "../Shared/global.h"
 #include "../HtmlHelp.h"
 
 
@@ -25,7 +25,7 @@
 #include "GenericQueryGrid.h"
 #include "GenericItemForm.h"
 #include "../MyEvent.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 
 #include "DBGrid.h"
 #include "GenericTable.h"

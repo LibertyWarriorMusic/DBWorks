@@ -20,6 +20,7 @@ class MyEvent : public wxEvent
     bool m_bOpenQueryGrid;
     bool m_bOpenDesignPage;
     bool m_bOpenDesignForm;
+    bool m_bOpenRunQuery;
 
     bool m_bEdit;
     bool m_bRefreshDatabase; //Refresh the entire grid reloading every record.
@@ -29,6 +30,7 @@ class MyEvent : public wxEvent
     bool m_bImportDatabase;
     bool m_bStatusMessage;
     bool m_bDestroyedPropertyTable;
+    bool m_bRunFormWasDestroyed;
 
     bool m_bTableDiagramFrameWasDestroyed;
     bool m_bMainRunPageWasDestroyed;

@@ -3,9 +3,9 @@
 //
 #include<wx/wx.h>
 
-#include "../global.h"
+#include "../Shared/global.h"
 #include "../MyEvent.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 #include "../Generic/GenericTable.h"
 #include "ObTable.h"
 
@@ -22,8 +22,8 @@ ObTable::ObTable()
     m_bShowTable=true;
     m_TableRect.x=0;
     m_TableRect.y=0;
-    m_ObPosition.x=0;
-    m_ObPosition.y=0;
+    m_TableRect.width=100;
+    m_TableRect.height=300;
 }
 
 ObTable::~ObTable()
@@ -74,26 +74,21 @@ void ObTable::SetObjectPosition(wxPoint pt)
         pt.x=0;
     
     wxPoint ptToSnap = pt;
-
     if(m_bSnapToGrid){
-
-
         //Create a rect from the grid distand
         wxRect rect = Utility::CalcGridRectThatPtLiesInside(pt,m_gridDistance);
-
         //Will find the closest corner to snap to
-        wxPoint ptToSnap = Utility::CalPtSnapToClosestCornerInRect(pt,rect);
-
-        m_ObPosition = ptToSnap;
-    } else{
-        m_ObPosition = ptToSnap;
+        ptToSnap = Utility::CalPtSnapToClosestCornerInRect(pt,rect);
     }
 
-    if(m_ObPosition.x < 0)
-        m_ObPosition.x=0;
+    m_TableRect.x = ptToSnap.x;
+    m_TableRect.y = ptToSnap.y;
 
-    if(m_ObPosition.y<0)
-        m_ObPosition.y=0;
+    if(m_TableRect.x < 0)
+        m_TableRect.x=0;
+
+    if(m_TableRect.y<0)
+        m_TableRect.y=0;
 }
 void ObTable::TurnSnapOn()
 {
@@ -146,8 +141,8 @@ void ObTable::SaveDB()
     wxString posX;
     wxString posY;
     wxString show="no";
-    posX << m_ObPosition.x;
-    posY << m_ObPosition.y;
+    posX << m_TableRect.x;
+    posY << m_TableRect.y;
 
     wxString keyX="ObTablePositionX";
     wxString keyY="ObTablePositionY";
@@ -156,11 +151,10 @@ void ObTable::SaveDB()
     if(m_bShowTable)
         show="yes";
 
-    Utility::SaveTableData(Settings.sDatabase,m_sTableName,keyX ,posX);
-    Utility::SaveTableData(Settings.sDatabase,m_sTableName,keyY ,posY);
-    Utility::SaveTableData(Settings.sDatabase,m_sTableName,keyShow ,show);
+    Utility::SaveTableData(Settings.sDatabase,"sys_tables",GetTableID(),keyX ,posX);
+    Utility::SaveTableData(Settings.sDatabase,"sys_tables",GetTableID(),keyY ,posY);
+    Utility::SaveTableData(Settings.sDatabase,"sys_tables",GetTableID(),keyShow ,show);
 
-   // Utility::SaveTableDataBulk(Settings.sDatabase,m_sTableId, "<key:ObTablePositionX>"+posX+"</key><key:ObTablePositionY>"+posY+"<key:ObTableShow>"+show+"</key>");
 }
 int ObTable::GetFieldIndexByFieldName(wxString sFieldName)
 {
@@ -172,7 +166,6 @@ int ObTable::GetFieldIndexByFieldName(wxString sFieldName)
             if(fieldItem.fieldName==sFieldName)
                 return index;
         }
-
     }
 
    return wxNOT_FOUND;
@@ -211,12 +204,12 @@ void ObTable::DrawObject(wxDC&  dc)
 
 
     // Draw width label
-    int XStartPos = m_ObPosition.x;
-    int YStartPos = m_ObPosition.y;
+    int XStartPos = m_TableRect.x;
+    int YStartPos = m_TableRect.y;
 
     int XEndPos = XStartPos + 200;
     int XStartOfType = XStartPos + 100;
-    wxPoint pt = m_ObPosition;
+    wxPoint pt(m_TableRect.x,m_TableRect.y);
     wxPoint ptType(0,0);
 
     pt.y +=GAP;
@@ -306,8 +299,8 @@ void ObTable::DrawObject(wxDC&  dc)
     wxSize szTitle(width-2,HeightOfTable+25);
 
     // save the rect for the hit test.
-    m_TableRect.x = ptStart.x-6;
-    m_TableRect.y = ptStart.y-6;
+   // m_TableRect.x = ptStart.x-6;
+   // m_TableRect.y = ptStart.y-6;
     m_TableRect.width = szTitle.x+6;
     m_TableRect.height = szTitle.y+6;
 
@@ -407,17 +400,11 @@ void ObTable::DrawObject(wxDC&  dc)
         drawPt.y +=2;
         dc.DrawText(fieldItem.fieldName,drawPt);
 
-
-
-
         pt.x += extentFieldName.x;
 
         drawPt = ptType;
         drawPt.y +=2;
         dc.DrawText(fieldItem.fieldType,drawPt);
-
-
-
 
         pt.y +=extentFieldName.y;
         ptType.y = pt.y;
@@ -427,10 +414,6 @@ void ObTable::DrawObject(wxDC&  dc)
             dc.SetPen( wxPen( wxColor(150,150,170), 1 ) );
             dc.DrawLine(XStartPos +GAP,pt.y,XStartPos+width-GAP,pt.y);
         }
-
-
-
-
     }
 }
 

@@ -6,8 +6,8 @@
 #include<wx/wx.h>
 
 #include "../MyEvent.h"
-#include "../Utility.h"
-#include "../global.h"
+#include "../Shared/Utility.h"
+#include "../Shared/global.h"
 
 
 #include "DialogTemplate.h"
@@ -43,7 +43,7 @@ DIALOG_TEMPLATE::DIALOG_TEMPLATE( wxWindow* parent, wxWindowID id, const wxStrin
     // READONLY
     // SELECTION_LOOKUP_NAME{TableName;FieldName;}
     // You can use combinations like>  READONLY - SELECTION_LOOKUP_NAME{TableName;FieldName;}
-    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Tables *", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
+    AddCtlItem(CTL_SELECTION_LOOKUP_NAME, "Available Tables *", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
     SetFlags("ID_SELECT_TABLE","SQL_DATABASES");
     wxComboBox *pCom = (wxComboBox*)GetControl("ID_SELECT_TABLE");
     pCom->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DIALOG_TEMPLATE::OnDatabaseComboChange ), nullptr, this );

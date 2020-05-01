@@ -22,10 +22,10 @@
 #include <wx/toolbar.h>
 #include <wx/checkbox.h>
 
-#include "Utility.h"
-#include "global.h"
+#include "Shared/Utility.h"
+#include "Shared/global.h"
 #include "MyEvent.h"
-#include "RunPages/MainRunPage.h"
+#include "RuntimeEngine/MainRunPage.h"
 #include "DesignPages/DesignForm.h"
 #include "DesignPages/DesignPage.h"
 #include "Generic/GenericItemForm.h"
@@ -115,20 +115,42 @@ bool MyApp::OnInit()
     m_dataRecordIndex=0;
     m_sTableID="";
     m_saTables = nullptr;
+
+    m_MainRunPageFrame = nullptr;
+    m_MainFrame = nullptr;
     //m_Res = nullptr;
 
     bool bSettingLoaded= LoadAppSettings();
+
+    if(Settings.RUN_ENGINE_ENABLED){
+        //Runtime Engine only
+
+        m_MainRunPageFrame = new MainRunPage((wxFrame*) nullptr, -1,
+                "Running Database",
+                wxPoint(MAIN_WIN_POSX,MAIN_WIN_POSY),
+                wxSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight),
+                wxDEFAULT_FRAME_STYLE);
+        m_MainRunPageFrame->Show(true);
+
+    }else{
+        //Design  mode only
+
+        m_MainFrame = new MainFrame((wxFrame*) nullptr,
+                                    -1,
+                                    wxT(MAIN_WIN_TITLE),
+                                    wxPoint(MAIN_WIN_POSX,MAIN_WIN_POSY),
+                                    wxSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight),
+                                    (unsigned)wxDEFAULT_FRAME_STYLE
+        );
+
+        m_MainFrame->Show(true);
+        m_MainFrame->SetSettingsLoaded(bSettingLoaded);
+    }
+
+
+
     
-    m_MainFrame = new MainFrame((wxFrame*) nullptr,
-                                   -1,
-                                  wxT(MAIN_WIN_TITLE),
-                                  wxPoint(MAIN_WIN_POSX,MAIN_WIN_POSY),
-                                  wxSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight),
-                                (unsigned)wxDEFAULT_FRAME_STYLE
-                                  );
-    
-    m_MainFrame->Show(true);
-    m_MainFrame->SetSettingsLoaded(bSettingLoaded);
+
 
     return true;
 }
@@ -149,7 +171,7 @@ void MyApp::activateRenderLoop(bool on)
 
 bool MyApp::LoadAppSettings()
 {
-    wxString        str;
+    wxString str;
     wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
     //wxLogMessage(strExe);
     strExe.Replace("DBWorks", "mysqlReservedWords.txt"); //For mac and linux
@@ -260,11 +282,11 @@ void MyApp::ProcessLine(wxString line)
     }else if (setting=="DOUBLE_CLICK_GRID_CELL"){
         Settings.sDClickGridCell=value;
     }
-    else if (setting=="IMPORT_KEYS_HAVING_PRIMARY_FIELDS"){
+    else if (setting=="IMPORT_FIELDS_HAVING_PRIMARY_KEYS"){
         if(value=="NO")
-            Settings.bImportPrimaryKey=false;
+            Settings.IMPORT_FIELDS_HAVING_PRIMARY_KEYS=false;
         else if (value=="YES")
-            Settings.bImportPrimaryKey=true;
+            Settings.IMPORT_FIELDS_HAVING_PRIMARY_KEYS=true;
     }
     else if (setting=="IMPORT_CREATE_TABLES"){
         if(value=="NO")
@@ -301,6 +323,12 @@ void MyApp::ProcessLine(wxString line)
             Settings.SHOW_USERGROUP_COMBO_ON_TOOLBAR=true;
         else if (value=="NO")
             Settings.SHOW_USERGROUP_COMBO_ON_TOOLBAR=false;
+    }
+    else if (setting=="RUN_ENGINE_ENABLED"){
+        if(value=="YES")
+            Settings.RUN_ENGINE_ENABLED=true;
+        else if (value=="NO")
+            Settings.RUN_ENGINE_ENABLED=false;
     }
 }
 
@@ -954,18 +982,11 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     // Setup the toolbar
     m_Toolbar1 = this->CreateToolBar();
 
-
-
-
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
-
     wxBitmap BitMap;
-
 
     Utility::LoadBitmap(BitMap,"help.png");
     m_Toolbar1->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
-
-
 
     if (Utility::IsSystemDatabaseDeveloper() ) {
 
@@ -995,7 +1016,6 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     }
 
     wxStaticText * txtCltDatabase = new wxStaticText( m_Toolbar1, wxID_ANY, "Database ", wxDefaultPosition, wxDefaultSize, 0 );
-
 
     m_DatabaseCombo = new wxComboBox( m_Toolbar1, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,wxCB_READONLY);
     m_DatabaseCombo->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( MainFrame::OnDatabaseComboChange ), nullptr, this );
@@ -2029,8 +2049,9 @@ void MainFrame::OpenDesignForm(wxString sTableId, wxString sTableName)
     if(m_pDesignForm != nullptr)
         m_pDesignForm->Destroy();
 
-    m_pDesignForm = new DesignForm((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pDesignForm = new DesignForm((wxFrame*) this, -1, "Form Design: " + sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE );
     m_pDesignForm->SetFormID(sTableId); //
+    m_pDesignForm->LoadControlObjects();
     m_pDesignForm->Show(true);
 
 }
@@ -2040,7 +2061,7 @@ void MainFrame::OpenDesignPage(wxString sTableId, wxString sTableName)
     if(m_pDesignPage != nullptr)
         m_pDesignPage->Destroy();
 
-    m_pDesignPage = new DesignPage((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pDesignPage = new DesignPage((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE );
     m_pDesignPage->SetPageID(sTableId); //
     m_pDesignPage->Show(true);
 }

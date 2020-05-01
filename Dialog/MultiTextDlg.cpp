@@ -10,13 +10,13 @@
 #include<wx/wx.h>
 
 #include "../MyEvent.h"
-#include "../Utility.h"
-#include "../global.h"
+#include "../Shared/Utility.h"
+#include "../Shared/global.h"
 
 
 #include "MultiTextDlg.h"
 
-MultiTextDlg::MultiTextDlg(wxWindow* parent, wxString sDialogTitle, wxString sFieldTitle) : DialogBaseClass( parent, wxID_ANY, sDialogTitle, wxDefaultPosition, wxSize( 1000,900 ), wxDEFAULT_FRAME_STYLE | wxID_OK )
+MultiTextDlg::MultiTextDlg(wxWindow* parent, wxString sDialogTitle, wxString sFieldTitle) : DialogBaseClass( parent, wxID_ANY, sDialogTitle, wxDefaultPosition, wxSize( 1000,900 ), wxSTAY_ON_TOP | wxID_OK )
 {
 
     wxBoxSizer *sizer1 = new wxBoxSizer( wxHORIZONTAL );

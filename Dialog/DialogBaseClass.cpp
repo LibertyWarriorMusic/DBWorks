@@ -2,16 +2,21 @@
 // Created by Nicholas Zounis on 23/3/20.
 //
 
-#define BORDERWIDTH 3
 #define TEXTWIDTH 140
 #define ALLOW_TO_GROW 1
 
 #include <wx/wxprec.h>
 #include<wx/wx.h>
+#include<wx/listbox.h>
+
 #include <wx/hyperlink.h>
 #include <wx/datectrl.h>
-#include "../Utility.h"
-#include "../global.h"
+#include "../Shared/Utility.h"
+#include "../Shared/global.h"
+
+#include "../CustomControls/ListBoxManager.h"
+#include "../CustomControls/MyTextCtrl.h"
+
 
 #include "DialogBaseClass.h"
 enum {
@@ -29,7 +34,7 @@ WX_DEFINE_OBJARRAY(ArrayFieldDataCtls);
 
 
 
-DialogBaseClass::DialogBaseClass( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style)
+DialogBaseClass::DialogBaseClass( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxDialog( parent, id, title, pos, size, style )
 {
     m_CalculatedHeightWindow=0;
     m_OkLabel = "OK";
@@ -43,6 +48,11 @@ DialogBaseClass::DialogBaseClass( wxWindow* parent, wxWindowID id, const wxStrin
 wxBoxSizer* DialogBaseClass::GetMainSizer()
 {
     return m_MainFormSizer;
+}
+
+wxArrayString* DialogBaseClass::GetSelectionArrayString()
+{
+    return &m_asSelectionItemArray;
 }
 
 void DialogBaseClass::SetOkLabel(wxString label)
@@ -62,14 +72,14 @@ void DialogBaseClass::Create()
     m_bOk = new wxButton( this, wxID_ANY , wxT("Import Database"), wxDefaultPosition, wxSize(120,20), 0 );
     m_bOk->SetLabel(m_OkLabel);
     m_bOk->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogBaseClass::OnbOk ), nullptr, this );
-    btSizer->Add( m_bOk, 0, wxALL, BORDERWIDTH );
+    btSizer->Add( m_bOk, 0, wxALL, BORDER_WIDTH );
 
 
     m_Cancel = new wxButton( this, wxID_ANY , wxT("Cancel"), wxDefaultPosition, wxSize(120,20), 0 );
     m_Cancel->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( DialogBaseClass::OnbCancel ), nullptr, this );
-    btSizer->Add( m_Cancel, 0, wxALL, BORDERWIDTH );
+    btSizer->Add( m_Cancel, 0, wxALL, BORDER_WIDTH );
 
-    m_MainFormSizer->Add( btSizer, 0, wxALIGN_CENTER, BORDERWIDTH);
+    m_MainFormSizer->Add( btSizer, 0, wxALIGN_CENTER, BORDER_WIDTH);
 
     m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
     m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH + 10;
@@ -157,7 +167,7 @@ FieldCtlItem* DialogBaseClass::NewFieldDataCtrl()
 
 
 // This is where we generate our control
-void DialogBaseClass::AddCtlItem(int iTypeOfControl, wxString TitleName, wxString Description, wxString sIdentifier)
+void DialogBaseClass::AddCtlItem(int iTypeOfControl, wxString TitleName, wxString Description, wxString sIdentifier, int ID)
 {
     FieldCtlItem* ctlItem = NewFieldDataCtrl();
     ctlItem->Title= TitleName;
@@ -172,41 +182,55 @@ void DialogBaseClass::AddCtlItem(int iTypeOfControl, wxString TitleName, wxStrin
 
     switch(m_CtrlDataItem[index].iTypeOfControl) {
         case CTL_STATIC :
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, ID, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             break;
         case CTL_TEXT :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0 );
             break;
         case CTL_MULTI_TEXT :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
             break;
-        case CTL_COMBO_LOOKUP_NAME :
+        case CTL_SELECTION_LOOKUP_NAME :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0 );
-            break;
-
-        case CTL_COMBO_ADDITIVE :
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0);
+            m_CtrlDataItem[index].comCtl = new wxComboBox( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0 );
             break;
 
-        case CTL_COMBO :
+        case CTL_SELECTION_ADDITIVE :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0);
+            m_CtrlDataItem[index].comCtl = new wxComboBox( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0);
+            break;
+
+        case CTL_SELECTION :
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].comCtl = new wxComboBox( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,0);
 
             break;
         case CTL_CHECKBOX :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, ID, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
             break;
         case CTL_DATE :
             m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-            m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( this, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( this, ID, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, 0 );
 
             break;
 
+        case CTL_LISTBOX :
+
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].pListBox = new wxListBox(this, ID,wxDefaultPosition, wxDefaultSize);
+            break;
+
+        case CTL_BUTTON :
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, Description, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].pButton = new wxButton(this, ID,TitleName, wxDefaultPosition, wxDefaultSize);
+            break;
+        case CTL_MYTEXTCTRL :
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].pMyTextCtrl = new MyTextCtrl(this,"Test");
+            break;
         default:
             break;
     }
@@ -257,7 +281,7 @@ void DialogBaseClass::RenderAllControls()
     wxString sFlags="";
     unsigned long style=0;
 
-    wxArrayString sSelectionItemArray;
+
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
         sFlags =  m_CtrlDataItem[index].Flags; // Get additional flags for the control
@@ -336,7 +360,7 @@ void DialogBaseClass::RenderAllControls()
 
                 m_MainFormSizer->Add( gSizer1, ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
                 break;
-            case CTL_COMBO_LOOKUP_NAME :
+            case CTL_SELECTION_LOOKUP_NAME :
                 gSizer1 = new wxBoxSizer( wxHORIZONTAL );
                 //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
                 m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
@@ -345,13 +369,13 @@ void DialogBaseClass::RenderAllControls()
 
                 //We can add other type of flags here
                 if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SQL_DATABASES"))
-                    Utility::LoadStringArrayWidthMySQLDatabaseNames(sSelectionItemArray);
+                    Utility::LoadStringArrayWidthMySQLDatabaseNames(m_asSelectionItemArray);
                 else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_TABLES"))
-                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, sSelectionItemArray);
+                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray);
                 else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_HIDDEN_TABLES"))
-                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, sSelectionItemArray, true);
+                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray, true);
                 else
-                    Utility::ExtractSelectionLookupItemsName(sSelectionItemArray,sFlags);
+                    Utility::ExtractSelectionLookupItemsName(m_asSelectionItemArray,sFlags);
 
 
                 // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
@@ -370,8 +394,10 @@ void DialogBaseClass::RenderAllControls()
 
 
                 //Fill the list box with the selection items.
-                for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-                    m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
+                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
+               // for ( int iIdx=0; iIdx<m_asSelectionItemArray.GetCount(); iIdx++ )
+                    //m_CtrlDataItem[index].comCtl->Append(m_asSelectionItemArray[iIdx]);
+
 
                 if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
                     m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
@@ -382,7 +408,7 @@ void DialogBaseClass::RenderAllControls()
                 m_MainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
                 break;
 
-            case CTL_COMBO_ADDITIVE :
+            case CTL_SELECTION_ADDITIVE :
                 gSizer1 = new wxBoxSizer( wxHORIZONTAL );
                 //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
                 m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
@@ -391,7 +417,7 @@ void DialogBaseClass::RenderAllControls()
                 //Create a wxComboCtrl. We need to fill it with the values extracted from
 
                 //Extract all the selection items.
-                Utility::ExtractSelectionItems(sSelectionItemArray,sFlags);
+                Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
 
 
                 // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
@@ -399,6 +425,9 @@ void DialogBaseClass::RenderAllControls()
                 //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
                 if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
                     style |= wxCB_READONLY;
+                }
+
+                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
                     m_CtrlDataItem[index].comCtl->Disable();
                 }
 
@@ -409,7 +438,7 @@ void DialogBaseClass::RenderAllControls()
 
 
                 //Fill the list box with the selection items.
-                Utility::FillComboFromStringArray(m_CtrlDataItem[index].comCtl,sSelectionItemArray);
+                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
                 //for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
                     //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
 
@@ -434,7 +463,7 @@ void DialogBaseClass::RenderAllControls()
                 m_MainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
                 break;
 
-            case CTL_COMBO :
+            case CTL_SELECTION :
 
                 gSizer1 = new wxBoxSizer( wxHORIZONTAL );
                 //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
@@ -444,7 +473,7 @@ void DialogBaseClass::RenderAllControls()
                 //Create a wxComboCtrl. We need to fill it with the values extracted from
 
                 //Extract all the selection items.
-                Utility::ExtractSelectionItems(sSelectionItemArray,sFlags);
+                Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
 
 
                 // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
@@ -452,6 +481,9 @@ void DialogBaseClass::RenderAllControls()
                 //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
                 if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
                     style |= wxCB_READONLY;
+                }
+
+                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
                     m_CtrlDataItem[index].comCtl->Disable();
                 }
 
@@ -462,7 +494,7 @@ void DialogBaseClass::RenderAllControls()
 
 
                 //Fill the list box with the selection items.
-                Utility::FillComboFromStringArray(m_CtrlDataItem[index].comCtl,sSelectionItemArray);
+                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
                // for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
                     //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
 
@@ -488,7 +520,7 @@ void DialogBaseClass::RenderAllControls()
                 style=0;
 
                 //m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-                gSizer1->Add( m_CtrlDataItem[index].pCheckBox, 0, wxALL, BORDERWIDTH );
+                gSizer1->Add( m_CtrlDataItem[index].pCheckBox, 0, wxALL, BORDER_WIDTH );
 
                 m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
 
@@ -527,6 +559,33 @@ void DialogBaseClass::RenderAllControls()
                 m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
                 break;
 
+            case CTL_LISTBOX :
+
+                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+                style=0;
+
+                gSizer1->Add( m_CtrlDataItem[index].pListBox,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+                break;
+
+            case CTL_BUTTON :
+
+                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+                style=0;
+
+                gSizer1->Add( m_CtrlDataItem[index].pButton,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+                break;
+
+
             default:
                 break;
         }
@@ -560,15 +619,15 @@ void DialogBaseClass::SetDataValue(wxString sIdentifier,wxString sData)
                     m_CtrlDataItem[index].sData = sData;
                     m_CtrlDataItem[index].textCtl->SetValue(sData);
                     break;
-                case CTL_COMBO_LOOKUP_NAME :
+                case CTL_SELECTION_LOOKUP_NAME :
                     m_CtrlDataItem[index].sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
-                case CTL_COMBO_ADDITIVE :
+                case CTL_SELECTION_ADDITIVE :
                     m_CtrlDataItem[index].sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
-                case CTL_COMBO :
+                case CTL_SELECTION :
                     m_CtrlDataItem[index].sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
@@ -624,15 +683,15 @@ wxString DialogBaseClass::GetDataValue(wxString sIdentifier)
                     m_CtrlDataItem[index].sData = m_CtrlDataItem[index].textCtl->GetValue();
                     return m_CtrlDataItem[index].sData;
 
-                case CTL_COMBO_LOOKUP_NAME :
+                case CTL_SELECTION_LOOKUP_NAME :
                     m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
                     return m_CtrlDataItem[index].sData;
 
-                case CTL_COMBO_ADDITIVE :
+                case CTL_SELECTION_ADDITIVE :
                     m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
                     return m_CtrlDataItem[index].sData;
 
-                case CTL_COMBO :
+                case CTL_SELECTION :
                     m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
                     return m_CtrlDataItem[index].sData;
 
@@ -654,6 +713,12 @@ wxString DialogBaseClass::GetDataValue(wxString sIdentifier)
 
                 case CTL_WEBLINK :
                     m_CtrlDataItem[index].sData = m_CtrlDataItem[index].linkCtl->GetURL();
+                    return m_CtrlDataItem[index].sData;
+
+                case CTL_BUTTON :
+                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].pButton->GetLabel();
+                    return m_CtrlDataItem[index].sData;
+                case CTL_LISTBOX :
                     return m_CtrlDataItem[index].sData;
                 default:
 
@@ -682,11 +747,11 @@ void* DialogBaseClass::GetControl(wxString sIdentifier)
                     return (wxTextCtrl*)m_CtrlDataItem[index].textCtl;
                 case CTL_MULTI_TEXT :
                     return (wxComboBox*)m_CtrlDataItem[index].comCtl;
-                case CTL_COMBO_LOOKUP_NAME :
+                case CTL_SELECTION_LOOKUP_NAME :
                     return (wxComboBox*)m_CtrlDataItem[index].comCtl;
-                case CTL_COMBO_ADDITIVE :
+                case CTL_SELECTION_ADDITIVE :
                     return (wxComboBox*)m_CtrlDataItem[index].comCtl;
-                case CTL_COMBO :
+                case CTL_SELECTION :
                     return (wxComboBox*)m_CtrlDataItem[index].comCtl;
                 case CTL_CHECKBOX :
                     return (wxCheckBox*)m_CtrlDataItem[index].pCheckBox;
@@ -694,12 +759,15 @@ void* DialogBaseClass::GetControl(wxString sIdentifier)
                     return (wxDatePickerCtrl*)m_CtrlDataItem[index].datePickerCtl;
                 case CTL_WEBLINK :
                     return (wxHyperlinkCtrl*)m_CtrlDataItem[index].linkCtl;
+                case CTL_BUTTON :
+                    return (wxButton*) m_CtrlDataItem[index].pButton;
+                case CTL_LISTBOX :
+                    return (wxListBox*) m_CtrlDataItem[index].pListBox;
                 default:
                     break;
             }
         }
     }
-
 
     return nullptr;
 }

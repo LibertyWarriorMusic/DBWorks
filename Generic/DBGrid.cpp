@@ -16,9 +16,9 @@
 //Add my own classes here
 
 
-#include "../global.h"
+#include "../Shared/global.h"
 #include "../MyEvent.h"
-#include "../Utility.h"
+#include "../Shared/Utility.h"
 #include "DBGrid.h"
 
 #include <wx/arrimpl.cpp>
@@ -565,7 +565,8 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                          strData1.Trim();
                                          if(!strData1.IsEmpty() && strData1!="NULL"){
                                              Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
-                                             SetCellValue(iTracRowIncaseOfSkip, index + 1,sTableResult[0]);
+                                             if(sTableResult.GetCount()>0)
+                                                SetCellValue(iTracRowIncaseOfSkip, index + 1,sTableResult[0]);
                                          }
                                      }
                                 }
@@ -589,8 +590,11 @@ bool DBGrid::LoadGridFromDatabase(bool bCheckTableExists, wxString queryToApply)
                                     }
                                     strData1.Trim();
 
-                                    if(Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1))
-                                        SetCellValue(iTracRowIncaseOfSkip, index + 1,sTableResult[0]);
+                                    if(Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1)){
+                                        if(sTableResult.GetCount()>0)
+                                            SetCellValue(iTracRowIncaseOfSkip, index + 1,sTableResult[0]);
+                                    }
+
                                 }
                                 else {
                                     SetCellValue(iTracRowIncaseOfSkip, index + 1, strData1); //Set the value of the cell from the table value.
@@ -768,8 +772,8 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                                         {
                                             wxArrayString sTableResult;
                                             Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
-
-                                            SetCellValue(m_gridRow, index + 1,sTableResult[0]);
+                                            if(sTableResult.GetCount()>0)
+                                                SetCellValue(m_gridRow, index + 1,sTableResult[0]);
                                         }
                                     }
                                     else if(Utility::HasFlag(flag,"SELECTION_LINKED_ID")){
@@ -789,7 +793,8 @@ bool DBGrid::LoadGridRowFromDatabase(int m_gridRow, bool bCheckTableExists)
                                         if(!strData1.IsEmpty()){
 
                                             Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName, tableName+"Id",strData1);
-                                            SetCellValue(m_gridRow, index + 1,sTableResult[0]);
+                                            if(sTableResult.GetCount()>0)
+                                                SetCellValue(m_gridRow, index + 1,sTableResult[0]);
                                         }
 
                                     }
@@ -1179,7 +1184,7 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
             wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase, tableName, column);
 
             // wxString ID;
-            Utility::GetTableIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+            Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
             sValue = sTableResult[0];
 
             my_event.m_sTableId = sValue;
@@ -1223,7 +1228,7 @@ void DBGrid::OnClickMenuFilter(wxCommandEvent& event)
 
             } else {
                 wxArrayString sArray;
-                Utility::GetTableIDFromTableWhereFieldEquals(Settings.sDatabase, sArray, tableName, fieldName,sValue);
+                Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sArray, tableName, fieldName,sValue);
 
                 if(sArray.GetCount()>0){
                     sValue = sArray[0];

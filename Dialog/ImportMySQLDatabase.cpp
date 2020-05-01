@@ -10,8 +10,8 @@
 #include<wx/wx.h>
 
 #include "../MyEvent.h"
-#include "../Utility.h"
-#include "../global.h"
+#include "../Shared/Utility.h"
+#include "../Shared/global.h"
 
 
 #include "ImportMySQLDatabase.h"
@@ -41,7 +41,7 @@ ImportMySQLDatabase::ImportMySQLDatabase( wxWindow* parent, wxWindowID id, const
 
     //------------------------------------------------
     // AVAILABLE DATABASES COMBO
-    AddCtlItem(CTL_COMBO_LOOKUP_NAME, "Available Databases", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
+    AddCtlItem(CTL_SELECTION_LOOKUP_NAME, "Available Databases", "Select a table to add to the diagram.", "ID_SELECT_TABLE");
     SetFlags("ID_SELECT_TABLE","SQL_DATABASES");
     wxComboBox *pCom = (wxComboBox*)GetControl("ID_SELECT_TABLE");
     pCom->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( ImportMySQLDatabase::OnDatabaseComboChange ), nullptr, this );

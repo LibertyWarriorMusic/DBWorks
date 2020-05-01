@@ -29,8 +29,8 @@
 #include <mysql++.h>
 
 #include "../MyEvent.h"
-#include "../global.h"
-#include "../Utility.h"
+#include "../Shared/global.h"
+#include "../Shared/Utility.h"
 
 #include "GenericItemForm.h"
 
@@ -666,8 +666,11 @@ void GenericItemForm::InsertItem(){
                             wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
                             wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
-                            Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
-                            sValue = sTableResult[0];
+                            Utility::GetRecordIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
 
                         }else if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_NAME")) {
 
@@ -686,9 +689,11 @@ void GenericItemForm::InsertItem(){
 
                             } else{
                                 wxArrayString sArray;
-                                Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
+                                Utility::GetRecordIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
                                 if(sArray.GetCount()>0)
                                     sValue = sArray[0];
+                                else
+                                    sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
                             }
                         }
                         else
@@ -789,8 +794,11 @@ void GenericItemForm::UpdateItem(){
                             wxString tableName = Utility::GetTableNameFromSYS_TABLESById(Settings.sDatabase,tableId);
                             wxString fieldName = Utility::GetTableFieldNameFromMySQLInfoSchema(Settings.sDatabase,tableName,column);
 
-                            Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
-                            sValue = sTableResult[0];
+                            Utility::GetRecordIDFromTableWhereFieldEquals(m_sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
 
                         }else if(Utility::HasFlag(itemArray[i].Flags,"SELECTION_LINKED_NAME")) {
 
@@ -809,8 +817,11 @@ void GenericItemForm::UpdateItem(){
 
                             } else{
                                 wxArrayString sArray;
-                                Utility::GetTableIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
-                                sValue = sArray[0];
+                                Utility::GetRecordIDFromTableWhereFieldEquals(m_sDatabase, sArray, tableName, fieldName,sValue);
+                                if(sArray.GetCount()>0)
+                                    sValue = sArray[0];
+                                else
+                                    sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
                             }
                         }
                         else
@@ -871,8 +882,6 @@ UPDATE sys_docs SET Title = 'Main Window' ,TypeOfDoc = 'Help Document' ,Document
 
 
 */
-
-
 
 //Load the form fields directly from the database rather than passing them in from the form given a passwordId
 void GenericItemForm::LoadFields()
