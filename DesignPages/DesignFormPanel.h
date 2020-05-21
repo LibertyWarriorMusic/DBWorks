@@ -35,6 +35,8 @@ private:
     void paintEvent(wxPaintEvent & evt);
     void render(wxDC& dc);
 
+    wxString PromptEditSingleTextDialog(wxString sKey,  wxString sDialogTitle, wxString sLabel);
+
     void OnDatabaseComboChange(wxCommandEvent& event);
     void mouseMoved(wxMouseEvent& event);
     void mouseDown(wxMouseEvent& event);
@@ -47,12 +49,14 @@ private:
     void keyReleased(wxKeyEvent& event);
     void OnMenuOpenControl(wxCommandEvent& event);
     void OnMenuAddControl(wxCommandEvent& event);
+    void OnManageActions(wxCommandEvent& event);
     void OnMenuEditLinkedFields(wxCommandEvent& event);
     void OnSetFlags(wxCommandEvent& event);
     void OnSetSelectionOptions(wxCommandEvent& event);
     void OnSetLinkedTable(wxCommandEvent& event);
     void OnMenuDeleteControl(wxCommandEvent& event);
     void OnMenuEditStatic(wxCommandEvent& event);
+    void OnMenuEditDescription(wxCommandEvent& event);
     void OnRunQuery(wxCommandEvent& event);
 
 public:

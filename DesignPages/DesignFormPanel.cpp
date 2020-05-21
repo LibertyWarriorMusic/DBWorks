@@ -36,8 +36,8 @@
 #include "../Dialog/SetFlagsDlg.h"
 #include "../Dialog/ListBoxDlg.h"
 #include "../Dialog/SingleTextDlg.h"
+#include "../Dialog/ManageActionsDlg.h"
 #include "../Generic/GenericQueryGrid.h"
-
 
 #include "mysql.h"
 #include "mysql++.h"
@@ -63,7 +63,9 @@ enum {
     ID_MENU_RUN_QUERY,
     ID_MENU_EDIT_SET_FLAGS,
     ID_MENU_SELECTION_OPTIONS,
-    ID_MENU_EDIT_LINKED_TABLE
+    ID_MENU_EDIT_LINKED_TABLE,
+    ID_MENU_EDIT_DESCRIPTION,
+    ID_MENU_MANAGE_ACTIONS
 };
 
 BEGIN_EVENT_TABLE(DesignFormPanel, wxPanel)
@@ -81,13 +83,81 @@ BEGIN_EVENT_TABLE(DesignFormPanel, wxPanel)
     EVT_MENU(ID_MENU_EDIT_LINKED_FIELD, DesignFormPanel::OnMenuEditLinkedFields)
     EVT_MENU(ID_MENU_DELETE_CONTROL, DesignFormPanel::OnMenuDeleteControl)
     EVT_MENU(ID_MENU_EDIT_STATIC, DesignFormPanel::OnMenuEditStatic)
+    EVT_MENU(ID_MENU_EDIT_DESCRIPTION, DesignFormPanel::OnMenuEditDescription)
     EVT_MENU(ID_MENU_RUN_QUERY, DesignFormPanel::OnRunQuery)
     EVT_MENU(ID_MENU_EDIT_SET_FLAGS, DesignFormPanel::OnSetFlags)
     EVT_MENU(ID_MENU_SELECTION_OPTIONS, DesignFormPanel::OnSetSelectionOptions)
     EVT_MENU(ID_MENU_EDIT_LINKED_TABLE, DesignFormPanel::OnSetLinkedTable)
+    EVT_MENU(ID_MENU_MANAGE_ACTIONS, DesignFormPanel::OnManageActions)
     EVT_PAINT(DesignFormPanel::paintEvent)
 
 END_EVENT_TABLE()
+void DesignFormPanel::rightClick(wxMouseEvent& event)
+{
+    m_pObCurrentFormControl= nullptr;
+
+    m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
+
+    ObControl* pCtl = GetObjectHitByMouse(m_MousePos);
+    //Diagram menus
+    //Create a context menu to do stuff here.
+    auto *menu = new wxMenu;
+
+    if(pCtl!= nullptr)
+    {
+        m_pObCurrentFormControl = pCtl;
+
+        if(m_pObCurrentFormControl->GetTypeName()=="CTL_STATIC" )
+        {
+            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
+        }
+        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SPACER" ){
+
+        }
+        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION" || m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION_ADDITIVE"){
+            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
+            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
+            menu->Append(ID_MENU_SELECTION_OPTIONS, wxT("Manage Options"), wxT("Manage options."));
+        }
+        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION_LINKED_NAME"
+                || m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION_LOOKUP_NAME"){
+            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
+            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
+            menu->Append(ID_MENU_EDIT_LINKED_TABLE, wxT("Set Linked Table"), wxT("Set Linked Table."));
+        }
+        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_BUTTON")
+        {
+            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Button Label"), wxT("Set the Button Label."));
+            menu->Append(ID_MENU_EDIT_DESCRIPTION, wxT("Set Button Description"), wxT("Set Button Description."));
+            menu->Append(ID_MENU_MANAGE_ACTIONS, wxT("Manage Actions"), wxT("Manage Actions"));
+
+        }
+        else if(m_pObCurrentFormControl->GetTypeName()!="CTL_RECORD_SELECTOR")
+        {
+            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
+            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
+
+            //Don't do this.
+            //menu->Append(ID_MENU_EDIT_SET_FLAGS, wxT("Set Flags"), wxT("Set flags for this controlFS."));
+        }
+
+
+        menu->Append(ID_MENU_DELETE_CONTROL, wxT("Delete Control"), wxT("Delete Control."));
+    }
+    else{
+        menu->Append(ID_MENU_RUN_QUERY, wxT("Test query"), wxT("Test query."));
+        // menu->AppendSeparator();
+    }
+
+    PopupMenu( menu, m_MousePos);
+
+    //Tell the parent to add a table to the drawing at the mouse point.
+    MyEvent my_event( this );
+    my_event.m_bStatusMessage=true;
+    my_event.m_pMousePoint=m_MousePos;
+    GetParent()->ProcessWindowEvent( my_event );
+
+}
 
 DesignFormPanel::~DesignFormPanel()
 {
@@ -116,15 +186,26 @@ wxString DesignFormPanel::GetFormID()
 //MENU EVENT FUNCTIONS
 void DesignFormPanel::OnMenuEditStatic(wxCommandEvent& event)
 {
+    wxString sData = PromptEditSingleTextDialog("Label","Set Label","Label");
+    m_pObCurrentFormControl->SetLabel(sData);
+    RedrawControlObjects();
+}
+
+void DesignFormPanel::OnMenuEditDescription(wxCommandEvent& event)
+{
+    wxString sData = PromptEditSingleTextDialog("Short_Description","Edit short description","Short Description.");
+    m_pObCurrentFormControl->SetDescription(sData);
+    RedrawControlObjects();
+}
+
+wxString DesignFormPanel::PromptEditSingleTextDialog(wxString sKey, wxString sDialogTitle, wxString sLabel)
+{
     if(m_pObCurrentFormControl!= nullptr){
 
-        wxString sControlTypeName = m_pObCurrentFormControl->GetTypeName();
         wxString sControlId = m_pObCurrentFormControl->GetControlID();
 
-        SingleTextDlg * pDlg = new SingleTextDlg(nullptr, "Set label.", "Label");
+        SingleTextDlg * pDlg = new SingleTextDlg(nullptr, sDialogTitle, sLabel);
 
-        wxString sLabel="";
-        wxString sKey="Label";
         Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,sKey,sLabel);
 
         pDlg->SetDataValue("ID_TEXT",sLabel);
@@ -133,12 +214,35 @@ void DesignFormPanel::OnMenuEditStatic(wxCommandEvent& event)
 
             sLabel = pDlg->GetDataValue("ID_TEXT");
             Utility::SaveTableData(Settings.sDatabase,"usr_controls",sControlId,sKey,sLabel);
-            m_pObCurrentFormControl->SetLabel(sLabel);
+            //We need to create a new entry in the Form queries.
+        }
+        pDlg->Destroy();
+    }
+
+    return sLabel;
+}
+
+void DesignFormPanel::OnManageActions(wxCommandEvent& event)
+{
+
+    if(m_pObCurrentFormControl!= nullptr){
+
+        wxString sControlId = m_pObCurrentFormControl->GetControlID();
+        ManageActionsDlg * pDlg = new ManageActionsDlg(nullptr, "Avaliable actions", "Select Action");
+        pDlg->SetControlID(sControlId);
+        pDlg->Load();
+
+        if(pDlg->ShowModal()==wxOK) {
+
+            pDlg->Save();
+            //So we can redraw on the screen.
+            m_pObCurrentFormControl->SetAction(pDlg->GetAction());
             RedrawControlObjects();
 
             //We need to create a new entry in the Form queries.
         }
         pDlg->Destroy();
+
     }
 }
 
@@ -347,65 +451,7 @@ wxSize DesignFormPanel::GetSizeDiagramExtend()
     return size;
 }
 
-void DesignFormPanel::rightClick(wxMouseEvent& event)
-{
-    m_pObCurrentFormControl= nullptr;
 
-    m_MousePos =  event.GetPosition(); //Remember the mouse position to draw
-
-    ObControl* pCtl = GetObjectHitByMouse(m_MousePos);
-    //Diagram menus
-    //Create a context menu to do stuff here.
-    auto *menu = new wxMenu;
-
-    if(pCtl!= nullptr)
-    {
-        m_pObCurrentFormControl = pCtl;
-
-        if(m_pObCurrentFormControl->GetTypeName()=="CTL_STATIC" || m_pObCurrentFormControl->GetTypeName()=="CTL_BUTTON")
-        {
-            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
-        }
-        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SPACER" ){
-
-        }
-        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION"){
-            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
-            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
-            menu->Append(ID_MENU_SELECTION_OPTIONS, wxT("Manage Options"), wxT("Manage options."));
-        }
-        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION_LINKED_NAME"
-                    || m_pObCurrentFormControl->GetTypeName()=="CTL_SELECTION_LOOKUP_NAME"){
-            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
-            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
-            menu->Append(ID_MENU_EDIT_LINKED_TABLE, wxT("Set Linked Table"), wxT("Set Linked Table."));
-        }
-        else if(m_pObCurrentFormControl->GetTypeName()!="CTL_RECORD_SELECTOR")
-        {
-            menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));
-            menu->Append(ID_MENU_EDIT_LINKED_FIELD, wxT("Set Linked Field"), wxT("Edit table definitions."));
-
-            //Don't do this.
-            //menu->Append(ID_MENU_EDIT_SET_FLAGS, wxT("Set Flags"), wxT("Set flags for this controlFS."));
-        }
-
-
-        menu->Append(ID_MENU_DELETE_CONTROL, wxT("Delete Control"), wxT("Delete Control."));
-    }
-    else{
-        menu->Append(ID_MENU_RUN_QUERY, wxT("Test query"), wxT("Test query."));
-        // menu->AppendSeparator();
-    }
-
-    PopupMenu( menu, m_MousePos);
-
-    //Tell the parent to add a table to the drawing at the mouse point.
-    MyEvent my_event( this );
-    my_event.m_bStatusMessage=true;
-    my_event.m_pMousePoint=m_MousePos;
-    GetParent()->ProcessWindowEvent( my_event );
-
-}
 
 void DesignFormPanel::mouseDoubleClick(wxMouseEvent& event)
 {
@@ -584,14 +630,13 @@ void DesignFormPanel::LoadControlObjects()
     if(saControl.GetCount()>0){
         for(int index=0;index<count;index++){
             wxString sData="";
-            wxString sKey="ObControlShow";
 
             wxString sControlId = saControl[index].GetData("usr_controlsId");
             wxString sTypeName = saControl[index].GetData("typeName");
             wxString sTypeID = saControl[index].GetData("usr_control_typesId");
             wxString sEntireTableData = saControl[index].GetData("table_data");
 
-            Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,sKey,sData,sEntireTableData);
+            Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,"ObControlShow",sData,sEntireTableData);
             if(sData=="yes"){
                 //Load the data and create the table object.
                 //wxString sTableID = Utility::GetTableIdFromSYS_TABLESByTableName(Settings.sDatabase,saControlId[index]);
@@ -612,6 +657,10 @@ void DesignFormPanel::LoadControlObjects()
 
                 Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Label"),sLabel);
                 pCtl->SetLabel(sLabel);
+                Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Short_Description"),sLabel);
+                pCtl->SetDescription(sLabel);
+                Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Action"),sLabel);
+                pCtl->SetAction(sLabel);
                 Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Field"),sField);
                 pCtl->SetField(sField);
 

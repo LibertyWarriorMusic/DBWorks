@@ -196,6 +196,7 @@ enum {
     CTL_SPACER,
     CTL_STATIC,
     CTL_TEXT,
+    CTL_PASSWORD,
     CTL_MULTI_TEXT,
     CTL_SELECTION_ADDITIVE,
     CTL_SELECTION,
@@ -209,10 +210,13 @@ enum {
     CTL_SELECTION_LINKED_ID,
     CTL_RECORD_SELECTOR,
     CTL_LISTBOX,
-    CTL_MYTEXTCTRL
+    CTL_MYTEXTCTRL,
+    CTL_TIME
 };
 class ListBoxManager;
 class MyTextCtrl;
+class myButton;
+class RecordSelector;
 
 //This class is used to generate fields for either database forms or dialog based forms
 class FieldCtlItem  : public TableField
@@ -229,16 +233,18 @@ public:
     wxDatePickerCtrl *datePickerCtl;
     wxCheckBox *pCheckBox;
     wxButton *pButton;
+    myButton *pmyButton;
     wxListBox *pListBox;
     MyTextCtrl *pMyTextCtrl;
+    RecordSelector *pRecordSelector;
 
     int iTypeOfControl; //Used to identify the type of control we have, combo - checkbox. Identified by the enum above
     bool bFound; // A temp field used for searching items.
 
     wxBoxSizer *pSizer; // The controls will be stored in a box sizer
-    wxString sIdentifier; // Used to identify this control in the list when we retrieve or set data
-    wxString sData;//Used to store generic data for this field item.
-    wxString sDescription; // A description associated with this control
+    wxString m_sIdentifier; // Used to identify this control in the list when we retrieve or set data
+    wxString m_sData;//Used to store generic data for this field item.
+    wxString m_sDescription; // A description associated with this control
 
     //Used in the run form
     wxString m_sTypeName;
@@ -246,7 +252,7 @@ public:
     wxString m_sTypeId;
     wxString m_sControlId;
     wxString m_sLabel;
-    wxString m_sField;
+    //wxString m_sField;
 
     wxRect m_rect; // Used to determine the order in which to layout the controls or the exact position of the control
 
@@ -262,16 +268,16 @@ public:
         fieldDefault="";
         Title="";
         Flags="";
-        sData="";
-        sDescription="";
-        sIdentifier="";
+        m_sData="";
+        m_sDescription="";
+        m_sIdentifier="";
 
         m_sTypeName="";
         m_sFormId="";
         m_sTypeId="";
         m_sControlId="";
         m_sLabel="";
-        m_sField="";
+        //m_sField=""; USE fieldName
 
         iTypeOfControl=0;
         bFound=false;
@@ -289,8 +295,10 @@ public:
         pSizer= nullptr;
         pCheckBox= nullptr;
         pButton = nullptr;
+        pmyButton = nullptr;
         pListBox = nullptr;
         pMyTextCtrl = nullptr;
+        pRecordSelector = nullptr;
         iTypeOfControl=CTL_NULL; //Set the control type as a simple text as default
     };
 
@@ -305,6 +313,8 @@ public:
             iTypeOfControl = CTL_STATIC;
         else if(m_sTypeName=="CTL_TEXT")
             iTypeOfControl = CTL_TEXT;
+        else if(m_sTypeName=="CTL_PASSWORD")
+            iTypeOfControl = CTL_PASSWORD;
         else if(m_sTypeName=="CTL_MULTI_TEXT")
             iTypeOfControl = CTL_MULTI_TEXT;
         else if(m_sTypeName=="CTL_SELECTION_ADDITIVE")
@@ -333,6 +343,8 @@ public:
             iTypeOfControl = CTL_LISTBOX;
         else if(m_sTypeName=="CTL_MYTEXTCTRL")
             iTypeOfControl = CTL_MYTEXTCTRL;
+        else if(m_sTypeName=="CTL_TIME")
+            iTypeOfControl = CTL_TIME;
     };
 };
 

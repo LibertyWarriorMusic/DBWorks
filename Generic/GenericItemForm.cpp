@@ -657,7 +657,7 @@ void GenericItemForm::InsertItem(){
 
                             wxArrayString sArray;
                             wxString flags = itemArray[i].Flags;
-                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            flags.Replace( "SELECTION_LINKED_ID", "SELECTION");
                             Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableId = sArray[0];
@@ -785,7 +785,7 @@ void GenericItemForm::UpdateItem(){
 
                             wxArrayString sArray;
                             wxString flags = itemArray[i].Flags;
-                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                            flags.Replace( "SELECTION_LINKED_ID", "SELECTION");
                             Utility::ExtractSelectionItems(sArray,itemArray[i].Flags);
 
                             wxString tableId = sArray[0];
@@ -856,7 +856,7 @@ void GenericItemForm::UpdateItem(){
                     
             }
             
-            queryString = queryString + "WHERE " + m_sKeyName + " = " + m_sId;
+            queryString = queryString + " WHERE " + m_sKeyName + " = " + m_sId;
             Query query = conn.query(queryString);
             query.execute();
         }
@@ -978,7 +978,7 @@ void GenericItemForm::LoadFields()
 
                                             wxArrayString sArray;
                                             wxString flags = itemArray[index].Flags;
-                                            flags.Replace( "SELECTION_LINKED_NAME", "SELECTION");
+                                            flags.Replace( "SELECTION_LINKED_ID", "SELECTION");
                                             Utility::ExtractSelectionItems(sArray,itemArray[index].Flags);
 
                                             wxString tableId = sArray[0];

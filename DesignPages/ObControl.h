@@ -13,7 +13,9 @@ public:
     void SetTypeID(wxString sId);
     void SetFormID(wxString sId);
     void SetLabel(wxString sLabel);
+    void SetDescription(wxString sDescription);
     void SetField(wxString sField);
+    void SetAction(wxString sAction);
 
     wxString GetTypeName();
     wxString GetTypeID();
@@ -21,6 +23,7 @@ public:
     wxString GetFormID();
     wxString GetLabel();
     wxString GetField();
+    wxString GetAction();
 
     ObControl();
     wxRect GetControlRect();
@@ -37,7 +40,9 @@ private:
     wxString m_sTypeId;
     wxString m_sControlId;
     wxString m_sLabel;
+    wxString m_sDescription;
     wxString m_sField;
+    wxString m_sAction;
 
     wxRect m_ControlRect;
 

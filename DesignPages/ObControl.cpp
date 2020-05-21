@@ -15,6 +15,7 @@ ObControl::ObControl()
     m_sTypeId="";
     m_sFormId="";
     m_sLabel="";
+    m_sDescription="";
     m_sField="";
 
     m_ControlRect.x=0;
@@ -128,9 +129,24 @@ void ObControl::SetField(wxString sField)
     m_sField=sField;
 }
 
+void ObControl::SetAction(wxString sAction)
+{
+
+    m_sAction = sAction;
+}
+
+void ObControl::SetDescription(wxString sDescription)
+{
+    m_sDescription=sDescription;
+}
 wxString ObControl::GetField()
 {
     return m_sField;
+}
+
+wxString ObControl::GetAction()
+{
+    return m_sAction;
 }
 
 wxString ObControl::GetLabel()
@@ -214,12 +230,21 @@ void ObControl::DrawControlObject(wxDC&  dc){
     dc.DrawRectangle(m_ControlRect);
 
     wxString sTextToDraw = m_sTypeName;
+
+    if(!m_sDescription.IsEmpty()){
+        sTextToDraw += " - Description: "+m_sDescription;
+    }
+
     if(!m_sLabel.IsEmpty()){
         sTextToDraw += " - Label: "+m_sLabel;
     }
 
     if(!m_sField.IsEmpty()){
         sTextToDraw += " - Field: "+m_sField;
+    }
+
+    if(!m_sAction.IsEmpty()){
+        sTextToDraw += " - Action: "+m_sAction;
     }
 
     dc.DrawText(sTextToDraw,m_ControlRect.x+10,m_ControlRect.y+10);

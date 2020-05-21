@@ -6,15 +6,20 @@
 #include <wx/hyperlink.h>
 #include <wx/datectrl.h>
 
+#include "../CustomControls/myButton.h"
+#include "../CustomControls/RecordSelector.h"
 #include "../MyEvent.h"
 #include "../Shared/Utility.h"
 #include "../Shared/global.h"
+#include <mysql.h>
+#include <mysql++.h>
+
 
 #include "RunForm.h"
 
-
+using namespace mysqlpp;
 wxBEGIN_EVENT_TABLE(RunForm, wxFrame)
-
+                EVT_MYEVENT(RunForm::OnMyEvent)
 wxEND_EVENT_TABLE()
 
 
@@ -23,13 +28,20 @@ RunForm::RunForm( wxWindow* parent, wxWindowID id, const wxString& title, const 
     m_CalculatedHeightWindow=0;
     m_sOldSelectionText="";
     wxString m_sFormId=""; //Set for testing
+    m_sCurrentId="";
+    m_bLoadFields=false;
 
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 }
-void RunForm::Create()
+void RunForm::Create(wxString sQuery)
 {
+    SetQuery(sQuery);
+    m_bLoadFields=false;
     LoadControlObjects();
     RenderAllControls();
+
+    if(m_bLoadFields)
+        LoadFields(m_sCurrentId);
 }
 
 wxString RunForm::GetFormID()
@@ -55,10 +67,30 @@ int RunForm::GetFormMode()
 void RunForm::SetQuery(wxString sQuery)
 {
     m_sBuildQuery = sQuery;
+    //Extract all the table names from the select query.
+    Utility::LoadStringArrayWithTableNamesFromSelectQuery(m_sBuildQuery, m_TableList);
 }
 
-wxString RunForm::GetQuery()
+wxString RunForm::GetQuery(wxString sFormId)
 {
+
+    if(sFormId.IsEmpty())
+        return m_sBuildQuery;
+
+    //If we have a form ID, get the query from the database.
+    m_sFormId=sFormId;
+
+    //Load Query String
+    wxString Query = "SELECT usr_queries.queryDefinition, usr_forms.usr_formsId, usr_queries.usr_queriesId";
+    Query+= " FROM usr_queries, usr_forms";
+    Query+= " WHERE usr_forms.usr_queriesId = usr_queries.usr_queriesId";
+    Query+= " AND usr_forms.usr_formsId = "+ m_sFormId +" LIMIT 1";
+
+    ArrayFieldRecord aRecord;
+    Utility::LoadArrayFieldRecordFromQuery(aRecord, Query);
+    if(aRecord.GetCount()==1)
+        m_sBuildQuery = aRecord[0].GetData("queryDefinition");
+
     return m_sBuildQuery;
 }
 
@@ -107,7 +139,7 @@ void RunForm::LoadControlObjects()
                 // Also, when creating controls in the dialog class, sIdentifier is used to identify the controls.
                 //This the DialogBaseClass, these are public functions and sIdentifier can be set to any value.
                 // In order to identify controls, we set sIdentifier = sControlID which is a unique field.
-                pCtl->sIdentifier = sControlId;
+                pCtl->m_sIdentifier = sControlId;
 
                 pCtl->m_sControlId=sControlId;
                 pCtl->m_sFormId=GetFormID();
@@ -127,10 +159,17 @@ void RunForm::LoadControlObjects()
                 Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("ObControlPositionY"),yPos);
 
                 Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Label"),sLabel);
-
                 pCtl->m_sLabel=sLabel;
+
+                Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Short_Description"),sLabel);
+                pCtl->m_sDescription=sLabel;
+
                 Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,wxT("Field"),sField);
-                pCtl->m_sField=sField;
+                //pCtl->m_sField=sField;
+                sField.Trim(true);
+                sField.Trim(false);
+                pCtl->fieldName=sField;
+
 /*
                 int lxPos = Utility::StringToInt(xPos);
                 int lyPos = Utility::StringToInt(yPos);
@@ -152,45 +191,6 @@ void RunForm::LoadControlObjects()
     }
 }
 
-//Before you dropdown, save the combo contents.
-void RunForm::OnComboDropDown( wxCommandEvent& event )
-{
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-    m_sOldSelectionText = combo->GetValue();
-}
-
-void RunForm::OnComboChange( wxCommandEvent& event )
-{
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-    wxString value = combo->GetStringSelection();
-
-    if(m_sOldSelectionText.IsEmpty())
-        combo->SetValue(value);
-    else{
-        m_sOldSelectionText << " - " << value;
-        combo->SetValue(m_sOldSelectionText);
-    }
-}
-
-void RunForm::OnComboCloseUp( wxCommandEvent& event )
-{
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-
-
-    //Remove the comments from the combo.
-    wxString value = combo->GetStringSelection();
-    int i = value.find('[',0);
-
-    if(i!= wxNOT_FOUND){
-        value = value.Left(i);
-        value = value.Trim(true);
-        combo->SetValue(value);
-    }
-}
-
-RunForm::~RunForm(){
-
-}
 
 FieldCtlItem* RunForm::NewFieldDataCtrl()
 {
@@ -274,6 +274,8 @@ void RunForm::RenderControl(int index)
     wxString sFlags="";
     wxString sTableName="";
     wxString sFieldName="";
+    wxString sAction="";
+    wxString sControlId="";
     bool bWebLink = false;
     unsigned long style=0;
 
@@ -341,6 +343,34 @@ void RunForm::RenderControl(int index)
 
             m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
             break;
+        case CTL_PASSWORD :
+            gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
+            gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY"))
+                style = wxTE_READONLY;
+                //The only place we actually want to see the password is when we view the table.
+
+
+            style |= wxTE_PASSWORD;
+
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+            gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+
+            m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+            break;
         case CTL_MULTI_TEXT :
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
@@ -386,13 +416,12 @@ void RunForm::RenderControl(int index)
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Linked_Table",sTableName);
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Display_Field",sFieldName);
 
-            sFlags = "SELECTION_LOOKUP_NAME{"+sTableName+";"+sFieldName+";}";
-            Utility::ExtractSelectionLookupItemsName(m_asSelectionItemArray,sFlags);
 
             m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
             //Fill the list box with the selection items.
+            Utility::LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, m_asSelectionItemArray,sTableName,sFieldName);
             Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
 
             if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
@@ -410,19 +439,17 @@ void RunForm::RenderControl(int index)
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
             m_asSelectionItemArray.Clear();
+            sControlId = m_CtrlDataItem[index].m_sControlId;
 
-            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Linked_Table",sTableName);
-            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Display_Field",sFieldName);
-
-            sFlags = "SELECTION_LOOKUP_NAME{"+sTableName+";"+sFieldName+";}";
-            Utility::ExtractSelectionLookupItemsName(m_asSelectionItemArray,sFlags);
+            Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,"Linked_Table",sTableName);
+            Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,"Display_Field",sFieldName);
 
             m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
             //Fill the list box with the selection items.
+            Utility::LoadStringArrayFromDatabaseTableByName(Settings.sDatabase, m_asSelectionItemArray,sTableName,sFieldName);
             Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
-                m_CtrlDataItem[index].comCtl->Append(m_asSelectionItemArray[index]);
 
             if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
                 m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
@@ -439,16 +466,12 @@ void RunForm::RenderControl(int index)
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
-            style=m_CtrlDataItem[index].comCtl->GetWindowStyle();
+            style=0;
             //Create a wxComboCtrl. We need to fill it with the values extracted from
 
             //Extract all the selection items.
             m_asSelectionItemArray.Clear();
-            Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
-
-            // If there is no selection items in the flags, they will be in usr_control_items table.
-            if(m_asSelectionItemArray.IsEmpty())
-                LoadSelectionItemsFromUsrControlItemsTable(m_CtrlDataItem[index].m_sControlId);
+            LoadSelectionItemsFromUsrControlItemsTable(m_CtrlDataItem[index].m_sControlId);
 
             // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
             // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
@@ -462,33 +485,21 @@ void RunForm::RenderControl(int index)
             }
 
             m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
-
-
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
-
 
             //Fill the list box with the selection items.
             Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
-            //for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-            //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
 
             //Make sure you set the default value after you append selection items.
             if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
                 m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
 
-
             m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
 
             //Attache handlers to buttons
-
-            // Connect a closeup event so I can remove the comments.
-            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( RunForm::OnComboCloseUp ), nullptr, this );
-
             //These events will prevent the replacement of text and add them together.
-
             m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( RunForm::OnComboChange ), nullptr, this );
             m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( RunForm::OnComboDropDown ), nullptr, this );
-
 
             m_MainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
             break;
@@ -506,15 +517,13 @@ void RunForm::RenderControl(int index)
 
             //Extract all the selection items.
             m_asSelectionItemArray.Clear();
-            Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
-
-            // If there is no selection items in the flags, they will be in usr_control_items table.
-            if(m_asSelectionItemArray.IsEmpty())
-                LoadSelectionItemsFromUsrControlItemsTable(m_CtrlDataItem[index].m_sControlId);
+            LoadSelectionItemsFromUsrControlItemsTable(m_CtrlDataItem[index].m_sControlId);
 
             // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
             // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
             //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+
+
             if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
                 style |= wxCB_READONLY;
             }
@@ -542,10 +551,7 @@ void RunForm::RenderControl(int index)
 
             //Attache handlers to buttons
             // Connect a closeup event so I can remove the comments.
-            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( RunForm::OnComboCloseUp ), nullptr, this );
-
-
-
+            
             m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
             break;
         case CTL_CHECKBOX :
@@ -593,53 +599,110 @@ void RunForm::RenderControl(int index)
 
         case CTL_WEBLINK :
 
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
+            gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
 
-                style = 0;
+            style = 0;
 
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
-                    style = wxTE_READONLY;
-                    bWebLink=true;
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
+                style = wxTE_READONLY;
+                bWebLink=true;
+            }
+
+            if(bWebLink){
+                //This Hyperlink control needs to have a URL and label, so I just added google, but it gets writen over
+                m_CtrlDataItem[index].linkCtl = new wxHyperlinkCtrl( this, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
+                m_CtrlDataItem[index].linkCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+                gSizer1->Add( m_CtrlDataItem[index].linkCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+                m_CtrlDataItem[index].linkCtl->SetURL("");
+                m_CtrlDataItem[index].linkCtl->SetLabel("");
+
+                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty()){
+                    m_CtrlDataItem[index].linkCtl->SetURL(m_CtrlDataItem[index].fieldDefault);
+                    m_CtrlDataItem[index].linkCtl->SetLabel(m_CtrlDataItem[index].fieldDefault);
                 }
+            }else{
 
-                if(bWebLink){
-                    //This Hyperlink control needs to have a URL and label, so I just added google, but it gets writen over
-                    m_CtrlDataItem[index].linkCtl = new wxHyperlinkCtrl( this, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
-                    m_CtrlDataItem[index].linkCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
-                    gSizer1->Add( m_CtrlDataItem[index].linkCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-                    m_CtrlDataItem[index].linkCtl->SetURL("");
-                    m_CtrlDataItem[index].linkCtl->SetLabel("");
-
-                    if(!m_CtrlDataItem[index].fieldDefault.IsEmpty()){
-                        m_CtrlDataItem[index].linkCtl->SetURL(m_CtrlDataItem[index].fieldDefault);
-                        m_CtrlDataItem[index].linkCtl->SetLabel(m_CtrlDataItem[index].fieldDefault);
-                    }
-                }else{
-
-                    m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
-                    m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
-                    gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+                m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+                m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+                gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
 
-                    if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                        m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-                }
+                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                    m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+            }
 
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+            m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+
+        break;
+
+
+        case CTL_BUTTON :
+
+
+            gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sDescription);
+            gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style = 0;
+
+            m_CtrlDataItem[index].pmyButton = new myButton( this, m_CtrlDataItem[index].m_sLabel );
+            m_CtrlDataItem[index].pmyButton->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+            gSizer1->Add( m_CtrlDataItem[index].pmyButton,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+            m_CtrlDataItem[index].pmyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( RunForm::OnButtonClick ), nullptr, this );
+
+
+            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Action",sAction);
+            m_CtrlDataItem[index].pmyButton->SetAction(sAction);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+            m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
+
+            break;
+
+        case CTL_RECORD_SELECTOR :
+
+
+            gSizer1 = new wxBoxSizer( wxHORIZONTAL );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sDescription);
+            gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style = 0;
+
+            m_CtrlDataItem[index].pRecordSelector = new RecordSelector( this, "Record Selector" );
+            m_CtrlDataItem[index].pRecordSelector->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+            gSizer1->Add( m_CtrlDataItem[index].pRecordSelector,0, wxALL, BORDER_WIDTH );
+
+            m_CtrlDataItem[index].pRecordSelector->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( RunForm::OnChangeRecord ), nullptr, this );
+
+            if(m_TableList.GetCount()>0){
+                m_CtrlDataItem[index].pRecordSelector->LoadAllRecordID(m_TableList[0]);
+                    m_sCurrentId = m_CtrlDataItem[index].pRecordSelector->GetCurrentRecordID();
+            }
+
+
+            //Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Action",sAction);
+
+            //We need to load the record selector with all the tableId's from the query.
+            //m_CtrlDataItem[index].pRecordSelector->SetAction(sAction);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+            m_MainFormSizer->Add( gSizer1,0, 0, BORDER_WIDTH );
+
+            m_bLoadFields=true;
 
             break;
 
         default:
             break;
     }
-
-
-
 }
 
 void RunForm::LoadSelectionItemsFromUsrControlItemsTable(wxString sControlId){
@@ -724,7 +787,7 @@ void RunForm::SetDataValue(wxString sIdentifier,wxString sData)
 
     bool bState=false;
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -732,33 +795,33 @@ void RunForm::SetDataValue(wxString sIdentifier,wxString sData)
 
                     break;
                 case CTL_SPACER :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     break;
                 case CTL_STATIC :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     break;
                 case CTL_TEXT :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].textCtl->SetValue(sData);
                     break;
                 case CTL_MULTI_TEXT :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].textCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION_LOOKUP_NAME :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION_ADDITIVE :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_CHECKBOX :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     sData.Lower();
 
                     if (sData == "true")
@@ -769,11 +832,11 @@ void RunForm::SetDataValue(wxString sIdentifier,wxString sData)
                     m_CtrlDataItem[index].pCheckBox->SetValue(bState);
                     break;
                 case CTL_DATE :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].datePickerCtl->SetValue(Utility::StringToDate(sData));
                     break;
                 case CTL_WEBLINK :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].linkCtl->SetURL(sData);
                     m_CtrlDataItem[index].linkCtl->SetLabel(sData);
                     break;
@@ -794,36 +857,36 @@ wxString RunForm::GetDataValue(wxString sIdentifier)
     wxString sTempData="";
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
 
                 case CTL_SPACER :
-                        return m_CtrlDataItem[index].sData;
+                        return m_CtrlDataItem[index].m_sData;
 
                 case CTL_STATIC :
-                    return m_CtrlDataItem[index].sData;
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_TEXT :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].textCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].textCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_MULTI_TEXT :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].textCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].textCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION_LOOKUP_NAME :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION_ADDITIVE :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_CHECKBOX :
 
@@ -834,16 +897,16 @@ wxString RunForm::GetDataValue(wxString sIdentifier)
                         sTempData = "true";
                     else if (!bState)
                         sTempData = "false";
-                    m_CtrlDataItem[index].sData = sTempData;
+                    m_CtrlDataItem[index].m_sData = sTempData;
                     return sTempData;
 
                 case CTL_DATE :
-                    m_CtrlDataItem[index].sData = Utility::DateToString(m_CtrlDataItem[index].datePickerCtl->GetValue());
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = Utility::DateToString(m_CtrlDataItem[index].datePickerCtl->GetValue());
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_WEBLINK :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].linkCtl->GetURL();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].linkCtl->GetURL();
+                    return m_CtrlDataItem[index].m_sData;
 
                 default:
                     break;
@@ -860,7 +923,7 @@ void* RunForm::GetControl(wxString sIdentifier)
     wxString sTempData="";
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -898,7 +961,7 @@ bool RunForm::GetCheckState(wxString sIdentifier)
     bool bState=false;
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -918,7 +981,7 @@ bool RunForm::GetCheckState(wxString sIdentifier)
 void RunForm::SetCheckState(wxString sIdentifier, bool bCheckState){
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
             switch(m_CtrlDataItem[index].iTypeOfControl) {
 
@@ -934,7 +997,7 @@ void RunForm::SetCheckState(wxString sIdentifier, bool bCheckState){
 
 int RunForm::GetCtlIndex(wxString sIdentifier){
     for (int index=0; index < m_CtrlDataItem.GetCount();index++) {
-        if (sIdentifier == m_CtrlDataItem[index].sIdentifier)
+        if (sIdentifier == m_CtrlDataItem[index].m_sIdentifier)
             return index;
     }
     return wxNOT_FOUND;
@@ -944,9 +1007,544 @@ int RunForm::GetCtlIndex(wxString sIdentifier){
 void RunForm::SetFlags(wxString sIdentifier, wxString sFlags)
 {
     for (int index=0; index < m_CtrlDataItem.GetCount();index++) {
-        if (sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if (sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             m_CtrlDataItem[index].Flags=sFlags;
             return;
         }
     }
 }
+
+
+//ACTIONS:
+
+void RunForm::OnButtonClick( wxCommandEvent& event )
+{
+    myButton * pButton = (myButton*) event.GetEventObject();
+    if(pButton!= nullptr){
+        wxString sAction = pButton->GetAction();
+
+        if(sAction=="ACTION_EXIT"){
+            Close(true);
+        }
+        else if(sAction=="ACTION_INSERT") {
+            if(m_TableList.IsEmpty()){
+                wxLogMessage("Unable to extract table from query, check form query.");
+            }else if (m_TableList.GetCount()>1){
+                wxLogMessage("The form query references more than one table, insert can only work on one table.");
+            }
+            else if(m_TableList.GetCount()==1){
+                //wxLogMessage(sArray[0]);
+                InsertItem(m_TableList[0]);
+                Close(true);
+            }
+
+        }
+        else if(sAction=="ACTION_UPDATE") {
+            if(m_TableList.IsEmpty()){
+                wxLogMessage("Unable to extract table from query, check form query.");
+            }else if (m_TableList.GetCount()>1){
+                wxLogMessage("The form query references more than one table, insert can only work on one table.");
+            }
+            else if(m_TableList.GetCount()==1){
+                //wxLogMessage(sArray[0]);
+                UpdateItem(m_TableList[0], m_sCurrentId);
+                Close(true);
+            }
+        }
+        else if(sAction=="ACTION_DELETE") {
+            if(m_TableList.IsEmpty()){
+                wxLogMessage("Unable to extract table from query, check form query.");
+            }else if (m_TableList.GetCount()>1){
+                wxLogMessage("The form query references more than one table, insert can only work on one table.");
+            }
+            else if(m_TableList.GetCount()==1){
+                DeleteItem(m_TableList[0], m_sCurrentId);
+                Close(true);
+            }
+        }
+        else
+            wxLogMessage(sAction);
+    }
+}
+
+void RunForm::OnChangeRecord( wxCommandEvent& event )
+{
+    wxLogMessage("Change Record");
+}
+
+//Before you dropdown, save the combo contents.
+void RunForm::OnComboDropDown( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    m_sOldSelectionText = combo->GetValue();
+
+}
+
+void RunForm::OnComboChange( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    wxString value = combo->GetStringSelection();
+
+       if(m_sOldSelectionText.IsEmpty())
+          combo->SetValue(value);
+       else{
+          m_sOldSelectionText << " - " << value;
+          combo->SetValue(m_sOldSelectionText);
+      }
+}
+
+RunForm::~RunForm(){
+
+}
+
+void RunForm::InsertItem(wxString sTableName){
+
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    try{
+        // Connect to the sample database.
+        Connection conn(false);
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+            ParseSpecialCharacters();
+
+            wxString queryString;
+            int count = m_CtrlDataItem.GetCount();
+
+            if (count>0){
+
+                queryString = "INSERT INTO " +sTableName + " (";
+
+                for(int i=0;i<count;i++){
+
+                    //If we don't have a fieldName, then is might be a button, skip item
+                    if(m_CtrlDataItem[i].fieldName.IsEmpty())
+                        continue;
+
+                    if(Utility::IsReservedMySQLWord(m_CtrlDataItem[i].fieldName)){
+                        wxString msg = "The field is a mysql reserved word: "+m_CtrlDataItem[i].fieldName;
+                        wxLogMessage(msg);
+                        return;
+                    }
+
+                    queryString = queryString + m_CtrlDataItem[i].fieldName + ",";
+                }
+
+                int LenOfQuery = queryString.Length();
+                queryString = queryString.Left(LenOfQuery-1);
+
+                queryString = queryString + ") VALUES (";
+
+                for(int i=0;i<count;i++){
+
+                    //If we don't have a fieldName, then is might be a button, skip item
+                    if(m_CtrlDataItem[i].fieldName.IsEmpty())
+                        continue;
+
+                    wxString sValue;
+                    if(m_CtrlDataItem[i].textCtl != nullptr)
+                        sValue = m_CtrlDataItem[i].textCtl->GetValue();
+                    else if(m_CtrlDataItem[i].comCtl != nullptr){
+
+                        if(m_CtrlDataItem[i].iTypeOfControl == CTL_SELECTION_LOOKUP_NAME) {
+
+                            //We need to get this working, it's doing a linked name at the moment.
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+
+                            wxString tableName="";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Linked_Table",tableName);
+
+                            wxString fieldName = "";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Display_Field",fieldName);
+
+                            wxArrayString sTableResult;
+                            Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
+
+                        }else if(m_CtrlDataItem[i].iTypeOfControl == CTL_SELECTION_LINKED_NAME) {
+
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+
+                            wxString tableName="";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Linked_Table",tableName);
+
+                            wxString fieldName = "";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Display_Field",fieldName);
+
+                            wxArrayString sTableResult;
+                            Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
+                        }
+                        else
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+                    }
+                    else if(m_CtrlDataItem[i].datePickerCtl != nullptr)
+                        sValue = Utility::DateToString(m_CtrlDataItem[i].datePickerCtl->GetValue());
+                    else if(m_CtrlDataItem[i].linkCtl != nullptr)
+                        sValue = m_CtrlDataItem[i].linkCtl->GetURL();
+
+
+                    //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
+                    // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
+                    // These are important when we fill our combo with choices.
+                    if(m_CtrlDataItem[i].fieldType=="int")
+                        queryString = queryString + sValue + ",";
+                    else
+                        queryString = queryString + "'" + sValue + "',";
+                }
+            }
+
+            int LenOfQuery = queryString.Length();
+            queryString = queryString.Left(LenOfQuery-1);
+
+            queryString += ")";
+
+            Query query = conn.query(queryString);
+            if(!query.execute()){
+                wxLogMessage("Failed to insert.");
+            }
+        }
+
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+
+    } catch (const Exception& er) {
+        // Catch-all for any other MySQL++ exceptions
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    }
+}
+
+void RunForm::DeleteItem(wxString sTableName, wxString sId){
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    try{
+        // Connect to the sample database.
+        Connection conn(false);
+
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+            wxString queryString = " DELETE FROM " + sTableName + " WHERE " + sTableName + "Id = " + sId;
+            Query query = conn.query(queryString);
+            query.execute();
+        }
+
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+    } catch (const Exception& er) {
+        // Catch-all for any other MySQL++ exceptions
+    }
+}
+
+void RunForm::UpdateItem(wxString sTableName, wxString sId){
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    try{
+        // Connect to the sample database.
+        Connection conn(false);
+
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+            ParseSpecialCharacters();
+
+            wxString queryString = "UPDATE " + sTableName + " SET ";
+
+            // Run through the array and create the fields
+            int count = m_CtrlDataItem.GetCount();
+            int totalFields=0; // Count the total fields.
+
+            if (count>0){
+
+                for(int i=0;i<count;i++) {
+
+                    //If we don't have a fieldName, then is might be a button, skip item
+                    if (m_CtrlDataItem[i].fieldName.IsEmpty())
+                        continue;
+
+                    totalFields++;
+                }
+
+                for(int i=0;i<count;i++){
+
+
+                    //If we don't have a fieldName, then is might be a button, skip item
+                    if(m_CtrlDataItem[i].fieldName.IsEmpty())
+                        continue;
+
+                    wxString sValue;
+                    if(m_CtrlDataItem[i].textCtl != nullptr)
+                        sValue = m_CtrlDataItem[i].textCtl->GetValue();
+                    else if(m_CtrlDataItem[i].comCtl != nullptr){
+
+                        if(m_CtrlDataItem[i].iTypeOfControl == CTL_SELECTION_LOOKUP_NAME) {
+
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+
+                            wxString tableName="";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Linked_Table",tableName);
+
+                            wxString fieldName = "";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Display_Field",fieldName);
+
+                            wxArrayString sTableResult;
+                            Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
+
+                        }else if(m_CtrlDataItem[i].iTypeOfControl == CTL_SELECTION_LINKED_NAME) {
+
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+
+                            wxString tableName="";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Linked_Table",tableName);
+
+                            wxString fieldName = "";
+                            Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[i].m_sControlId,"Display_Field",fieldName);
+
+                            wxArrayString sTableResult;
+                            Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sTableResult, tableName, fieldName,sValue);
+                            if(sTableResult.GetCount()>0)
+                                sValue = sTableResult[0];
+                            else
+                                sValue = "0";// If we have an ID that can be NULL, then give it a value of 0
+                        }
+                        else
+                            sValue = m_CtrlDataItem[i].comCtl->GetValue();
+                    }
+
+                    else if(m_CtrlDataItem[i].datePickerCtl != nullptr)
+                        sValue = Utility::DateToString(m_CtrlDataItem[i].datePickerCtl->GetValue());
+                    else if(m_CtrlDataItem[i].linkCtl != nullptr)
+                        sValue = m_CtrlDataItem[i].linkCtl->GetURL();
+
+
+                    //If we have a linked selection, we don't save the value from the combo text, we save the ID from the table
+                    // The value in the combo will be the table name, so it doesn't matter here if we have a SELECTION_LINKED_ID or SELECTION_LINKED_NAME
+                    // These are important when we fill our combo with choices.
+                    if(m_CtrlDataItem[i].fieldType=="int")
+                            queryString = queryString + m_CtrlDataItem[i].fieldName + " = " + sValue + " ,";
+                    else
+                        queryString = queryString + m_CtrlDataItem[i].fieldName + " = '" + sValue + "' ,";
+                }
+            }
+            //Remove last ',';
+            int LenOfQuery = queryString.Length();
+            queryString = queryString.Left(LenOfQuery-1);
+
+            queryString = queryString + "WHERE " + sTableName + "Id = " + sId;
+            Query query = conn.query(queryString);
+            query.execute();
+        }
+
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+    } catch (const Exception& er) {
+        // Catch-all for any other MySQL++ exceptions
+    }
+}
+
+
+//This only removed " and ' from the field, this is not allowed in an entry.
+void RunForm::ParseSpecialCharacters()
+{
+
+
+    // Run through the array and create the fields
+    int count = m_CtrlDataItem.GetCount();
+
+    if (count>0){
+
+        for(int i=0;i<count;i++){
+
+            wxString st;
+
+            if(m_CtrlDataItem[i].textCtl != nullptr)
+                st = m_CtrlDataItem[i].textCtl->GetValue();
+            else if(m_CtrlDataItem[i].comCtl != nullptr)
+                st = m_CtrlDataItem[i].comCtl->GetValue();
+
+
+            st=Utility::Escape(st);
+
+            if(m_CtrlDataItem[i].textCtl != nullptr)
+                m_CtrlDataItem[i].textCtl->SetValue(st);
+            else if(m_CtrlDataItem[i].comCtl != nullptr)
+                m_CtrlDataItem[i].comCtl->SetValue(st);
+        }
+    }
+}
+
+void RunForm::OnMyEvent(MyEvent& event) {
+
+    if (event.m_bButtonClicked) {
+        //We clicked the record selector;
+        //Load the fields.
+        m_sCurrentId = event.m_sTableId;
+        LoadFields(m_sCurrentId);
+
+    }
+}
+
+//Load the form fields directly from the database rather than passing them in from the form given a passwordId
+void RunForm::LoadFields(wxString sId)
+{
+
+    if(sId.IsEmpty())
+        return;
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+    try{
+
+        if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                         (const_cast<char*>((const char*)server.mb_str())),
+                         (const_cast<char*>((const char*)user.mb_str())),
+                         (const_cast<char*>((const char*)pass.mb_str())))) {
+
+            if(m_TableList.GetCount()>0){
+
+
+                Query query = conn.query("select * from " + m_TableList[0] + " WHERE "+m_TableList[0]+"Id = " + sId);
+
+                StoreQueryResult res = query.store();
+
+                // Display results
+                if (res) {
+
+                    //There will only be one row
+                    // Get each row in result set, and print its contents
+                    for (size_t i = 0; i < res.num_rows(); ++i) {
+
+                        //Add a new row to the grid control.
+                        int count = m_CtrlDataItem.GetCount();
+
+
+                        if (count > 0) {
+
+                            for (int index = 0; index < count; index++) {
+
+                                //If we don't have a fieldName, then is might be a button, skip item
+                                if(m_CtrlDataItem[index].fieldName.IsEmpty())
+                                    continue;
+
+                                wxString fieldName = m_CtrlDataItem[index].fieldName;
+                                wxString strData1(res[i][fieldName], wxConvUTF8);
+
+                                wxString defaultValue = m_CtrlDataItem[index].fieldDefault;
+
+                                //Make sure we don't have an empty field because of a bug that cause field left to overwright the right field
+                                if (strData1.IsEmpty()) {
+                                    //This is where we can place a default value only if there is no value in the database.
+                                    if (!defaultValue.IsEmpty())
+                                        strData1 = defaultValue;
+                                    else if (m_CtrlDataItem[index].iTypeOfControl == CTL_DATE ) { //Check to see if the type is date, then set with current date.
+                                        wxDateTime now = wxDateTime::Now();
+                                        wxString dt = now.FormatDate();
+                                        strData1 = dt;
+                                    } else if (m_CtrlDataItem[index].iTypeOfControl == CTL_TIME ) { //Check to see if the type is date, then set with current date.
+                                        wxDateTime now = wxDateTime::Now();
+                                        wxString dt = now.FormatTime();
+                                        strData1 = dt;
+                                    } else if (m_CtrlDataItem[index].fieldType ==
+                                               "DATETIME") { //Check to see if the type is date, then set with current date.
+
+                                    } else if (m_CtrlDataItem[index].fieldType ==
+                                               "TIMESTAMP") { //Check to see if the type is date, then set with current date.
+
+                                    } else if (m_CtrlDataItem[index].fieldType ==
+                                               "YEAR") { //Check to see if the type is date, then set with current date.
+
+                                    }
+                                }
+
+                                if (m_CtrlDataItem[index].textCtl != nullptr)
+                                    m_CtrlDataItem[index].textCtl->SetValue(strData1);
+                                else if (m_CtrlDataItem[index].comCtl != nullptr) {
+
+                                    //If we have a linked ID, we want to show the table name, not the ID
+                                    if (m_CtrlDataItem[index].iTypeOfControl == CTL_SELECTION_LINKED_NAME) {
+
+                                        wxString tableName="";
+                                        Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Linked_Table",tableName);
+
+                                        wxString fieldName = "";
+                                        Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Display_Field",fieldName);
+
+                                        wxArrayString sTableResult;
+                                        strData1.Trim();
+
+                                        if (Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sTableResult,
+                                                                                       tableName, fieldName,
+                                                                                       tableName + "Id", strData1))
+                                            m_CtrlDataItem[index].comCtl->SetValue(sTableResult[0]);
+
+                                    } else
+                                        m_CtrlDataItem[index].comCtl->SetValue(strData1);
+                                } else if (m_CtrlDataItem[index].datePickerCtl != nullptr)
+                                    m_CtrlDataItem[index].datePickerCtl->SetValue(Utility::StringToDate(strData1));
+                                else if (m_CtrlDataItem[index].linkCtl != nullptr) {
+                                    m_CtrlDataItem[index].linkCtl->SetURL(strData1);
+                                    m_CtrlDataItem[index].linkCtl->SetLabel(strData1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }catch (BadQuery& er) { // handle any connection or
+        // query errors that may come up
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    } catch (const BadConversion& er) {
+        // Handle bad conversions
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    } catch (const Exception& er) {
+        // Catch-all for any other MySQL++ exceptions
+        //f->SetStatusText("Error: "+ wxString(er.what()));
+    }
+}
+

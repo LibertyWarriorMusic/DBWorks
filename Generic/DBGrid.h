@@ -41,6 +41,7 @@ private:
     void OnRunFilter(wxCommandEvent& event);
     void OnDesignPage(wxCommandEvent& event);
     void OnDesignForm(wxCommandEvent& event);
+    void OnRunForm(wxCommandEvent& event);
 public:
     DBGrid(wxWindow* _parent,wxWindowID _ID,wxPoint _pos,wxSize _size,long _style);
     ~DBGrid() override;

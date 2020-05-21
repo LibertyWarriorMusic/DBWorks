@@ -173,7 +173,7 @@ bool Utility::IsExactlyDivisable(double num, double div)
 }
 
 
-void Utility::LoadComboFromStringArray(wxComboBox *pCombo, const wxArrayString sArray)
+void Utility::LoadComboFromStringArray(wxComboBox *pCombo, const wxArrayString& sArray)
 {
     for ( int iIdx=0; iIdx<sArray.GetCount(); iIdx++ )
         pCombo->Append(sArray[iIdx]);
@@ -419,7 +419,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
         }
 
         //Uncomment this when you add a new type so this table can be recreated.
-        //ExecuteQuery(sDatabase,"drop table usr_control_types;",false);
+        ExecuteQuery(sDatabase,"drop table usr_control_types;",false);
 
         if(!DoesTableExist(sDatabase,"usr_control_types")){
 
@@ -440,6 +440,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query += "('CTL_STATIC'),";
             query += "('CTL_SPACER'),";
             query += "('CTL_TEXT'),";
+            query += "('CTL_PASSWORD'),";
             query += "('CTL_MULTI_TEXT'),";
             query += "('CTL_SELECTION_ADDITIVE'),";
             query += "('CTL_SELECTION'),";
@@ -449,14 +450,15 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query += "('CTL_BUTTON'),";
             query += "('CTL_SELECTION_LOOKUP_NAME'),";
             query += "('CTL_SELECTION_LINKED_NAME'),";
-            query += "('CTL_RECORD_SELECTOR');";
+            query += "('CTL_RECORD_SELECTOR'),";
+            query += "('CTL_TIME');";
 
             ExecuteQuery(sDatabase,query);
         }
 
 
         //Uncomment this when you add a new type so this table can be recreated.
-        //ExecuteQuery(sDatabase,"drop table usr_control_actions;",false);
+        ExecuteQuery(sDatabase,"drop table usr_control_actions;",false);
 
         if(!DoesTableExist(sDatabase,"usr_control_actions")){
 
@@ -477,6 +479,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query = "INSERT INTO usr_control_actions (actionName,script) VALUES ";
             query += "('ACTION_INSERT',''),";
             query += "('ACTION_UPDATE',''),";
+            query += "('ACTION_DELETE',''),";
             query += "('ACTION_SELECTION_CHANGED',''),";
             query += "('ACTION_RUN_SCRIPT',''),";
             query += "('ACTION_EXIT','');";
@@ -2377,6 +2380,11 @@ bool Utility::DoesFieldExitInTable(const wxString& sTableName,  const ArrayTable
 
                 int RowsInTable = res.num_rows();
 
+                //If we have added a field in the sys_fields, this will not be tested because we are cycling the
+                // rows from the DESCRIBE query. Return false is rows are not equal.
+                if(RowsInTable!=fieldItemList.GetCount()+1)
+                    return false;
+
                 // Get each row in result set, and print its contents
                 for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
 
@@ -3653,6 +3661,8 @@ bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString sT
 bool Utility::LoadTableData(wxString sDatabase, wxString sTableName, wxString sTableId, wxString KeyName, wxString &sData,wxString sEntireTableDataString)
 {
 
+    sData=""; //This should allways be cleared.
+    
     //STEP 1: Get the table_data field from sTableName.
     if(sEntireTableDataString.IsEmpty())
         sEntireTableDataString = GetTableDataString(sDatabase,sTableName,sTableId);
@@ -3874,6 +3884,7 @@ bool Utility::LoadStringArrayWithFieldNamesFromQuery(wxArrayString &aFields, wxS
     }
     return true;
 }
+
 bool Utility::LoadArrayFieldRecordFromQuery(ArrayFieldRecord &aRecord, wxString sQuery)
 {
 
@@ -3958,3 +3969,54 @@ bool Utility::LoadArrayFieldRecordFromQuery(ArrayFieldRecord &aRecord, wxString 
     return false;
 }
 
+void Utility::LoadStringArrayWithAllIDSFromTable(wxString sTableName, wxArrayString &m_asRecordID)
+{
+
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //SetStatusText("Database Connected");
+        wxString QueryString = "SELECT " + sTableName + "Id FROM " + sTableName;
+        Query query = conn.query(QueryString);
+        StoreQueryResult res = query.store();
+
+        //First we need to find the table name
+        // Display results
+        if (res) {
+
+            int RowsInTable = res.num_rows();
+
+            // Get each row in result set, and print its contents
+            for (size_t currentRow = 0; currentRow < RowsInTable; ++currentRow) {
+
+                try {
+                    wxString strData(res[currentRow][sTableName + "Id"], wxConvUTF8);
+                    m_asRecordID.Add(strData);
+                }
+                catch (int& num) {
+                    // wxLogMessage(MSG_DATABASE_FAIL_ROW);
+
+                }
+            }
+        }
+        else {
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+
+}

@@ -23,11 +23,14 @@ set(SOURCE_FILES
         CustomControls/myProgressControl.cpp
         CustomControls/ListBoxManager.cpp
         CustomControls/MyTextCtrl.cpp
+        CustomControls/myButton.cpp
+        CustomControls/RecordSelector.cpp
         TableDefDiagram/DiagramFrame.cpp
         TableDefDiagram/ObTablePanel.cpp
         TableDefDiagram/ObTable.cpp
         TableDefDiagram/TableDiagramFrame.cpp
         Dialog/SelectionFieldQueryDlg.cpp
+        Dialog/ManageActionsDlg.cpp
         Dialog/ListBoxDlg.cpp
         Dialog/LinkedTableDlg.cpp
         Dialog/SetFlagsDlg.cpp

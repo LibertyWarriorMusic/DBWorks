@@ -8,6 +8,8 @@
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
+//EXPERIMENTAL NOT USED
+
 class ListBoxManager : public wxWindow
 
 {
@@ -22,11 +24,6 @@ private:
 public:
     ListBoxManager(wxFrame* parent, wxString text);
     ListBoxManager(wxDialog* parent, wxString text);
-
-
-
-
-
 
     void paintEvent(wxPaintEvent & evt);
     void paintNow();

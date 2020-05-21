@@ -142,7 +142,7 @@ void DialogBaseClass::OnbOk( wxCommandEvent& event )
 
 int DialogBaseClass::GetCtlIndex(wxString sIdentifier){
     for (int index=0; index < m_CtrlDataItem.GetCount();index++) {
-        if (sIdentifier == m_CtrlDataItem[index].sIdentifier)
+        if (sIdentifier == m_CtrlDataItem[index].m_sIdentifier)
             return index;
     }
     return wxNOT_FOUND;
@@ -152,7 +152,7 @@ int DialogBaseClass::GetCtlIndex(wxString sIdentifier){
 void DialogBaseClass::SetFlags(wxString sIdentifier, wxString sFlags)
 {
     for (int index=0; index < m_CtrlDataItem.GetCount();index++) {
-        if (sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if (sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             m_CtrlDataItem[index].Flags=sFlags;
             return;
         }
@@ -172,8 +172,8 @@ void DialogBaseClass::AddCtlItem(int iTypeOfControl, wxString TitleName, wxStrin
     FieldCtlItem* ctlItem = NewFieldDataCtrl();
     ctlItem->Title= TitleName;
     ctlItem->iTypeOfControl = iTypeOfControl;
-    ctlItem->sDescription=Description;
-    ctlItem->sIdentifier=sIdentifier;
+    ctlItem->m_sDescription=Description;
+    ctlItem->m_sIdentifier=sIdentifier;
     m_CtrlDataItem.Add(ctlItem);
     int index = m_CtrlDataItem.GetCount();
 
@@ -604,35 +604,35 @@ void DialogBaseClass::SetDataValue(wxString sIdentifier,wxString sData)
 
     bool bState=false;
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
                 case CTL_STATIC :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     break;
                 case CTL_TEXT :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].textCtl->SetValue(sData);
                     break;
                 case CTL_MULTI_TEXT :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].textCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION_LOOKUP_NAME :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION_ADDITIVE :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_SELECTION :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].comCtl->SetValue(sData);
                     break;
                 case CTL_CHECKBOX :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     sData.Lower();
 
                     if (sData == "true")
@@ -643,11 +643,11 @@ void DialogBaseClass::SetDataValue(wxString sIdentifier,wxString sData)
                     m_CtrlDataItem[index].pCheckBox->SetValue(bState);
                     break;
                 case CTL_DATE :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].datePickerCtl->SetValue(Utility::StringToDate(sData));
                     break;
                 case CTL_WEBLINK :
-                    m_CtrlDataItem[index].sData = sData;
+                    m_CtrlDataItem[index].m_sData = sData;
                     m_CtrlDataItem[index].linkCtl->SetURL(sData);
                     m_CtrlDataItem[index].linkCtl->SetLabel(sData);
                     break;
@@ -668,32 +668,32 @@ wxString DialogBaseClass::GetDataValue(wxString sIdentifier)
     wxString sTempData="";
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
                 case CTL_STATIC :
-                    return m_CtrlDataItem[index].sData;
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_TEXT :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].textCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].textCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_MULTI_TEXT :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].textCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].textCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION_LOOKUP_NAME :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION_ADDITIVE :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_SELECTION :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].comCtl->GetValue();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].comCtl->GetValue();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_CHECKBOX :
 
@@ -704,22 +704,22 @@ wxString DialogBaseClass::GetDataValue(wxString sIdentifier)
                         sTempData = "true";
                     else if (!bState)
                         sTempData = "false";
-                    m_CtrlDataItem[index].sData = sTempData;
+                    m_CtrlDataItem[index].m_sData = sTempData;
                     return sTempData;
 
                 case CTL_DATE :
-                    m_CtrlDataItem[index].sData = Utility::DateToString(m_CtrlDataItem[index].datePickerCtl->GetValue());
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = Utility::DateToString(m_CtrlDataItem[index].datePickerCtl->GetValue());
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_WEBLINK :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].linkCtl->GetURL();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].linkCtl->GetURL();
+                    return m_CtrlDataItem[index].m_sData;
 
                 case CTL_BUTTON :
-                    m_CtrlDataItem[index].sData = m_CtrlDataItem[index].pButton->GetLabel();
-                    return m_CtrlDataItem[index].sData;
+                    m_CtrlDataItem[index].m_sData = m_CtrlDataItem[index].pButton->GetLabel();
+                    return m_CtrlDataItem[index].m_sData;
                 case CTL_LISTBOX :
-                    return m_CtrlDataItem[index].sData;
+                    return m_CtrlDataItem[index].m_sData;
                 default:
 
                     break;
@@ -737,7 +737,7 @@ void* DialogBaseClass::GetControl(wxString sIdentifier)
     wxString sTempData="";
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -777,7 +777,7 @@ bool DialogBaseClass::GetCheckState(wxString sIdentifier)
     bool bState=false;
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
 
             switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -796,7 +796,7 @@ bool DialogBaseClass::GetCheckState(wxString sIdentifier)
 void DialogBaseClass::SetCheckState(wxString sIdentifier, bool bCheckState){
 
     for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        if(sIdentifier == m_CtrlDataItem[index].sIdentifier){
+        if(sIdentifier == m_CtrlDataItem[index].m_sIdentifier){
             //Search the type of control
             switch(m_CtrlDataItem[index].iTypeOfControl) {
 

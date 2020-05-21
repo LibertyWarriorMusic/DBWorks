@@ -20,6 +20,7 @@ class MyEvent : public wxEvent
     bool m_bOpenQueryGrid;
     bool m_bOpenDesignPage;
     bool m_bOpenDesignForm;
+    bool m_bRunForm;
     bool m_bOpenRunQuery;
 
     bool m_bEdit;
@@ -31,6 +32,8 @@ class MyEvent : public wxEvent
     bool m_bStatusMessage;
     bool m_bDestroyedPropertyTable;
     bool m_bRunFormWasDestroyed;
+
+    bool m_bButtonClicked;
 
     bool m_bTableDiagramFrameWasDestroyed;
     bool m_bMainRunPageWasDestroyed;

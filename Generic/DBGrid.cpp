@@ -34,7 +34,8 @@ enum {
     ID_MENU_FILTER_SHOW_ALL,
     ID_MENU_DOCUMENT,
     ID_MENU_DESIGN_FORMS,
-    ID_MENU_DESIGN_PAGES
+    ID_MENU_DESIGN_PAGES,
+    ID_MENU_RUN_FORM
 };
 
 wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
@@ -47,6 +48,7 @@ wxBEGIN_EVENT_TABLE(DBGrid, wxGrid)
     EVT_MENU(ID_MENU_FILTER_SHOW_ALL, DBGrid::OnClickMenuFilterShowAll)
     EVT_MENU(ID_MENU_OPEN_FORM_QUERY, DBGrid::OnOpenFormQuery)
     EVT_MENU(ID_MENU_DESIGN_FORMS, DBGrid::OnDesignForm)
+    EVT_MENU(ID_MENU_RUN_FORM, DBGrid::OnRunForm)
     EVT_MENU(ID_MENU_DESIGN_PAGES, DBGrid::OnDesignPage)
 wxEND_EVENT_TABLE()
 
@@ -305,8 +307,10 @@ void DBGrid::OnGridRClick(wxGridEvent& event )
                 menu->Append(ID_MENU_RUN_FILTER, wxT("Run Filter"), wxT("Run the filter to view the records."));
             else if(m_sTableName==SYS_TABLES)
                 menu->Append(ID_MENU_OPEN, wxT("Open Table"), wxT("Open the database table."));
-            else if(m_sTableName=="usr_forms")
+            else if(m_sTableName=="usr_forms"){
                 menu->Append(ID_MENU_DESIGN_FORMS, wxT("Design Form"), wxT("Design forms that are used to populate pages."));
+                menu->Append(ID_MENU_RUN_FORM, wxT("Run Form"), wxT("Run this form."));
+            }
             else if(m_sTableName=="usr_pages")
                 menu->Append(ID_MENU_DESIGN_PAGES, wxT("Design Page"), wxT("Design the page."));
             else{
@@ -1444,11 +1448,24 @@ void DBGrid::OnDesignPage(wxCommandEvent& event)
     my_event.SetEventType(m_eventType);
     GetParent()->ProcessWindowEvent( my_event );
 }
+
 void DBGrid::OnDesignForm(wxCommandEvent& event)
 {
     MyEvent my_event( this );
 
     my_event.m_bOpenDesignForm = true;
+    my_event.m_sTableId = GetCellValue(m_iRow,0); //This will be usr_formsId
+    my_event.m_sTableName = GetCellValue(m_iRow,1);
+
+    my_event.SetEventType(m_eventType);
+    GetParent()->ProcessWindowEvent( my_event );
+}
+
+void DBGrid::OnRunForm(wxCommandEvent& event)
+{
+    MyEvent my_event( this );
+
+    my_event.m_bRunForm = true;
     my_event.m_sTableId = GetCellValue(m_iRow,0); //This will be usr_formsId
     my_event.m_sTableName = GetCellValue(m_iRow,1);
 

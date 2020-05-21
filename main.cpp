@@ -26,6 +26,7 @@
 #include "Shared/global.h"
 #include "MyEvent.h"
 #include "RuntimeEngine/MainRunPage.h"
+#include "RuntimeEngine/RunForm.h"
 #include "DesignPages/DesignForm.h"
 #include "DesignPages/DesignPage.h"
 #include "Generic/GenericItemForm.h"
@@ -837,9 +838,13 @@ void MyApp::UpdateProgressBar()
     m_MainFrame->UpdateProgressBar(m_ProgessCount);
 }
 
-//=============
-// MyFrame Class Methods
-//
+//=============================================================================
+//=============================================================================
+//=============================================================================
+//=========================== MyFrame Class Methods ===========================
+//=============================================================================
+//=============================================================================
+
 void MainFrame::OnButtonAction( wxCommandEvent& event )
 {
     SetStatusText(_("Status Text"));
@@ -885,6 +890,8 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_ProgressGauge = nullptr;
     m_txtCltProgressBar = nullptr;
     m_pFormItem= nullptr;
+    m_pRunForm= nullptr;
+
 
     bool b_DatabaseDeveloper=false;
     m_sCurrentStoredWhereCondition="";
@@ -1477,6 +1484,10 @@ void MainFrame::OnbViewItem( wxCommandEvent& event )
 
         OpenForm(tableName, tableId);
     }
+    else if(size>1)
+        wxLogMessage("You can only view one row at a time.");
+    else if(size==0)
+        wxLogMessage("You need to select a row in the grid to view the table.");
 
 }
 
@@ -1993,6 +2004,11 @@ void MainFrame::DestroyOpenWindows()
         m_pDesignForm= nullptr;
     }
 
+    if (m_pRunForm != nullptr){
+        m_pRunForm->Destroy();
+        m_pRunForm= nullptr;
+    }
+
     if (m_pDesignPage != nullptr){
         m_pDesignPage->Destroy();
         m_pDesignPage= nullptr;
@@ -2056,6 +2072,21 @@ void MainFrame::OpenDesignForm(wxString sTableId, wxString sTableName)
 
 }
 
+void MainFrame::OpenRunForm(wxString sTableId, wxString sTableName)
+{
+
+    if (m_pRunForm != nullptr)
+        m_pRunForm->Destroy();
+
+    m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
+                             wxDEFAULT_FRAME_STYLE);
+
+    m_pRunForm->SetFormID(sTableId); // The formId is used to load the form definition from the database.
+    m_pRunForm->Create(m_pRunForm->GetQuery(sTableId));//We need to get the query for this form in order to run it.
+    m_pRunForm->Show(true);
+
+}
+
 void MainFrame::OpenDesignPage(wxString sTableId, wxString sTableName)
 {
     if(m_pDesignPage != nullptr)
@@ -2081,6 +2112,10 @@ void MainFrame::OnMyEvent(MyEvent& event)
     else if(event.m_bOpenDesignForm)
     {
         OpenDesignForm(event.m_sTableId,event.m_sTableName);
+    }
+    else if(event.m_bRunForm)
+    {
+        OpenRunForm(event.m_sTableId,event.m_sTableName);
     }
     else if(event.m_bOpenDesignPage)
     {
@@ -2119,6 +2154,9 @@ void MainFrame::OnMyEvent(MyEvent& event)
     }
     else if(event.m_bDesignFormWasDestroyed){
         m_pDesignForm = nullptr;
+    }
+    else if(event.m_bRunFormWasDestroyed){
+        m_pRunForm = nullptr;
     }
     else if(event.m_bDesignPageWasDestroyed){
         m_pDesignPage= nullptr;

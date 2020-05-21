@@ -96,7 +96,7 @@ public:
 
     //Combo loading functions
     static void LoadComboUsrFilters(wxString sDatabase, wxComboBox &pCombo, wxString associatedTableId);
-    static void LoadComboFromStringArray(wxComboBox *pCombo, const wxArrayString sArray);
+    static void LoadComboFromStringArray(wxComboBox *pCombo, const wxArrayString& sArray);
     static void DestroyComboDataObjects(wxComboBox *pCombo);
     static void LoadComboFromDatabaseTableByName(wxString sDatabase, wxComboBox *combo, wxString sTableName, wxString sFieldName);
 
@@ -174,6 +174,7 @@ public:
     static wxString RemoveTableFromSelectQuery(wxString sQuery, wxString sTableName);
     static void LoadStringArrayWithTableNamesFromUpdateQuery(wxString sQuery, wxArrayString &sArray);
     static void LoadStringArrayWithTableNamesFromSelectQuery(wxString sQuery, wxArrayString &sArray);
+    static void LoadStringArrayWithAllIDSFromTable(wxString sTableName, wxArrayString &m_asRecordID);
     static wxString GetTableNamesFromInsertQuery(wxString sQuery);
     static bool DoesStringExistInStringArray(const wxString& sToCheck, const wxArrayString &sArray);
     static wxString GetFirstStringFromRight(wxString str);

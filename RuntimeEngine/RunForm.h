@@ -20,13 +20,19 @@ private:
     wxBoxSizer* m_MainFormSizer;
     int m_CalculatedHeightWindow;
     wxArrayString m_asSelectionItemArray;
+
     ArrayFieldDataCtls m_CtrlDataItem; // Used to store information about each control
 
     wxString m_sOldSelectionText; //Remember the selectiontext
     int m_iRunMode; //This form may be a select, update or insert form.
 
+    bool m_bLoadFields; //Set to true if we have a record selector. A record selector indicates that we need to load fields.
+
     wxString m_sFormId;
     wxString m_sBuildQuery; // The query the form is based.
+    wxArrayString m_TableList;// A list of table name from the build query
+    wxString m_sCurrentId; // The current table ID for the form.
+
 
     //We need to get a list of all the indexes for the query this form is based upon.
     wxString GetFormIndex();
@@ -39,9 +45,12 @@ private:
 
     void LoadSelectionItemsFromUsrControlItemsTable(wxString sControlId);
 
+    //ACTIONS
     void OnComboDropDown( wxCommandEvent& event );
     void OnComboChange( wxCommandEvent& event );
-    void OnComboCloseUp( wxCommandEvent& event );
+    void OnButtonClick( wxCommandEvent& event );
+    void OnChangeRecord( wxCommandEvent& event );
+    void OnMyEvent(MyEvent& event);
 
     //This the DialogBaseClass, these are public functions and sIdentifier can be set to any value.
     // In this class, controls are generated from the form builder, so in order to identify controls, we set
@@ -54,7 +63,11 @@ private:
     bool GetCheckState(wxString sIdentifier); //Used to get the data for this control
     void SetCheckState(wxString sIdentifier, bool bCheckState); //Used to get the data for this control
 
-
+    void InsertItem(wxString sTableName);
+    void UpdateItem(wxString sTableName, wxString sId);
+    void DeleteItem(wxString sTableName, wxString sId);
+    void ParseSpecialCharacters();
+    void LoadFields(wxString sId);
 
 public:
     explicit RunForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
@@ -62,11 +75,11 @@ public:
     //USER FUNCTIONS
     void RenderAllControls();
     void RenderControl(int index);
-    void Create();
+    void Create(wxString sQuery);
 
     wxString GetFormID();
     void SetQuery(wxString sQuery);
-    wxString GetQuery();
+    wxString GetQuery(wxString sFormId="");
 
     void SetFormID(wxString Id);
 

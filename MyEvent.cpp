@@ -22,6 +22,7 @@ MyEvent::MyEvent( wxWindow* win )
     m_bOpenDesignPage=false;
     m_bOpenDesignForm=false;
     m_bOpenRunQuery = false;
+    m_bRunForm = false;
 
     //Indicators for frames being destroyed.
     m_bTableDiagramFrameWasDestroyed=false;
@@ -31,6 +32,8 @@ MyEvent::MyEvent( wxWindow* win )
     m_bDesignFormWasDestroyed=false;
     m_bDesignPageWasDestroyed=false;
     m_bRunFormWasDestroyed=false;
+
+    m_bButtonClicked=false;
 
     m_sTableName="";
     m_sDatabaseName="";

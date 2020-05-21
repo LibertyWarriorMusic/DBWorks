@@ -612,6 +612,11 @@ void GenericTable::OnMyEvent(MyEvent& event )
         Close(true); //Close this window.
         GetParent()->ProcessWindowEvent( event );
     }
+    else if(event.m_bRunForm)
+    {
+        Close(true); //Close this window.
+        GetParent()->ProcessWindowEvent( event );
+    }
     else if(event.m_bOpenDesignPage)
     {
         Close(true); //Close this window.

@@ -2,34 +2,39 @@
 // Created by Nicholas Zounis on 26/3/20.
 //
 
-#ifndef DBWORKS_MyTextCtl_H
-#define DBWORKS_MyTextCtl_H
+#ifndef DBWORKS_RecordSelector_H
+#define DBWORKS_RecordSelector_H
 
 #include <wx/wx.h>
 #include <wx/sizer.h>
 
-
 //EXPERIMENTAL NOT USED
 
+class RecordSelector : public wxWindow
 
-class MyTextCtrl : public wxTextCtrl
 {
 private:
 
     bool m_bPressedDown;
     wxString m_sText;
 
-    static const int buttonWidth = 200;
-    static const int buttonHeight = 100;
+    wxArrayString m_asRecordID; // Holds all the record ID's for the query.
+
+    int m_iRecordIndex;
+
+    static const int buttonWidth = 100;
+    static const int buttonHeight = 25;
 
 public:
-    MyTextCtrl(wxFrame* parent, wxString text);
-    MyTextCtrl(wxDialog* parent, wxString text);
-
-
+    RecordSelector(wxFrame* parent, wxString text);
+    RecordSelector(wxDialog* parent, wxString text);
 
     void paintEvent(wxPaintEvent & evt);
     void paintNow();
+
+    void LoadAllRecordID(wxString sTableName);
+
+    wxString GetCurrentRecordID();
 
     void render(wxDC& dc);
 
@@ -48,4 +53,4 @@ DECLARE_EVENT_TABLE()
 
 
 
-#endif //DBWORKS_MyTextCtl_H
+#endif //DBWORKS_ListBoxManager_H

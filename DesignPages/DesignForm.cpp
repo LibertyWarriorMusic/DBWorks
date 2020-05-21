@@ -38,11 +38,10 @@ void DesignForm::OnRunForm( wxCommandEvent& event ) {
         m_pRunForm->Destroy();
 
     m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
-                                     wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+                                     wxDEFAULT_FRAME_STYLE);
 
     m_pRunForm->SetFormID(m_sFormId); // The formId is used to load the form definition from the database.
-    m_pRunForm->SetQuery(m_sBuildQuery); //The query will be run to fill the fields.
-    m_pRunForm->Create();
+    m_pRunForm->Create(m_sBuildQuery);
     m_pRunForm->Show(true);
 }
 

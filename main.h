@@ -58,6 +58,7 @@ public:
         MainRunPage *m_pMainRunPage;
         DesignForm * m_pDesignForm;
         DesignPage * m_pDesignPage;
+        RunForm * m_pRunForm;
         TableDiagramFrame *m_pTableDiagaram;
         GenericTable * m_pFilters;
 
@@ -104,6 +105,7 @@ public:
         void LoadDatabaseCombo();
 
         void OpenDesignForm(wxString sTableId, wxString sTableName);
+        void OpenRunForm(wxString sTableId, wxString sTableName);
         void OpenDesignPage(wxString sTableId, wxString sTableName);
 
     protected:
