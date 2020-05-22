@@ -172,16 +172,19 @@ void MyApp::activateRenderLoop(bool on)
 
 bool MyApp::LoadAppSettings()
 {
+    // FOR Linux dbworks
+    int FileLen = 7;
+
+    // For Windows dbworks.exe
+    //int FileLen = 11;
+
     wxString str;
     wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
     //wxLogMessage(strExe);
     int len = strExe.Length();
-    strExe = strExe.Left(len-7) + "mysqlReservedWords.txt";
+    strExe = strExe.Left(len-FileLen) + "mysqlReservedWords.txt";
 
-    
-    //strExe.Replace("DBWorks", "mysqlReservedWords.txt"); //For mac and linux
-   // strExe.Replace("dbworks", "mysqlReservedWords.txt"); //For mac and linux
-    //strExe.Replace("dbworks.exe", "mysqlReservedWords.txt"); // For windows.
+
     wxTextFile tfile;
     if(tfile.Open(strExe)){
         Settings.sMSQLReservedWords += tfile.GetFirstLine();
@@ -192,18 +195,7 @@ bool MyApp::LoadAppSettings()
     strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
 
     len = strExe.Length();
-    strExe = strExe.Left(len-7) + "settings.ini";
-
-    //wxLogMessage(strExe);
-   // strExe.Replace("DBWorks", "settings.ini"); //For mac and linux
-   // strExe.Replace("dbworks", "settings.ini"); //For mac and linux
-    //strExe.Replace("dbworks.exe", "settings.ini"); // For windows.
-
-
-
-    //wxString strExe = "/Applications/DatabaseWorks/settings.ini";
-    //wxString strExe = "settings.ini";
-    // open the file
+    strExe = strExe.Left(len-FileLen) + "settings.ini";
 
     if(tfile.Open(strExe)){
         // read the first line
@@ -223,7 +215,6 @@ bool MyApp::LoadAppSettings()
         //There is nothing else to do here because the setting already are loaded with default values;
         return true;
     }
-
     return false;
 }
 
@@ -1499,7 +1490,7 @@ void MainFrame::OnbViewItem( wxCommandEvent& event )
 
 }
 
-    void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
+void MainFrame::OpenForm(wxString sTableName,wxString sTableID)
 {
 
     // We don't want the user to have more than one properties window open at once, it becomes very confusing if you do.
@@ -1863,17 +1854,6 @@ void MainFrame::OnOpenPages( wxCommandEvent& event )
     }
 
 }
-void MainFrame::OnRunDatabase( wxCommandEvent& event )
-{
-    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
-    // be pointing to garbage memory and the program will crash if you try and call Destroy().
-    if(m_pMainRunPage != nullptr)
-        m_pMainRunPage->Destroy();
-
-    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
-    m_pMainRunPage->Show(true);
-
-}
 
 void MainFrame::OnbHelp( wxCommandEvent& event )
 {
@@ -1994,6 +1974,34 @@ void MainFrame::OpenTableDefinitions(wxString sTableName)
 
 
 }
+
+void MainFrame::OnRunDatabase( wxCommandEvent& event )
+{
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+    if(m_pMainRunPage != nullptr)
+        m_pMainRunPage->Destroy();
+
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pMainRunPage->Show(true);
+
+}
+
+void MainFrame::OpenRunForm(wxString sTableId, wxString sTableName)
+{
+
+    if (m_pRunForm != nullptr)
+        m_pRunForm->Destroy();
+
+    m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
+                             wxDEFAULT_FRAME_STYLE);
+
+    m_pRunForm->SetFormID(sTableId); // The formId is used to load the form definition from the database.
+    m_pRunForm->Create(m_pRunForm->GetQuery(sTableId));//We need to get the query for this form in order to run it.
+    m_pRunForm->Show(true);
+
+}
+
 void MainFrame::DestroyOpenWindows()
 {
 
@@ -2080,20 +2088,6 @@ void MainFrame::OpenDesignForm(wxString sTableId, wxString sTableName)
 
 }
 
-void MainFrame::OpenRunForm(wxString sTableId, wxString sTableName)
-{
-
-    if (m_pRunForm != nullptr)
-        m_pRunForm->Destroy();
-
-    m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
-                             wxDEFAULT_FRAME_STYLE);
-
-    m_pRunForm->SetFormID(sTableId); // The formId is used to load the form definition from the database.
-    m_pRunForm->Create(m_pRunForm->GetQuery(sTableId));//We need to get the query for this form in order to run it.
-    m_pRunForm->Show(true);
-
-}
 
 void MainFrame::OpenDesignPage(wxString sTableId, wxString sTableName)
 {

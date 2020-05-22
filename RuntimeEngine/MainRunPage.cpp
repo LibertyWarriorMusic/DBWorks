@@ -14,6 +14,10 @@
 
 MainRunPage::MainRunPage( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
+
+    //Step 1: We need to get the usr_pagesId with the pageName field 'MainPage', this is the starting point.
+    //Step 2: With the MainPage index, we need to load all forms from usr_forms having the usr_pageId of the MainPage.
+    //
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 
     wxBoxSizer *gSizer1 = new wxBoxSizer( wxHORIZONTAL );
