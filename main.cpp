@@ -175,9 +175,13 @@ bool MyApp::LoadAppSettings()
     wxString str;
     wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
     //wxLogMessage(strExe);
-    strExe.Replace("DBWorks", "mysqlReservedWords.txt"); //For mac and linux
-    strExe.Replace("dbworks", "mysqlReservedWords.txt"); //For mac and linux
-    strExe.Replace("dbworks.exe", "mysqlReservedWords.txt"); // For windows.
+    int len = strExe.Length();
+    strExe = strExe.Left(len-7) + "mysqlReservedWords.txt";
+
+    
+    //strExe.Replace("DBWorks", "mysqlReservedWords.txt"); //For mac and linux
+   // strExe.Replace("dbworks", "mysqlReservedWords.txt"); //For mac and linux
+    //strExe.Replace("dbworks.exe", "mysqlReservedWords.txt"); // For windows.
     wxTextFile tfile;
     if(tfile.Open(strExe)){
         Settings.sMSQLReservedWords += tfile.GetFirstLine();
@@ -186,10 +190,14 @@ bool MyApp::LoadAppSettings()
     }
 
     strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
+
+    len = strExe.Length();
+    strExe = strExe.Left(len-7) + "settings.ini";
+
     //wxLogMessage(strExe);
-    strExe.Replace("DBWorks", "settings.ini"); //For mac and linux
-    strExe.Replace("dbworks", "settings.ini"); //For mac and linux
-    strExe.Replace("dbworks.exe", "settings.ini"); // For windows.
+   // strExe.Replace("DBWorks", "settings.ini"); //For mac and linux
+   // strExe.Replace("dbworks", "settings.ini"); //For mac and linux
+    //strExe.Replace("dbworks.exe", "settings.ini"); // For windows.
 
 
 
