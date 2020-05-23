@@ -2096,6 +2096,7 @@ void MainFrame::OpenDesignPage(wxString sTableId, wxString sTableName)
 
     m_pDesignPage = new DesignPage((wxFrame*) this, -1, sTableName, wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE );
     m_pDesignPage->SetPageID(sTableId); //
+    m_pDesignPage->LoadFormObjects();
     m_pDesignPage->Show(true);
 }
 

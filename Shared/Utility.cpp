@@ -761,20 +761,18 @@ wxString Utility::ReplaceFieldTagsWithValuesFromTable(wxString Recordset, wxStri
 bool Utility::LoadBitmap(wxBitmap &image, wxString ImageFileName)
 {
 
-    //This has caused an issue when the Bear tested on his mac.
+    // FOR Linux dbworks
+    int FileLen = 7;
 
+    // For Windows dbworks.exe
+    //int FileLen = 11;
 
-   // wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
-    //wxLogMessage(strExe);
- //   strExe.Replace("DBWorks", "images/"+ImageFileName); //For mac and linux
- //   strExe.Replace("dbworks", "images/"+ImageFileName); //For mac and linux
-  //  strExe.Replace("dbworks.exe", "images/"+ImageFileName); // For windows.
+    wxString str;
+    wxString strExe = wxStandardPaths::Get().GetExecutablePath(); // Get the path to the images
 
-    wxString strExe = "/Applications/DatabaseWorks/images/"+ImageFileName;
-    //wxString strExe = "images/"+ImageFileName;
-    //  strExe.Replace("view.png", "help.png"); //For mac and linux
+    int len = strExe.Length();
+    strExe = strExe.Left(len-FileLen) + "images/"+ ImageFileName;
 
-    //wxString strExe = "images/"+ImageFileName;
     return image.LoadFile(strExe, wxBITMAP_TYPE_PNG);
 }
 
@@ -786,7 +784,7 @@ void Utility::EscapeAscii(wxString& QueryString)
     QueryString.Replace("`~!@%$#^%", "_", true);
 
 }
-
+// used for query statements only, not user data.
 wxString  Utility::EscapeQuery(wxString QueryString) {
 
     Utility::EscapeAscii(QueryString);

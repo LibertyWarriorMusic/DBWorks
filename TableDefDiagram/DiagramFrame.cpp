@@ -17,9 +17,9 @@ wxEND_EVENT_TABLE()
 
 DiagramFrame::DiagramFrame( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
-    m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
-    m_StatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
-    m_StatusBar = nullptr;
+    m_pMainFormSizer = new wxBoxSizer( wxVERTICAL );
+    m_pStatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+    m_pToolbar = nullptr;
 }
 
 DiagramFrame::~DiagramFrame(){
@@ -28,13 +28,13 @@ DiagramFrame::~DiagramFrame(){
 
 wxBoxSizer* DiagramFrame::GetFrameSizer()
 {
-    return m_MainFormSizer;
+    return m_pMainFormSizer;
 
 }
 void DiagramFrame::AttachPanel(wxPanel *panel)
 {
     panel->SetParent(this);
-    m_MainFormSizer->Add( panel, 0, wxGROW, 0);
+    m_pMainFormSizer->Add( panel, 0, wxGROW, 0);
     panel->Layout();
     panel->Show();
 }

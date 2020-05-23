@@ -42,15 +42,15 @@ TableDiagramFrame::TableDiagramFrame( DiagramFrame* parent, wxWindowID id, const
 
     wxBitmap BitMap;
 
-    m_Toolbar1 = this->CreateToolBar();
+    m_pToolbar = this->CreateToolBar();
     Utility::LoadBitmap(BitMap,"help.png");
-    m_Toolbar1->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
+    m_pToolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
 
     Utility::LoadBitmap(BitMap,"add.png");
-    m_Toolbar1->AddTool(ID_TOOL_ADD, wxT("Paste existing table to diagram."), BitMap, wxT("Paste existing table to diagram."));
+    m_pToolbar->AddTool(ID_TOOL_ADD, wxT("Paste existing table to diagram."), BitMap, wxT("Paste existing table to diagram."));
 
-    m_Toolbar1->Realize();
-    this->SetToolBar(m_Toolbar1);
+    m_pToolbar->Realize();
+    this->SetToolBar(m_pToolbar);
 }
 
 TableDiagramFrame::~TableDiagramFrame()

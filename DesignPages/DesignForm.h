@@ -18,17 +18,12 @@ class DesignForm : public DiagramFrame
     wxDECLARE_EVENT_TABLE();
 private:
 
-    wxToolBar * m_pToolbar;
-    wxStatusBar* m_pStatusBar;
     wxComboBox * m_pComboSelectCtl;
     RunForm * m_pRunForm;
     HtmlHelp *m_pHtmlWin;
     GenericQueryGrid * m_pQueryGrid;
 
-
     DesignFormPanel * m_pDesignFormDiagramPanel; //Used for drawing
-
-
 
     void AddDrawObject( const wxString& sTableID);
 

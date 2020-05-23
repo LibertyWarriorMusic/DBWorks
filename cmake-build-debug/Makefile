@@ -339,6 +339,33 @@ DesignPages/DesignPage.cpp.s:
 	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/DesignPage.cpp.s
 .PHONY : DesignPages/DesignPage.cpp.s
 
+DesignPages/DesignPagePanel.o: DesignPages/DesignPagePanel.cpp.o
+
+.PHONY : DesignPages/DesignPagePanel.o
+
+# target to build an object file
+DesignPages/DesignPagePanel.cpp.o:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/DesignPagePanel.cpp.o
+.PHONY : DesignPages/DesignPagePanel.cpp.o
+
+DesignPages/DesignPagePanel.i: DesignPages/DesignPagePanel.cpp.i
+
+.PHONY : DesignPages/DesignPagePanel.i
+
+# target to preprocess a source file
+DesignPages/DesignPagePanel.cpp.i:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/DesignPagePanel.cpp.i
+.PHONY : DesignPages/DesignPagePanel.cpp.i
+
+DesignPages/DesignPagePanel.s: DesignPages/DesignPagePanel.cpp.s
+
+.PHONY : DesignPages/DesignPagePanel.s
+
+# target to generate assembly for a file
+DesignPages/DesignPagePanel.cpp.s:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/DesignPagePanel.cpp.s
+.PHONY : DesignPages/DesignPagePanel.cpp.s
+
 DesignPages/ObControl.o: DesignPages/ObControl.cpp.o
 
 .PHONY : DesignPages/ObControl.o
@@ -365,6 +392,33 @@ DesignPages/ObControl.s: DesignPages/ObControl.cpp.s
 DesignPages/ObControl.cpp.s:
 	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/ObControl.cpp.s
 .PHONY : DesignPages/ObControl.cpp.s
+
+DesignPages/ObForm.o: DesignPages/ObForm.cpp.o
+
+.PHONY : DesignPages/ObForm.o
+
+# target to build an object file
+DesignPages/ObForm.cpp.o:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/ObForm.cpp.o
+.PHONY : DesignPages/ObForm.cpp.o
+
+DesignPages/ObForm.i: DesignPages/ObForm.cpp.i
+
+.PHONY : DesignPages/ObForm.i
+
+# target to preprocess a source file
+DesignPages/ObForm.cpp.i:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/ObForm.cpp.i
+.PHONY : DesignPages/ObForm.cpp.i
+
+DesignPages/ObForm.s: DesignPages/ObForm.cpp.s
+
+.PHONY : DesignPages/ObForm.s
+
+# target to generate assembly for a file
+DesignPages/ObForm.cpp.s:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/DesignPages/ObForm.cpp.s
+.PHONY : DesignPages/ObForm.cpp.s
 
 DesignPages/TemplateFrame.o: DesignPages/TemplateFrame.cpp.o
 
@@ -1128,9 +1182,15 @@ help:
 	@echo "... DesignPages/DesignPage.o"
 	@echo "... DesignPages/DesignPage.i"
 	@echo "... DesignPages/DesignPage.s"
+	@echo "... DesignPages/DesignPagePanel.o"
+	@echo "... DesignPages/DesignPagePanel.i"
+	@echo "... DesignPages/DesignPagePanel.s"
 	@echo "... DesignPages/ObControl.o"
 	@echo "... DesignPages/ObControl.i"
 	@echo "... DesignPages/ObControl.s"
+	@echo "... DesignPages/ObForm.o"
+	@echo "... DesignPages/ObForm.i"
+	@echo "... DesignPages/ObForm.s"
 	@echo "... DesignPages/TemplateFrame.o"
 	@echo "... DesignPages/TemplateFrame.i"
 	@echo "... DesignPages/TemplateFrame.s"

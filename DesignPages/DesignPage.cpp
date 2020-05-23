@@ -6,61 +6,128 @@
 
 #include "../HtmlHelp.h"
 #include "../MyEvent.h"
+#include "../Shared/global.h"
 #include "../Shared/Utility.h"
 
+#include "DesignPagePanel.h"
 #include "DesignPage.h"
 
 enum {
-    ID_HELP= wxID_HIGHEST + 10100,
+    ID_HELP= wxID_HIGHEST + 10200,
+    ID_TOOL_ADD
 };
 
 wxBEGIN_EVENT_TABLE(DesignPage, wxFrame)
                 EVT_TOOL(ID_HELP, DesignPage::OnbHelp)
+                EVT_TOOL(ID_TOOL_ADD, DesignPage::OnbAddItem)
                 EVT_MYEVENT(DesignPage::OnMyEvent)
 wxEND_EVENT_TABLE()
 
-DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DiagramFrame( parent, id, title, pos, size, style )
 {
-    m_sPageId="";
-    m_Toolbar = nullptr;
-    m_StatusBar = nullptr;
+    m_pToolbar = nullptr;
+    m_pStatusBar = nullptr;
     m_HtmlWin = nullptr;
+    m_pDesignPageDiagramPanel = nullptr;
 
-    m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
+    m_pDesignPageDiagramPanel = new DesignPagePanel(this); //This are our drawing functions.
+    AttachPanel(m_pDesignPageDiagramPanel);
 
-    wxBoxSizer *gSizer1 = new wxBoxSizer( wxHORIZONTAL );
 
-    wxStaticText *txt = new wxStaticText( this, wxID_ANY, "Design Page", wxDefaultPosition, wxDefaultSize, 0 );
+    //m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 
-    gSizer1->Add( txt, 0, wxEXPAND, 0);
+    //wxBoxSizer *gSizer1 = new wxBoxSizer( wxHORIZONTAL );
 
-    m_MainFormSizer->Add( gSizer1, 0, wxCenter, 5 );
+   // wxStaticText *txt = new wxStaticText( this, wxID_ANY, "Design Page", wxDefaultPosition, wxDefaultSize, 0 );
+
+    //gSizer1->Add( txt, 0, wxEXPAND, 0);
+
+   // m_MainFormSizer->Add( gSizer1, 0, wxCenter, 5 );
     //Create a HTML display for the help file
 
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
     // Get the path to the images
 
-    if(m_Toolbar == nullptr)
-        m_Toolbar = CreateToolBar();
-
-    m_StatusBar = this->CreateStatusBar( 1, wxSTB_SIZEGRIP, wxID_ANY );
+    if(m_pToolbar == nullptr)
+        m_pToolbar = CreateToolBar();
 
     wxBitmap BitMap;
+    
+/*
+    m_pComboSelectCtl = new wxComboBox( m_pToolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(230,25), 0,0,wxCB_READONLY);
+    m_pComboSelectCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DesignPage::OnSelectCtlChange ), nullptr, this );
+    m_pComboSelectCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( DesignPage::OnSelectCtlDropDown ), nullptr, this );
 
+
+    Utility::LoadComboFromDatabaseTableByName(Settings.sDatabase,m_pComboSelectCtl,"usr_forms","formName");
+    m_pComboSelectCtl->Select(0);
+    m_pToolbar->AddControl(m_pComboSelectCtl);
+
+
+
+    Utility::LoadBitmap(BitMap,"add.png");
+    m_pToolbar->AddTool(ID_TOOL_ADD, wxT(""), BitMap, wxT("Add form to the page."));
+*/
     Utility::LoadBitmap(BitMap,"help.png");
-    m_Toolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
+    m_pToolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
 
-    m_Toolbar->Realize();
-    SetToolBar(m_Toolbar);
+    m_pToolbar->Realize();
+    SetToolBar(m_pToolbar);
 }
 
 DesignPage::~DesignPage(){
 
+    if(m_pDesignPageDiagramPanel!= nullptr)
+        m_pDesignPageDiagramPanel->Destroy();
+}
+
+void DesignPage::LoadFormObjects()
+{
+    m_pDesignPageDiagramPanel->LoadFormObjects();
+    this->SetSize(800,700);
+    this->Show();
 }
 
 void DesignPage::SetPageID(wxString sPageId)
 {
-    m_sPageId=sPageId;
+    m_pDesignPageDiagramPanel->SetPageID(sPageId);
+}
+
+void DesignPage::OnSelectCtlDropDown( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    int iOldComboIndex = combo->GetSelection();
+}
+
+void DesignPage::OnSelectCtlChange( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    wxString sCtlType = combo->GetStringSelection();
+
+    //combo->SetSelection(iOldComboIndex); // Restore the old selection because the database doesn't exit.
+}
+
+void DesignPage::OnbAddItem( wxCommandEvent& event )
+{
+    wxString sformName = m_pComboSelectCtl->GetStringSelection();
+    if(!sformName.IsEmpty()){
+
+        wxArrayString sArray;
+        Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sArray, "usr_forms", "formName", sformName);
+        if(sArray.GetCount()==1){
+            wxString formId = sArray[0];
+            AddDrawObject(formId);
+        }
+    }
+    else{
+        wxLogMessage("Select a form first.");
+    }
+}
+
+
+void DesignPage::AddDrawObject( const wxString& sFormID)
+{
+    m_pDesignPageDiagramPanel->AddFormObject( sFormID);
 }
 
 //We can send a message to the parent that this window is destroyed.

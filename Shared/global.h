@@ -88,6 +88,7 @@ enum {
 
 class ObTable;
 class ObControl;
+class ObForm;
 
 //Object Array Declarations.
 class TableLinkageLine
@@ -392,3 +393,4 @@ WX_DECLARE_OBJARRAY(ObTable, ArrayDrawObjects); //Used in ObTablePanel class
 WX_DECLARE_OBJARRAY(TableField, ArrayQueryField); //Used in Generic Query Grid
 WX_DECLARE_OBJARRAY(FieldRect, ArrayFieldRect); //Used in Generic Query Grid
 WX_DECLARE_OBJARRAY(ObControl, ArrayDrawControls); //Used in DesignFormPanel
+WX_DECLARE_OBJARRAY(ObForm, ArrayDrawForms); //Used in DesignPagePanel

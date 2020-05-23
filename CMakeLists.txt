@@ -12,7 +12,9 @@ set(SOURCE_FILES
         PropertyTable.cpp
         HtmlHelp.cpp
         DesignPages/ObControl.cpp
+        DesignPages/ObForm.cpp
         DesignPages/DesignFormPanel.cpp
+        DesignPages/DesignPagePanel.cpp
         DesignPages/TemplateFrame.cpp
         DesignPages/DesignForm.cpp
         DesignPages/DesignPage.cpp

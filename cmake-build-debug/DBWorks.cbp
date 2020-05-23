@@ -144,10 +144,22 @@
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h">
 			<Option target="DBWorks"/>
 		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h">
+			<Option target="DBWorks"/>
+		</Unit>
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObControl.cpp">
 			<Option target="DBWorks"/>
 		</Unit>
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObControl.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObForm.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObForm.h">
 			<Option target="DBWorks"/>
 		</Unit>
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/TemplateFrame.cpp">

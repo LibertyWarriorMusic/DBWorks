@@ -6,31 +6,47 @@
 
 #IncludeRegexTransform: 
 
-/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
-wx/wx.h
--
-
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.cpp
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.cpp
 wx/wxprec.h
 -
 wx/wx.h
 -
+../HtmlHelp.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.h
 ../MyEvent.h
 /Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
 ../Shared/global.h
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/global.h
 ../Shared/Utility.h
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h
-MainRunPage.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.h
+DesignPagePanel.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h
+DesignPage.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h
 
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h
 wx/wxhtml.h
+-
+../TableDefDiagram/DiagramFrame.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.h
+wx/wxhtml.h
+-
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
+wx/wx.h
 -
 
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h
 
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/global.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.h
+wx/wxhtml.h
+-
 
 /usr/local/include/wx-3.0/wx/accel.h
 wx/defs.h

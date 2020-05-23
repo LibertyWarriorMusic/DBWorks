@@ -107,6 +107,7 @@ DesignForm::~DesignForm()
     if(m_pDesignFormDiagramPanel!= nullptr)
         m_pDesignFormDiagramPanel->Destroy();
 }
+
 void DesignForm::OnSelectCtlDropDown( wxCommandEvent& event )
 {
     wxComboBox * combo = (wxComboBox*) event.GetEventObject();
@@ -170,7 +171,6 @@ void DesignForm::OnbHelp( wxCommandEvent& event )
     m_pHtmlWin->Show(true);
 }
 
-//Not Working
 void DesignForm::LoadControlObjects()
 {
     m_pDesignFormDiagramPanel->LoadControlObjects();

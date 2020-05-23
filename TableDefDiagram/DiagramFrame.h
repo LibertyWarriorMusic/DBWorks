@@ -10,10 +10,12 @@ class DiagramFrame : public wxFrame{
 
 private:
 wxDECLARE_EVENT_TABLE();
-    wxToolBar * m_Toolbar1;
-    wxBoxSizer* m_MainFormSizer;
     wxPanel *m_attachedPanel;
-    wxStatusBar* m_StatusBar;
+
+protected:
+    wxToolBar * m_pToolbar;
+    wxBoxSizer* m_pMainFormSizer;
+    wxStatusBar* m_pStatusBar;
 
 public:
 

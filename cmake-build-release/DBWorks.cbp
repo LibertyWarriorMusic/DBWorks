@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="DBWorks"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="rebuild_cache">
+				<Option working_dir="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 rebuild_cache"/>
+					<CompileFile command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="edit_cache">
+				<Option working_dir="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 edit_cache"/>
+					<CompileFile command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="DBWorks">
+				<Option output="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/DBWorks" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_FILE_OFFSET_BITS=64"/>
+					<Add option="-D__WXMAC__"/>
+					<Add option="-D__WXOSX__"/>
+					<Add option="-D__WXOSX_COCOA__"/>
+					<Add directory="/usr/local/opt/mysql/include/mysql"/>
+					<Add directory="/usr/local/opt/mysql++/include/mysql++"/>
+					<Add directory="/usr/local/lib/wx/include/osx_cocoa-unicode-static-3.0"/>
+					<Add directory="/usr/local/include/wx-3.0"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 DBWorks"/>
+					<CompileFile command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="DBWorks/fast">
+				<Option output="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/DBWorks" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release"/>
+				<Option object_output="./"/>
+				<Option type="1"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-D_FILE_OFFSET_BITS=64"/>
+					<Add option="-D__WXMAC__"/>
+					<Add option="-D__WXOSX__"/>
+					<Add option="-D__WXOSX_COCOA__"/>
+					<Add directory="/usr/local/opt/mysql/include/mysql"/>
+					<Add directory="/usr/local/opt/mysql++/include/mysql++"/>
+					<Add directory="/usr/local/lib/wx/include/osx_cocoa-unicode-static-3.0"/>
+					<Add directory="/usr/local/include/wx-3.0"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../include/c++/v1"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/clang/11.0.3/include"/>
+					<Add directory="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include"/>
+					<Add directory="/System/Library/Frameworks"/>
+					<Add directory="/Library/Frameworks"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 DBWorks/fast"/>
+					<CompileFile command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/local/bin/gmake -j8 -f &quot;/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-release/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/ListBoxManager.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/ListBoxManager.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/MyTextCtrl.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/MyTextCtrl.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myButton.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myButton.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myProgressControl.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myProgressControl.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignForm.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignForm.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignFormPanel.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignFormPanel.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObControl.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObControl.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObForm.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/ObForm.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/TemplateFrame.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/TemplateFrame.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogBaseClass.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogBaseClass.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogTemplate.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogTemplate.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DlgTableSelect.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DlgTableSelect.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ImportMySQLDatabase.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ImportMySQLDatabase.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/LinkedTableDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/LinkedTableDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ListBoxDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ListBoxDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ManageActionsDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ManageActionsDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/MultiTextDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/MultiTextDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SelectionFieldQueryDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SelectionFieldQueryDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SetFlagsDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SetFlagsDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SingleTextDlg.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SingleTextDlg.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/DBGrid.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/DBGrid.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericItemForm.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericItemForm.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericQueryGrid.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericQueryGrid.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericTable.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Generic/GenericTable.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/PropertyTable.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/PropertyTable.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunForm.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunForm.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTable.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTable.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTablePanel.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTablePanel.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/TableDiagramFrame.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/TableDiagramFrame.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/main.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/main.h">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>
