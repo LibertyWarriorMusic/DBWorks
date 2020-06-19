@@ -18,12 +18,12 @@
 #include "RunForm.h"
 
 using namespace mysqlpp;
-wxBEGIN_EVENT_TABLE(RunForm, wxFrame)
+wxBEGIN_EVENT_TABLE(RunForm, wxWindow)
                 EVT_MYEVENT(RunForm::OnMyEvent)
 wxEND_EVENT_TABLE()
 
 
-RunForm::RunForm( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+RunForm::RunForm( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxWindow( parent, id, pos, size, style )
 {
     m_CalculatedHeightWindow=0;
     m_sOldSelectionText="";
@@ -33,6 +33,7 @@ RunForm::RunForm( wxWindow* parent, wxWindowID id, const wxString& title, const 
 
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 }
+
 void RunForm::Create(wxString sQuery)
 {
     SetQuery(sQuery);
@@ -773,7 +774,7 @@ void RunForm::ResizeTitleText()
 //We can send a message to the parent that this window is destroyed.
 bool RunForm::Destroy()
 {
-    bool bResult = wxFrame::Destroy();
+    bool bResult = wxWindow::Destroy();
 
     MyEvent my_event( this );
     my_event.m_bRunFormWasDestroyed=true;

@@ -16,12 +16,14 @@ class DesignPage : public DiagramFrame
     wxDECLARE_EVENT_TABLE();
 private:
     wxComboBox * m_pComboSelectCtl;
+    MainRunPage *m_pMainRunPage;
     DesignPagePanel * m_pDesignPageDiagramPanel; //Used for drawing
     void AddDrawObject( const wxString& sFormID);
     HtmlHelp *m_HtmlWin;
     void OnMyEvent(MyEvent& event );
     void OnbHelp( wxCommandEvent& event );
     void OnbAddItem( wxCommandEvent& event );
+    void OnRunPage( wxCommandEvent& event );
     void OnSelectCtlChange( wxCommandEvent& event );
     void OnSelectCtlDropDown( wxCommandEvent& event );
 

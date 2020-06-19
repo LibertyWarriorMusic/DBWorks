@@ -28,6 +28,16 @@ BEGIN_EVENT_TABLE(RecordSelector, wxPanel)
 
 END_EVENT_TABLE()
 
+RecordSelector::RecordSelector(wxWindow* parent, wxString text) :
+        wxWindow(parent, wxID_ANY)
+{
+
+    SetMinSize( wxSize(buttonWidth, buttonHeight) );
+    m_sText = text;
+    m_bPressedDown = false;
+
+    m_iRecordIndex=0;
+}
 
 RecordSelector::RecordSelector(wxFrame* parent, wxString text) :
         wxWindow(parent, wxID_ANY)

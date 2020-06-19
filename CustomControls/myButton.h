@@ -20,7 +20,7 @@ private:
     wxString m_sAction;
 
 public:
-    myButton(wxFrame* parent, wxString title);
+    myButton(wxWindow* parent, wxString title);
     void SetAction(wxString sAction);
     wxString GetAction();
 

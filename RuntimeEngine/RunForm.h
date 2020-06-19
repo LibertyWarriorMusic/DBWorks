@@ -13,7 +13,7 @@ enum {
     mode_update
 };
 
-class RunForm : public wxFrame{
+class RunForm : public wxWindow{
 
 private:
     wxDECLARE_EVENT_TABLE();
@@ -70,7 +70,7 @@ private:
     void LoadFields(wxString sId);
 
 public:
-    explicit RunForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
+    explicit RunForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(400,400), long style = wxDEFAULT_FRAME_STYLE);
 
     //USER FUNCTIONS
     void RenderAllControls();

@@ -11,7 +11,7 @@
 #include "../Dialog/MultiTextDlg.h"
 #include "../Generic/GenericQueryGrid.h"
 
-#include "../RuntimeEngine/RunForm.h"
+#include "../RuntimeEngine/RunFormFrame.h"
 #include "DesignFormPanel.h"
 #include "DesignForm.h"
 
@@ -34,15 +34,15 @@ void DesignForm::OnRunForm( wxCommandEvent& event ) {
 //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
 // be pointing to garbage memory and the program will crash if you try and call Destroy().
 
-    if (m_pRunForm != nullptr)
-        m_pRunForm->Destroy();
+    if (m_pRunFormFrame != nullptr)
+        m_pRunFormFrame->Destroy();
 
-    m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
+    m_pRunFormFrame = new RunFormFrame((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
                                      wxDEFAULT_FRAME_STYLE);
 
-    m_pRunForm->SetFormID(m_sFormId); // The formId is used to load the form definition from the database.
-    m_pRunForm->Create(m_sBuildQuery);
-    m_pRunForm->Show(true);
+    m_pRunFormFrame->SetFormID(m_sFormId); // The formId is used to load the form definition from the database.
+    m_pRunFormFrame->Create(m_sBuildQuery);
+    m_pRunFormFrame->Show(true);
 }
 
 
@@ -56,7 +56,7 @@ DesignForm::DesignForm( wxWindow* parent, wxWindowID id, const wxString& title, 
     m_pStatusBar = nullptr;
     m_pHtmlWin = nullptr;
     m_pQueryGrid = nullptr;
-    m_pRunForm = nullptr;
+    m_pRunFormFrame = nullptr;
     m_pDesignFormDiagramPanel= nullptr;
 
     iOldComboIndex=0;
@@ -230,7 +230,7 @@ void DesignForm::OnMyEvent(MyEvent& event )
         m_pHtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
     if(event.m_bRunFormWasDestroyed){
-        m_pRunForm = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
+        m_pRunFormFrame = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
     }
     else if(event.m_bRefreshDatabase){
 

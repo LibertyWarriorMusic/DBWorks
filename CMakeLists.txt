@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(SOURCE_FILES
         RuntimeEngine/MainRunPage.cpp
         RuntimeEngine/RunForm.cpp
+        RuntimeEngine/RunFormFrame.cpp
         Shared/Utility.cpp
         main.cpp
         MyEvent.cpp

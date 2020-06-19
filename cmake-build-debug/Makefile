@@ -987,6 +987,33 @@ RuntimeEngine/RunForm.cpp.s:
 	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/RuntimeEngine/RunForm.cpp.s
 .PHONY : RuntimeEngine/RunForm.cpp.s
 
+RuntimeEngine/RunFormFrame.o: RuntimeEngine/RunFormFrame.cpp.o
+
+.PHONY : RuntimeEngine/RunFormFrame.o
+
+# target to build an object file
+RuntimeEngine/RunFormFrame.cpp.o:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/RuntimeEngine/RunFormFrame.cpp.o
+.PHONY : RuntimeEngine/RunFormFrame.cpp.o
+
+RuntimeEngine/RunFormFrame.i: RuntimeEngine/RunFormFrame.cpp.i
+
+.PHONY : RuntimeEngine/RunFormFrame.i
+
+# target to preprocess a source file
+RuntimeEngine/RunFormFrame.cpp.i:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/RuntimeEngine/RunFormFrame.cpp.i
+.PHONY : RuntimeEngine/RunFormFrame.cpp.i
+
+RuntimeEngine/RunFormFrame.s: RuntimeEngine/RunFormFrame.cpp.s
+
+.PHONY : RuntimeEngine/RunFormFrame.s
+
+# target to generate assembly for a file
+RuntimeEngine/RunFormFrame.cpp.s:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/RuntimeEngine/RunFormFrame.cpp.s
+.PHONY : RuntimeEngine/RunFormFrame.cpp.s
+
 Shared/Utility.o: Shared/Utility.cpp.o
 
 .PHONY : Shared/Utility.o
@@ -1254,6 +1281,9 @@ help:
 	@echo "... RuntimeEngine/RunForm.o"
 	@echo "... RuntimeEngine/RunForm.i"
 	@echo "... RuntimeEngine/RunForm.s"
+	@echo "... RuntimeEngine/RunFormFrame.o"
+	@echo "... RuntimeEngine/RunFormFrame.i"
+	@echo "... RuntimeEngine/RunFormFrame.s"
 	@echo "... Shared/Utility.o"
 	@echo "... Shared/Utility.i"
 	@echo "... Shared/Utility.s"

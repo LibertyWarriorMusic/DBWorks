@@ -58,7 +58,7 @@ public:
         MainRunPage *m_pMainRunPage;
         DesignForm * m_pDesignForm;
         DesignPage * m_pDesignPage;
-        RunForm * m_pRunForm;
+        RunFormFrame * m_pRunFormFrame;
         TableDiagramFrame *m_pTableDiagaram;
         GenericTable * m_pFilters;
 

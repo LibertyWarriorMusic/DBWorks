@@ -13,7 +13,7 @@ BEGIN_EVENT_TABLE(myButton, wxPanel)
 END_EVENT_TABLE()
 
 
-myButton::myButton(wxFrame* parent, wxString title) :
+myButton::myButton(wxWindow* parent, wxString title) :
         wxButton(parent, wxID_ANY, title)
 {
 

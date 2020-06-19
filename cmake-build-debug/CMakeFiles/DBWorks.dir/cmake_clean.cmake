@@ -31,6 +31,7 @@ file(REMOVE_RECURSE
   "CMakeFiles/DBWorks.dir/PropertyTable.cpp.o"
   "CMakeFiles/DBWorks.dir/RuntimeEngine/MainRunPage.cpp.o"
   "CMakeFiles/DBWorks.dir/RuntimeEngine/RunForm.cpp.o"
+  "CMakeFiles/DBWorks.dir/RuntimeEngine/RunFormFrame.cpp.o"
   "CMakeFiles/DBWorks.dir/Shared/Utility.cpp.o"
   "CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o"
   "CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o"

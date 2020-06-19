@@ -27,6 +27,7 @@
 #include "MyEvent.h"
 #include "RuntimeEngine/MainRunPage.h"
 #include "RuntimeEngine/RunForm.h"
+#include "RuntimeEngine/RunFormFrame.h"
 #include "DesignPages/DesignForm.h"
 #include "DesignPages/DesignPage.h"
 #include "Generic/GenericItemForm.h"
@@ -889,7 +890,7 @@ MainFrame::MainFrame( wxWindow* parent, wxWindowID id, const wxString& title, co
     m_ProgressGauge = nullptr;
     m_txtCltProgressBar = nullptr;
     m_pFormItem= nullptr;
-    m_pRunForm= nullptr;
+    m_pRunFormFrame= nullptr;
 
 
     bool b_DatabaseDeveloper=false;
@@ -1983,6 +1984,9 @@ void MainFrame::OnRunDatabase( wxCommandEvent& event )
         m_pMainRunPage->Destroy();
 
     m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+
+
+
     m_pMainRunPage->Show(true);
 
 }
@@ -1990,15 +1994,14 @@ void MainFrame::OnRunDatabase( wxCommandEvent& event )
 void MainFrame::OpenRunForm(wxString sTableId, wxString sTableName)
 {
 
-    if (m_pRunForm != nullptr)
-        m_pRunForm->Destroy();
+    if (m_pRunFormFrame != nullptr)
+        m_pRunFormFrame->Destroy();
 
-    m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,
-                             wxDEFAULT_FRAME_STYLE);
+    m_pRunFormFrame = new RunFormFrame((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxSize(1000,1000), wxDEFAULT_FRAME_STYLE);
 
-    m_pRunForm->SetFormID(sTableId); // The formId is used to load the form definition from the database.
-    m_pRunForm->Create(m_pRunForm->GetQuery(sTableId));//We need to get the query for this form in order to run it.
-    m_pRunForm->Show(true);
+    m_pRunFormFrame->SetFormID(sTableId); // The formId is used to load the form definition from the database.
+    m_pRunFormFrame->Create(m_pRunFormFrame->GetQuery(sTableId));//We need to get the query for this form in order to run it.
+    m_pRunFormFrame->Show(true);
 
 }
 
@@ -2020,9 +2023,9 @@ void MainFrame::DestroyOpenWindows()
         m_pDesignForm= nullptr;
     }
 
-    if (m_pRunForm != nullptr){
-        m_pRunForm->Destroy();
-        m_pRunForm= nullptr;
+    if (m_pRunFormFrame != nullptr){
+        m_pRunFormFrame->Destroy();
+        m_pRunFormFrame= nullptr;
     }
 
     if (m_pDesignPage != nullptr){
@@ -2159,7 +2162,7 @@ void MainFrame::OnMyEvent(MyEvent& event)
         m_pDesignForm = nullptr;
     }
     else if(event.m_bRunFormWasDestroyed){
-        m_pRunForm = nullptr;
+        m_pRunFormFrame = nullptr;
     }
     else if(event.m_bDesignPageWasDestroyed){
         m_pDesignPage= nullptr;

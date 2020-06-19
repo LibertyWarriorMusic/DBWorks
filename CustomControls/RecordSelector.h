@@ -26,6 +26,7 @@ private:
     static const int buttonHeight = 25;
 
 public:
+    RecordSelector(wxWindow* parent, wxString text);
     RecordSelector(wxFrame* parent, wxString text);
     RecordSelector(wxDialog* parent, wxString text);
 

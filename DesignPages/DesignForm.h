@@ -8,7 +8,7 @@
 class HtmlHelp;
 class DiagaramFrame;
 class DesignFormPanel;
-class RunForm;
+class RunFormFrame;
 class GenericQueryGrid;
 
 #include "../TableDefDiagram/DiagramFrame.h"
@@ -19,7 +19,7 @@ class DesignForm : public DiagramFrame
 private:
 
     wxComboBox * m_pComboSelectCtl;
-    RunForm * m_pRunForm;
+    RunFormFrame * m_pRunFormFrame;
     HtmlHelp *m_pHtmlWin;
     GenericQueryGrid * m_pQueryGrid;
 

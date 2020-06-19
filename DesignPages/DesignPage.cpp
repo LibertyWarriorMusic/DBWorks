@@ -8,20 +8,35 @@
 #include "../MyEvent.h"
 #include "../Shared/global.h"
 #include "../Shared/Utility.h"
+#include "../RuntimeEngine/MainRunPage.h"
 
 #include "DesignPagePanel.h"
 #include "DesignPage.h"
 
 enum {
     ID_HELP= wxID_HIGHEST + 10200,
-    ID_TOOL_ADD
+    ID_TOOL_ADD,
+    ID_RUN_FORM
 };
 
 wxBEGIN_EVENT_TABLE(DesignPage, wxFrame)
                 EVT_TOOL(ID_HELP, DesignPage::OnbHelp)
                 EVT_TOOL(ID_TOOL_ADD, DesignPage::OnbAddItem)
+                EVT_TOOL(ID_RUN_FORM, DesignPage::OnRunPage)
                 EVT_MYEVENT(DesignPage::OnMyEvent)
 wxEND_EVENT_TABLE()
+
+void DesignPage::OnRunPage( wxCommandEvent& event ) {
+
+    //NOTE: This is very useful, if you have a help window already up, you can destory it first. However if the window was already destroyed internally (pressing close icon), then this pointer will
+    // be pointing to garbage memory and the program will crash if you try and call Destroy().
+    if(m_pMainRunPage != nullptr)
+        m_pMainRunPage->Destroy();
+
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
+    m_pMainRunPage->SetPageID(m_pDesignPageDiagramPanel->GetPageID());
+    m_pMainRunPage->Show(true);
+}
 
 DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : DiagramFrame( parent, id, title, pos, size, style )
 {
@@ -29,6 +44,7 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
     m_pStatusBar = nullptr;
     m_HtmlWin = nullptr;
     m_pDesignPageDiagramPanel = nullptr;
+    m_pMainRunPage = nullptr;
 
     m_pDesignPageDiagramPanel = new DesignPagePanel(this); //This are our drawing functions.
     AttachPanel(m_pDesignPageDiagramPanel);
@@ -52,7 +68,7 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
         m_pToolbar = CreateToolBar();
 
     wxBitmap BitMap;
-    
+
 /*
     m_pComboSelectCtl = new wxComboBox( m_pToolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(230,25), 0,0,wxCB_READONLY);
     m_pComboSelectCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DesignPage::OnSelectCtlChange ), nullptr, this );
@@ -70,6 +86,9 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
 */
     Utility::LoadBitmap(BitMap,"help.png");
     m_pToolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
+
+    Utility::LoadBitmap(BitMap,"run.png");
+    m_pToolbar->AddTool(ID_RUN_FORM, wxT(""), BitMap, wxT("Run form."));
 
     m_pToolbar->Realize();
     SetToolBar(m_pToolbar);
@@ -163,6 +182,9 @@ void DesignPage::OnMyEvent(MyEvent& event )
     //NOTE: We get here if resizing or right menu clicking, so we need to create a flag to indicated which.
     if(event.m_bHelpFrameWasDestroyed){
         m_HtmlWin = nullptr; // This allows us to test the help window if it was destroyed internally, like when you press the close icon in the window. See OnBHelp below.
+    }
+    else if(event.m_bMainRunPageWasDestroyed){
+        m_pMainRunPage = nullptr;
     }
     else if(event.m_bRefreshDatabase){
 
