@@ -23,13 +23,7 @@ wxEND_EVENT_TABLE()
 
 RunFormFrame::RunFormFrame( wxFrame* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
-
     m_pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,wxDEFAULT_FRAME_STYLE);
-
-   // m_pRunForm->SetFormID(m_sFormId); // The formId is used to load the form definition from the database.
-  //  m_pRunForm->Create(m_sBuildQuery);
-  //  m_pRunForm->Show(true);
-
 }
 
 RunFormFrame::~RunFormFrame(){

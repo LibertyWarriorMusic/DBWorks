@@ -7,6 +7,7 @@
 #include<wx/wxhtml.h>
 
 class RunForm;
+//This class is simply a frame to run the form.
 
 class RunFormFrame : public wxFrame{
 

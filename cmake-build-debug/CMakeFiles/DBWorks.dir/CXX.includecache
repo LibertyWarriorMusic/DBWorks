@@ -6,57 +6,53 @@
 
 #IncludeRegexTransform: 
 
-/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.h
-wx/wx.h
--
-wx/sizer.h
--
-
-/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myButton.h
-wx/wx.h
--
-wx/sizer.h
--
-
-/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
-wx/wx.h
--
-
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunForm.h
-wx/wxhtml.h
--
-
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunFormFrame.cpp
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.cpp
 wx/wxprec.h
 -
 wx/wx.h
 -
-wx/hyperlink.h
--
-wx/datectrl.h
--
-../CustomControls/myButton.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myButton.h
-../CustomControls/RecordSelector.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.h
+../HtmlHelp.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.h
 ../MyEvent.h
 /Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
-../Shared/Utility.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h
 ../Shared/global.h
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/global.h
-RunForm.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunForm.h
-RunFormFrame.h
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunFormFrame.h
+../Shared/Utility.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h
+../RuntimeEngine/MainRunPage.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.h
+DesignPagePanel.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h
+DesignPage.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h
 
-/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/RunFormFrame.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPage.h
+wx/wxhtml.h
+-
+../TableDefDiagram/DiagramFrame.h
+/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/DesignPages/DesignPagePanel.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/HtmlHelp.h
+wx/wxhtml.h
+-
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/MyEvent.h
+wx/wx.h
+-
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/RuntimeEngine/MainRunPage.h
 wx/wxhtml.h
 -
 
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/Utility.h
 
 /Users/nicholaszounis/Documents/GitHub/DBWorks/Shared/global.h
+
+/Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.h
+wx/wxhtml.h
+-
 
 /usr/local/include/wx-3.0/wx/accel.h
 wx/defs.h
@@ -570,12 +566,6 @@ wx/os2/combobox.h
 
 /usr/local/include/wx-3.0/wx/compiler.h
 
-/usr/local/include/wx-3.0/wx/compositewin.h
-wx/window.h
-/usr/local/include/wx-3.0/wx/wx/window.h
-wx/containr.h
-/usr/local/include/wx-3.0/wx/wx/containr.h
-
 /usr/local/include/wx-3.0/wx/confbase.h
 wx/defs.h
 /usr/local/include/wx-3.0/wx/wx/defs.h
@@ -740,18 +730,6 @@ wx/cocoa/dataobj2.h
 wx/os2/dataobj2.h
 /usr/local/include/wx-3.0/wx/wx/os2/dataobj2.h
 
-/usr/local/include/wx-3.0/wx/datectrl.h
-wx/defs.h
-/usr/local/include/wx-3.0/wx/wx/defs.h
-wx/datetimectrl.h
-/usr/local/include/wx-3.0/wx/wx/datetimectrl.h
-wx/msw/datectrl.h
-/usr/local/include/wx-3.0/wx/wx/msw/datectrl.h
-wx/osx/datectrl.h
-/usr/local/include/wx-3.0/wx/wx/osx/datectrl.h
-wx/generic/datectrl.h
-/usr/local/include/wx-3.0/wx/wx/generic/datectrl.h
-
 /usr/local/include/wx-3.0/wx/datetime.h
 wx/defs.h
 /usr/local/include/wx-3.0/wx/wx/defs.h
@@ -767,18 +745,6 @@ wx/anystr.h
 /usr/local/include/wx-3.0/wx/wx/anystr.h
 wx/dynarray.h
 /usr/local/include/wx-3.0/wx/wx/dynarray.h
-
-/usr/local/include/wx-3.0/wx/datetimectrl.h
-wx/defs.h
-/usr/local/include/wx-3.0/wx/wx/defs.h
-wx/control.h
-/usr/local/include/wx-3.0/wx/wx/control.h
-wx/datetime.h
-/usr/local/include/wx-3.0/wx/wx/datetime.h
-wx/msw/datetimectrl.h
-/usr/local/include/wx-3.0/wx/wx/msw/datetimectrl.h
-wx/osx/datetimectrl.h
-/usr/local/include/wx-3.0/wx/wx/osx/datetimectrl.h
 
 /usr/local/include/wx-3.0/wx/dc.h
 wx/object.h
@@ -1218,10 +1184,6 @@ wx/dynarray.h
 wx/dialog.h
 /usr/local/include/wx-3.0/wx/generic/wx/dialog.h
 
-/usr/local/include/wx-3.0/wx/generic/datectrl.h
-wx/compositewin.h
-/usr/local/include/wx-3.0/wx/generic/wx/compositewin.h
-
 /usr/local/include/wx-3.0/wx/generic/dirdlgg.h
 wx/dialog.h
 /usr/local/include/wx-3.0/wx/generic/wx/dialog.h
@@ -1249,8 +1211,6 @@ wx/filedlg.h
 /usr/local/include/wx-3.0/wx/generic/wx/filedlg.h
 wx/generic/filectrlg.h
 /usr/local/include/wx-3.0/wx/generic/wx/generic/filectrlg.h
-
-/usr/local/include/wx-3.0/wx/generic/hyperlink.h
 
 /usr/local/include/wx-3.0/wx/generic/listctrl.h
 wx/containr.h
@@ -1569,18 +1529,6 @@ wx/html/htmlcell.h
 /usr/local/include/wx-3.0/wx/html/wx/html/htmlcell.h
 wx/encconv.h
 /usr/local/include/wx-3.0/wx/html/wx/encconv.h
-
-/usr/local/include/wx-3.0/wx/hyperlink.h
-wx/defs.h
-/usr/local/include/wx-3.0/wx/wx/defs.h
-wx/control.h
-/usr/local/include/wx-3.0/wx/wx/control.h
-wx/gtk/hyperlink.h
-/usr/local/include/wx-3.0/wx/wx/gtk/hyperlink.h
-wx/msw/hyperlink.h
-/usr/local/include/wx-3.0/wx/wx/msw/hyperlink.h
-wx/generic/hyperlink.h
-/usr/local/include/wx-3.0/wx/wx/generic/hyperlink.h
 
 /usr/local/include/wx-3.0/wx/icon.h
 wx/iconloc.h
@@ -2197,10 +2145,6 @@ wx/bitmap.h
 /usr/local/include/wx-3.0/wx/osx/dataobj.h
 
 /usr/local/include/wx-3.0/wx/osx/dataobj2.h
-
-/usr/local/include/wx-3.0/wx/osx/datectrl.h
-
-/usr/local/include/wx-3.0/wx/osx/datetimectrl.h
 
 /usr/local/include/wx-3.0/wx/osx/dialog.h
 wx/panel.h

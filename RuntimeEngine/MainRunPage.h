@@ -9,11 +9,14 @@
 class MainRunPage : public wxFrame{
 
 private:
-    wxBoxSizer* m_MainFormSizer;
+wxDECLARE_EVENT_TABLE();
+
+   // wxBoxSizer* m_MainFormSizer;
+    //ArrayRunForms itemArray;
     wxString m_sPageId;
 public:
-    explicit MainRunPage( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
-
+    explicit MainRunPage( wxFrame* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
+    void OnMyEvent(MyEvent& event);
     ~MainRunPage() override;
     void SetPageID(wxString sPageId);
 

@@ -89,6 +89,7 @@ enum {
 class ObTable;
 class ObControl;
 class ObForm;
+//class RunForm;
 
 //Object Array Declarations.
 class TableLinkageLine

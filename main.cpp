@@ -1983,8 +1983,8 @@ void MainFrame::OnRunDatabase( wxCommandEvent& event )
     if(m_pMainRunPage != nullptr)
         m_pMainRunPage->Destroy();
 
-    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxSTAY_ON_TOP);
-
+   // m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxPoint(400,100), wxSize(1000,1000), wxDEFAULT_FRAME_STYLE );
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxSize(1700,1000), wxDEFAULT_FRAME_STYLE );
 
 
     m_pMainRunPage->Show(true);

@@ -10,9 +10,20 @@
 
 #include "RunForm.h"
 
+
+
 #include "MainRunPage.h"
 
-MainRunPage::MainRunPage( wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
+
+
+wxBEGIN_EVENT_TABLE(MainRunPage, wxFrame)
+                EVT_MYEVENT(MainRunPage::OnMyEvent)
+wxEND_EVENT_TABLE()
+
+//#include <wx/arrimpl.cpp>
+//WX_DEFINE_OBJARRAY(ArrayRunForms);
+
+MainRunPage::MainRunPage( wxFrame* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style ) : wxFrame( parent, id, title, pos, size, style )
 {
     m_sPageId="";
 
@@ -47,29 +58,19 @@ MainRunPage::MainRunPage( wxWindow* parent, wxWindowID id, const wxString& title
 
                 long style = wxBORDER_SIMPLE;
 
-                pRunForm = new RunForm((wxFrame *) this, -1, "Run Form", wxPoint(Utility::StringToInt(xPos),Utility::StringToInt(yPos)), wxSize(Utility::StringToInt(width),Utility::StringToInt(height)),style);
-
+                pRunForm = new RunForm((wxWindow *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,style);
                 pRunForm->SetFormID(usr_formsId); // The formId is used to load the form definition from the database.
                 pRunForm->Create(pRunForm->GetQuery(usr_formsId));//We need to get the query for this form in order to run it.
+
+
+                pRunForm->SetPosition(wxPoint(Utility::StringToInt(xPos),Utility::StringToInt(yPos)));
+                pRunForm->SetSize(wxSize(Utility::StringToInt(width),Utility::StringToInt(height)));
                 pRunForm->Show(true);
 
             }
+            Layout();
         }
-
-
-        //
-        m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
-
-        //wxBoxSizer *gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-
-        //wxStaticText *txt = new wxStaticText( this, wxID_ANY, "Hello World", wxDefaultPosition, wxDefaultSize, 0 );
-
-        //gSizer1->Add( txt, 0, wxEXPAND, 0);
-
-        //m_MainFormSizer->Add( gSizer1, 0, wxCenter, 5 );
-        //Create a HTML display for the help file
     }
-
 }
 
 MainRunPage::~MainRunPage(){
@@ -95,3 +96,13 @@ bool MainRunPage::Destroy()
 
     return bResult;
 }
+
+
+void MainRunPage::OnMyEvent(MyEvent& event) {
+
+    if (event.m_bButtonClicked) {
+
+
+    }
+}
+
