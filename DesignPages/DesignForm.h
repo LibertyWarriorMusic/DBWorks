@@ -22,6 +22,7 @@ private:
     RunFormFrame * m_pRunFormFrame;
     HtmlHelp *m_pHtmlWin;
     GenericQueryGrid * m_pQueryGrid;
+    wxSize m_FormSize;
 
     DesignFormPanel * m_pDesignFormDiagramPanel; //Used for drawing
 
@@ -39,6 +40,7 @@ private:
     void OnbAddItem( wxCommandEvent& event );
     void OnEditQuery( wxCommandEvent& event );
     void OnRunForm( wxCommandEvent& event );
+    void OnSizeForm(wxSizeEvent& event);
 
 public:
     explicit DesignForm( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);

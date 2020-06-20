@@ -28,6 +28,7 @@ wxBEGIN_EVENT_TABLE(DesignForm, wxFrame)
                 EVT_TOOL(ID_EDIT_QUERY, DesignForm::OnEditQuery)
                 EVT_TOOL(ID_RUN_FORM, DesignForm::OnRunForm)
                 EVT_MYEVENT(DesignForm::OnMyEvent)
+                EVT_SIZE(DesignForm::OnSizeForm)
 wxEND_EVENT_TABLE()
 
 void DesignForm::OnRunForm( wxCommandEvent& event ) {
@@ -125,6 +126,13 @@ void DesignForm::OnSelectCtlChange( wxCommandEvent& event )
 //We can send a message to the parent that this window is destroyed.
 bool DesignForm::Destroy()
 {
+    //Before we do anything, save the form size to the database
+    if(!m_sFormId.IsEmpty()){
+        wxString queryString = "UPDATE usr_forms SET width="+ Utility::IntToString(m_FormSize.x) + ", height=" + Utility::IntToString(m_FormSize.y) + " WHERE usr_formsId="+m_sFormId;
+        Utility::ExecuteQuery(queryString);
+    }
+
+
     bool bResult = wxFrame::Destroy();
 
     MyEvent my_event( this );
@@ -142,7 +150,7 @@ void DesignForm::SetFormID(wxString sFormId)
         m_pDesignFormDiagramPanel->SetFormID(sFormId);
 
         //Load Query String
-        wxString Query = "SELECT usr_queries.queryDefinition, usr_forms.usr_formsId, usr_queries.usr_queriesId";
+        wxString Query = "SELECT usr_queries.queryDefinition, usr_forms.usr_formsId, usr_queries.usr_queriesId, usr_forms.width, usr_forms.height";
         Query+= " FROM usr_queries, usr_forms";
         Query+= " WHERE usr_forms.usr_queriesId = usr_queries.usr_queriesId";
         Query+= " AND usr_forms.usr_formsId = "+ m_sFormId +" LIMIT 1";
@@ -152,9 +160,16 @@ void DesignForm::SetFormID(wxString sFormId)
         if(aRecord.GetCount()==1){
             m_sBuildQuery = aRecord[0].GetData("queryDefinition");
             m_usr_queriesId = aRecord[0].GetData("usr_queriesId");
+
+            //Set the form size here.
+            m_FormSize.x=Utility::StringToInt(aRecord[0].GetData("width"));
+            m_FormSize.y=Utility::StringToInt(aRecord[0].GetData("height"));
         }
 
         m_pDesignFormDiagramPanel->SetQuery(m_sBuildQuery);
+
+
+
     }
 
 }
@@ -175,7 +190,7 @@ void DesignForm::LoadControlObjects()
 {
     m_pDesignFormDiagramPanel->LoadControlObjects();
     //this->SetSize(m_pDesignFormDiagramPanel->GetSizeDiagramExtend());
-    this->SetSize(800,700);
+    this->SetSize(m_FormSize.x,m_FormSize.y);
     this->Show();
 }
 
@@ -260,4 +275,10 @@ void DesignForm::RunQuery() {
             m_pQueryGrid = nullptr;
         }
     }
+}
+
+void DesignForm::OnSizeForm(wxSizeEvent& event)
+{
+    OnSize(event);
+    m_FormSize = event.GetSize();//Make sure the form size is current and reflects any change. We are going to save it on exit.
 }

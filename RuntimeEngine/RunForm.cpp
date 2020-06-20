@@ -43,16 +43,37 @@ void RunForm::Create(wxString sQuery)
 
     if(m_bLoadFields)
         LoadFields(m_sCurrentId);
+
+    SetSize(m_FormSize);// Set the form Size.
 }
 
 wxString RunForm::GetFormID()
 {
     return m_sFormId; //This will return the current form ID from the selection control
 }
-
+wxSize RunForm::GetFormSize()
+{
+    return m_FormSize;
+}
 void RunForm::SetFormID(wxString Id)
 {
     m_sFormId = Id;
+
+    //Once we have the form ID, we can load the width and height of the form
+
+    //Load Query String
+    wxString Query = "SELECT width, height";
+    Query+= " FROM usr_forms";
+    Query+= " WHERE usr_formsId = "+ m_sFormId +" LIMIT 1";
+
+    ArrayFieldRecord aRecord;
+    Utility::LoadArrayFieldRecordFromQuery(aRecord, Query);
+    if(aRecord.GetCount()==1){
+
+        //Set the form size here.
+        m_FormSize.x=Utility::StringToInt(aRecord[0].GetData("width"));
+        m_FormSize.y=Utility::StringToInt(aRecord[0].GetData("height"));
+    }
 }
 
 void RunForm::SetFormMode(int mode)
@@ -171,19 +192,6 @@ void RunForm::LoadControlObjects()
                 sField.Trim(false);
                 pCtl->fieldName=sField;
 
-/*
-                int lxPos = Utility::StringToInt(xPos);
-                int lyPos = Utility::StringToInt(yPos);
-
-                if(lxPos> m_sizeWinObjectsExtend.x){
-                    m_sizeWinObjectsExtend.x = lxPos;
-                }
-                if(lyPos> m_sizeWinObjectsExtend.y){
-                    m_sizeWinObjectsExtend.y = lyPos;
-                }
-
-                wxPoint pt(Utility::StringToInt(xPos),Utility::StringToInt(yPos));
-                pCtl->SetControlPosition(pt);*/
 
                 m_CtrlDataItem.Add(pCtl);
             }
@@ -1026,6 +1034,12 @@ void RunForm::OnButtonClick( wxCommandEvent& event )
 
         if(sAction=="ACTION_EXIT"){
             Close(true);
+
+            //Send this event to the parent.
+            MyEvent my_event( this );
+            my_event.m_bDestroyed = true;
+            GetParent()->ProcessWindowEvent( my_event );
+
         }
         else if(sAction=="ACTION_INSERT") {
             if(m_TableList.IsEmpty()){

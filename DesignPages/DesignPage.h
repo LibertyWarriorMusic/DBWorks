@@ -17,6 +17,7 @@ class DesignPage : public DiagramFrame
 private:
     wxComboBox * m_pComboSelectCtl;
     MainRunPage *m_pMainRunPage;
+    wxSize m_PageSize;
     DesignPagePanel * m_pDesignPageDiagramPanel; //Used for drawing
     void AddDrawObject( const wxString& sFormID);
     HtmlHelp *m_HtmlWin;
@@ -26,7 +27,7 @@ private:
     void OnRunPage( wxCommandEvent& event );
     void OnSelectCtlChange( wxCommandEvent& event );
     void OnSelectCtlDropDown( wxCommandEvent& event );
-
+    void OnSizePage(wxSizeEvent& event);
 public:
     explicit DesignPage( wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = wxEmptyString, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize( 1000,900 ), long style = wxDEFAULT_FRAME_STYLE);
     ~DesignPage() override;

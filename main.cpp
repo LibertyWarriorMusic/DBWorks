@@ -127,7 +127,7 @@ bool MyApp::OnInit()
     if(Settings.RUN_ENGINE_ENABLED){
         //Runtime Engine only
 
-        m_MainRunPageFrame = new MainRunPage((wxFrame*) nullptr, -1,
+        m_MainRunPageFrame = new MainRunPage((wxFrame*) nullptr, -1,"",
                 "Running Database",
                 wxPoint(MAIN_WIN_POSX,MAIN_WIN_POSY),
                 wxSize((int)Settings.lMainWindowWidth,(int)Settings.lMainWindowHeight),
@@ -1984,7 +1984,7 @@ void MainFrame::OnRunDatabase( wxCommandEvent& event )
         m_pMainRunPage->Destroy();
 
    // m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxPoint(400,100), wxSize(1000,1000), wxDEFAULT_FRAME_STYLE );
-    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxSize(1700,1000), wxDEFAULT_FRAME_STYLE );
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1,"", "Your first database", wxDefaultPosition, wxSize(1700,1000), wxDEFAULT_FRAME_STYLE );
 
 
     m_pMainRunPage->Show(true);

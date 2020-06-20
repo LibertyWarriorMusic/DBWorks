@@ -42,7 +42,7 @@ wxString RunFormFrame::GetQuery(wxString sFormId)
 
 void RunFormFrame::Create(wxString sQuery) {
     m_pRunForm->Create(sQuery);
-
+    SetSize(m_pRunForm->GetFormSize());
 }
 
 //We can send a message to the parent that this window is destroyed.
@@ -63,8 +63,8 @@ bool RunFormFrame::Destroy()
 
 void RunFormFrame::OnMyEvent(MyEvent& event) {
 
-    if (event.m_bButtonClicked) {
-
+    if (event.m_bDestroyed) {
+        Close(true);
 
     }
 }

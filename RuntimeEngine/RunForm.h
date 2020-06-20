@@ -32,7 +32,7 @@ private:
     wxString m_sBuildQuery; // The query the form is based.
     wxArrayString m_TableList;// A list of table name from the build query
     wxString m_sCurrentId; // The current table ID for the form.
-
+    wxSize m_FormSize;// This is the size of this form.
 
     //We need to get a list of all the indexes for the query this form is based upon.
     wxString GetFormIndex();
@@ -76,6 +76,8 @@ public:
     void RenderAllControls();
     void RenderControl(int index);
     void Create(wxString sQuery);
+
+    wxSize GetFormSize();
 
     wxString GetFormID();
     void SetQuery(wxString sQuery);

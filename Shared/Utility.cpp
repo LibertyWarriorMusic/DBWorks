@@ -387,6 +387,8 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query = "CREATE TABLE `usr_pages` ("
                     "`usr_pagesId` int NOT NULL AUTO_INCREMENT,"
                     "`pageName` varchar(255) NOT NULL,"
+                    "`width` int default '600',"
+                    "`height` int default '300',"
                     "PRIMARY KEY (`usr_pagesId`)"
                     " ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8;";
 

@@ -24,6 +24,7 @@ wxBEGIN_EVENT_TABLE(DesignPage, wxFrame)
                 EVT_TOOL(ID_TOOL_ADD, DesignPage::OnbAddItem)
                 EVT_TOOL(ID_RUN_FORM, DesignPage::OnRunPage)
                 EVT_MYEVENT(DesignPage::OnMyEvent)
+                EVT_SIZE(DesignPage::OnSizePage)
 wxEND_EVENT_TABLE()
 
 void DesignPage::OnRunPage( wxCommandEvent& event ) {
@@ -33,10 +34,7 @@ void DesignPage::OnRunPage( wxCommandEvent& event ) {
     if(m_pMainRunPage != nullptr)
         m_pMainRunPage->Destroy();
 
-    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1, "Your first database", wxDefaultPosition, wxSize(1700,1000), wxDEFAULT_FRAME_STYLE );
-
-
-    m_pMainRunPage->SetPageID(m_pDesignPageDiagramPanel->GetPageID());
+    m_pMainRunPage = new MainRunPage((wxFrame*) this, -1,m_pDesignPageDiagramPanel->GetPageID(), "Your first database", wxDefaultPosition, wxSize(1700,1000), wxDEFAULT_FRAME_STYLE );
     m_pMainRunPage->Show(true);
 }
 
@@ -51,18 +49,6 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
     m_pDesignPageDiagramPanel = new DesignPagePanel(this); //This are our drawing functions.
     AttachPanel(m_pDesignPageDiagramPanel);
 
-
-    //m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
-
-    //wxBoxSizer *gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-
-   // wxStaticText *txt = new wxStaticText( this, wxID_ANY, "Design Page", wxDefaultPosition, wxDefaultSize, 0 );
-
-    //gSizer1->Add( txt, 0, wxEXPAND, 0);
-
-   // m_MainFormSizer->Add( gSizer1, 0, wxCenter, 5 );
-    //Create a HTML display for the help file
-
     wxInitAllImageHandlers(); //You need to call this or the images will not load.
     // Get the path to the images
 
@@ -71,21 +57,6 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
 
     wxBitmap BitMap;
 
-/*
-    m_pComboSelectCtl = new wxComboBox( m_pToolbar, wxID_ANY, wxEmptyString, wxDefaultPosition, wxSize(230,25), 0,0,wxCB_READONLY);
-    m_pComboSelectCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DesignPage::OnSelectCtlChange ), nullptr, this );
-    m_pComboSelectCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( DesignPage::OnSelectCtlDropDown ), nullptr, this );
-
-
-    Utility::LoadComboFromDatabaseTableByName(Settings.sDatabase,m_pComboSelectCtl,"usr_forms","formName");
-    m_pComboSelectCtl->Select(0);
-    m_pToolbar->AddControl(m_pComboSelectCtl);
-
-
-
-    Utility::LoadBitmap(BitMap,"add.png");
-    m_pToolbar->AddTool(ID_TOOL_ADD, wxT(""), BitMap, wxT("Add form to the page."));
-*/
     Utility::LoadBitmap(BitMap,"help.png");
     m_pToolbar->AddTool(ID_HELP, wxT("Help"), BitMap, wxT("Help."));
 
@@ -94,6 +65,12 @@ DesignPage::DesignPage( wxWindow* parent, wxWindowID id, const wxString& title, 
 
     m_pToolbar->Realize();
     SetToolBar(m_pToolbar);
+
+
+
+
+
+
 }
 
 DesignPage::~DesignPage(){
@@ -105,7 +82,27 @@ DesignPage::~DesignPage(){
 void DesignPage::LoadFormObjects()
 {
     m_pDesignPageDiagramPanel->LoadFormObjects();
-    this->SetSize(800,700);
+
+
+    wxString pageId = m_pDesignPageDiagramPanel->GetPageID();
+    //Load the page size
+    //Load Query String
+    wxString Query = "SELECT width, height";
+    Query+= " FROM usr_pages";
+    Query+= " WHERE usr_pagesId = "+ pageId +" LIMIT 1";
+
+    ArrayFieldRecord aRecord;
+    Utility::LoadArrayFieldRecordFromQuery(aRecord, Query);
+    if(aRecord.GetCount()==1){
+
+        //Set the form size here.
+        m_PageSize.x=Utility::StringToInt(aRecord[0].GetData("width"));
+        m_PageSize.y=Utility::StringToInt(aRecord[0].GetData("height"));
+    }
+
+    this->SetSize(m_PageSize);
+
+
     this->Show();
 }
 
@@ -154,6 +151,15 @@ void DesignPage::AddDrawObject( const wxString& sFormID)
 //We can send a message to the parent that this window is destroyed.
 bool DesignPage::Destroy()
 {
+    wxString pageId = m_pDesignPageDiagramPanel->GetPageID();
+
+    //Before we do anything, save the form size to the database
+    if(!pageId.IsEmpty()){
+        wxString queryString = "UPDATE usr_pages SET width="+ Utility::IntToString(m_PageSize.x) + ", height=" + Utility::IntToString(m_PageSize.y) + " WHERE usr_pagesId="+pageId;
+        Utility::ExecuteQuery(queryString);
+    }
+
+
     bool bResult = wxFrame::Destroy();
 
     MyEvent my_event( this );
@@ -192,4 +198,10 @@ void DesignPage::OnMyEvent(MyEvent& event )
 
 
     }
+}
+
+void DesignPage::OnSizePage(wxSizeEvent& event)
+{
+    OnSize(event);
+    m_PageSize = event.GetSize();//Make sure the form size is current and reflects any change. We are going to save it on exit.
 }
