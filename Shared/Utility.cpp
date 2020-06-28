@@ -484,6 +484,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query += "('ACTION_DELETE',''),";
             query += "('ACTION_SELECTION_CHANGED',''),";
             query += "('ACTION_RUN_SCRIPT',''),";
+            query += "('ACTION_OPEN_FORM',''),";
             query += "('ACTION_EXIT','');";
 
             ExecuteQuery(sDatabase,query);

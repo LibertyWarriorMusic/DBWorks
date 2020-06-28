@@ -46,4 +46,7 @@ MyEvent::MyEvent( wxWindow* win )
     SetEventObject( win );
     m_sData="";
     m_sTitle="";
+    m_sFormId="";
+    m_sTableId="";
+    m_sBuildQuery="";
 }

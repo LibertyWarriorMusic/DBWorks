@@ -40,6 +40,8 @@ DialogBaseClass::DialogBaseClass( wxWindow* parent, wxWindowID id, const wxStrin
     m_OkLabel = "OK";
     //The is the sizer we are going to attach control to.
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
+    m_CtrlItemSizer = new wxBoxSizer(wxVERTICAL);
+    m_MainFormSizer->Add( m_CtrlItemSizer, 0, wxALIGN_LEFT, 0);
     this->SetLabel(title);
     this->SetSizer( m_MainFormSizer );
 
@@ -58,8 +60,6 @@ wxArrayString* DialogBaseClass::GetSelectionArrayString()
 void DialogBaseClass::SetOkLabel(wxString label)
 {
     m_OkLabel = label;
-
-
 }
 
 void DialogBaseClass::Create()
@@ -236,367 +236,374 @@ void DialogBaseClass::AddCtlItem(int iTypeOfControl, wxString TitleName, wxStrin
     }
 }
 
-
-//Before you dropdown, save the combo contents.
-void DialogBaseClass::OnComboDropDown( wxCommandEvent& event )
+void DialogBaseClass::RemoveCtlItem(wxString sIdentifier)
 {
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-    m_sOldSelectionText = combo->GetValue();
+    for (int index=0; index < m_CtrlDataItem.GetCount();index++){
+        if(m_CtrlDataItem[index].m_sIdentifier==sIdentifier){
 
-}
-void DialogBaseClass::OnComboChange( wxCommandEvent& event )
-{
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
-    wxString value = combo->GetStringSelection();
+            m_CtrlItemSizer->Remove(m_CtrlDataItem[index].pBoxSizer);
 
-    if(m_sOldSelectionText.IsEmpty())
-        combo->SetValue(value);
-    else{
-        m_sOldSelectionText << " - " << value;
-        combo->SetValue(m_sOldSelectionText);
+            // m_CtrlDataItem[index].DestroyCtrl();// This is causing a crash
+            m_CtrlDataItem[index].HideCtrl();
+            
+            m_CtrlDataItem.RemoveAt(index); //Remove it from the list
+
+            this->Layout();
+            break;
+        }
     }
 }
 
-
-void DialogBaseClass::OnComboCloseUp( wxCommandEvent& event )
+bool DialogBaseClass::HasCtlItem(wxString sIdentifier)
 {
-    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    for (int index=0; index < m_CtrlDataItem.GetCount();index++){
+        if(m_CtrlDataItem[index].m_sIdentifier==sIdentifier){
+            return true;
+        }
+    }
+    return false;
+}
 
-
-    //Remove the comments from the combo.
-    wxString value = combo->GetStringSelection();
-    int i = value.find('[',0);
-
-    if(i!= wxNOT_FOUND){
-        value = value.Left(i);
-        value = value.Trim(true);
-        combo->SetValue(value);
+//We added a new ctrl item after we created the OK buttons, so we need to add this before the buttons.
+void DialogBaseClass::RenderNewControl()
+{
+    int index = m_CtrlDataItem.GetCount();
+    index--;
+    if(index > -1){
+        //m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+        RenderCtrl(index);
+        this->Layout();
     }
 }
+
 
 //After we add all our control, we call this function to render our constrols to the main sizer so they display
 void DialogBaseClass::RenderAllControls()
 {
-    wxBoxSizer* gSizer1;
-    wxString sFlags="";
-    unsigned long style=0;
 
-
-
-    for (int index=0; index < m_CtrlDataItem.GetCount();index++){
-        sFlags =  m_CtrlDataItem[index].Flags; // Get additional flags for the control
-        switch(m_CtrlDataItem[index].iTypeOfControl) {
-            case CTL_STATIC :
-
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-                break;
-            case CTL_TEXT :
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY"))
-                    style = wxTE_READONLY;
-                //The only place we actually want to see the password is when we view the table.
-                else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"PASSWORD") )
-                    style = wxTE_PASSWORD;
-
-                //m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
-                m_CtrlDataItem[index].textCtl->SetWindowStyle(style);
-
-
-                m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
-                gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-
-
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-            case CTL_MULTI_TEXT :
-
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-
-
-                //Don't do rich text right now because you copy and past into the field, some special characters might be present that you can't see.
-                //I still need to implement parsing for special characters, then we might be able to use this style again.
-                //unsigned long style =  wxTE_WORDWRAP | wxTE_RIGHT| wxTE_DONTWRAP | wxTE_MULTILINE | wxTE_RICH | wxHSCROLL;
-
-                style =  wxTE_WORDWRAP | wxTE_RIGHT | wxTE_MULTILINE  | wxHSCROLL;
-
-                if (Utility::HasFlag( m_CtrlDataItem[index].Flags,"READONLY"))
-                    style |= wxTE_READONLY;
-
-                //m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
-                m_CtrlDataItem[index].textCtl->SetWindowStyle(style);
-
-
-                m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,TEXTCTLMULTI_HEIGHT ) );
-                gSizer1->Add( m_CtrlDataItem[index].textCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
-
-                //This will probably not be used for combos, but kept it hear because it might be used to remember a default value for the control
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-
-                m_CalculatedHeightWindow += TEXTCTLMULTI_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-                m_MainFormSizer->Add( gSizer1, ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-                break;
-            case CTL_SELECTION_LOOKUP_NAME :
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=m_CtrlDataItem[index].comCtl->GetWindowStyle();
-
-                //We can add other type of flags here
-                if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SQL_DATABASES"))
-                    Utility::LoadStringArrayWidthMySQLDatabaseNames(m_asSelectionItemArray);
-                else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_TABLES"))
-                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray);
-                else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_HIDDEN_TABLES"))
-                    Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray, true);
-                else
-                    Utility::ExtractSelectionLookupItemsName(m_asSelectionItemArray,sFlags);
-
-
-                // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
-                // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
-                //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
-                    style |= wxCB_READONLY;
-                    m_CtrlDataItem[index].comCtl->Disable();
-                }
-
-
-                //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
-                m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
-
-                gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
-
-
-                //Fill the list box with the selection items.
-                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
-               // for ( int iIdx=0; iIdx<m_asSelectionItemArray.GetCount(); iIdx++ )
-                    //m_CtrlDataItem[index].comCtl->Append(m_asSelectionItemArray[iIdx]);
-
-
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-
-                m_MainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
-                break;
-
-            case CTL_SELECTION_ADDITIVE :
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=m_CtrlDataItem[index].comCtl->GetWindowStyle();
-                //Create a wxComboCtrl. We need to fill it with the values extracted from
-
-                //Extract all the selection items.
-                Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
-
-
-                // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
-                // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
-                //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
-                    style |= wxCB_READONLY;
-                }
-
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
-                    m_CtrlDataItem[index].comCtl->Disable();
-                }
-
-                //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
-                m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
-
-                gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
-
-
-                //Fill the list box with the selection items.
-                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
-                //for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-                    //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
-
-                //Make sure you set the default value after you append selection items.
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-                //Attache handlers to buttons
-
-                // Connect a closeup event so I can remove the comments.
-                m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboCloseUp ), nullptr, this );
-
-                //These events will prevent the replacement of text and add them together.
-
-                m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboChange ), nullptr, this );
-                m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( DialogBaseClass::OnComboDropDown ), nullptr, this );
-
-
-                m_MainFormSizer->Add( gSizer1, 0, wxEXPAND, BORDER_WIDTH );
-                break;
-
-            case CTL_SELECTION :
-
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=m_CtrlDataItem[index].comCtl->GetWindowStyle() ;
-                //Create a wxComboCtrl. We need to fill it with the values extracted from
-
-                //Extract all the selection items.
-                Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
-
-
-                // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
-                // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
-                //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
-                    style |= wxCB_READONLY;
-                }
-
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
-                    m_CtrlDataItem[index].comCtl->Disable();
-                }
-
-                //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
-                m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
-
-                gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
-
-
-                //Fill the list box with the selection items.
-                Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
-               // for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
-                    //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
-
-                //Make sure you set the default value after you append selection items.
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-                //Attache handlers to buttons
-                // Connect a closeup event so I can remove the comments.
-                m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboCloseUp ), nullptr, this );
-
-
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-            case CTL_CHECKBOX :
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-                //m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
-                gSizer1->Add( m_CtrlDataItem[index].pCheckBox, 0, wxALL, BORDER_WIDTH );
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-            case CTL_DATE :
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-
-                style = wxDP_DEFAULT | wxDP_DROPDOWN | wxDP_SHOWCENTURY;
-
-                //m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( this, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, style );
-                m_CtrlDataItem[index].datePickerCtl->SetWindowStyle(style);
-
-
-                m_CtrlDataItem[index].datePickerCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
-                gSizer1->Add( m_CtrlDataItem[index].datePickerCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-                //gSizer1->Add( itemArray[i].textCtl, 0, 0, BORDER_WIDTH );
-
-                if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
-                    m_CtrlDataItem[index].datePickerCtl->SetValue(Utility::StringToDate(m_CtrlDataItem[index].fieldDefault));
-                else if(m_CtrlDataItem[index].fieldType == "DATE") { //Check to see if the type is date, then set with current date.
-                    m_CtrlDataItem[index].datePickerCtl->SetValue(wxDateTime::Now());
-                }
-
-                if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY"))
-                    m_CtrlDataItem[index].datePickerCtl->Disable();
-
-
-                m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-
-            case CTL_LISTBOX :
-
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-                gSizer1->Add( m_CtrlDataItem[index].pListBox,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-
-            case CTL_BUTTON :
-
-                gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-                //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
-                m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
-                gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
-                style=0;
-
-                gSizer1->Add( m_CtrlDataItem[index].pButton,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
-
-                m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
-                break;
-
-
-            default:
-                break;
-        }
-
-    }
+    for (int index=0; index < m_CtrlDataItem.GetCount();index++)
+        RenderCtrl(index);
 
     ResizeTitleText(); //Find the maximum width of the title fields and set all controls to that width.
     this->Layout();
     this->Centre( wxBOTH );
     //Create the buttons to the dialog
     Create();
+}
+
+void DialogBaseClass::RenderCtrl(int index)
+{
+    wxString sFlags="";
+    unsigned long style=0;
+
+    sFlags =  m_CtrlDataItem[index].Flags; // Get additional flags for the control
+    switch(m_CtrlDataItem[index].iTypeOfControl) {
+        case CTL_STATIC :
+
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+
+
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+            break;
+        case CTL_TEXT :
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY"))
+                style = wxTE_READONLY;
+                //The only place we actually want to see the password is when we view the table.
+            else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"PASSWORD") )
+                style = wxTE_PASSWORD;
+
+            //m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].textCtl->SetWindowStyle(style);
+
+
+            m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+        case CTL_MULTI_TEXT :
+
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+
+
+            //Don't do rich text right now because you copy and past into the field, some special characters might be present that you can't see.
+            //I still need to implement parsing for special characters, then we might be able to use this style again.
+            //unsigned long style =  wxTE_WORDWRAP | wxTE_RIGHT| wxTE_DONTWRAP | wxTE_MULTILINE | wxTE_RICH | wxHSCROLL;
+
+            style =  wxTE_WORDWRAP | wxTE_RIGHT | wxTE_MULTILINE  | wxHSCROLL;
+
+            if (Utility::HasFlag( m_CtrlDataItem[index].Flags,"READONLY"))
+                style |= wxTE_READONLY;
+
+            //m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
+            m_CtrlDataItem[index].textCtl->SetWindowStyle(style);
+
+
+            m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,TEXTCTLMULTI_HEIGHT ) );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].textCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+
+            //This will probably not be used for combos, but kept it hear because it might be used to remember a default value for the control
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].textCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+            m_CalculatedHeightWindow += TEXTCTLMULTI_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer, ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+            break;
+        case CTL_SELECTION_LOOKUP_NAME :
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=m_CtrlDataItem[index].comCtl->GetWindowStyle();
+
+            //We can add other type of flags here
+            if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SQL_DATABASES"))
+                Utility::LoadStringArrayWidthMySQLDatabaseNames(m_asSelectionItemArray);
+            else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_TABLES"))
+                Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray);
+            else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"SYS_HIDDEN_TABLES"))
+                Utility::LoadStringArrayWithTableNamesFromSysTables(Settings.sDatabase, m_asSelectionItemArray, true);
+            else
+                Utility::ExtractSelectionLookupItemsName(m_asSelectionItemArray,sFlags);
+
+
+            // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+            // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+            //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
+                style |= wxCB_READONLY;
+                m_CtrlDataItem[index].comCtl->Disable();
+            }
+
+
+            //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+            m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
+
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+
+
+            //Fill the list box with the selection items.
+            Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
+            // for ( int iIdx=0; iIdx<m_asSelectionItemArray.GetCount(); iIdx++ )
+            //m_CtrlDataItem[index].comCtl->Append(m_asSelectionItemArray[iIdx]);
+
+
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer, 0, wxEXPAND, BORDER_WIDTH );
+            break;
+
+        case CTL_SELECTION_ADDITIVE :
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=m_CtrlDataItem[index].comCtl->GetWindowStyle();
+            //Create a wxComboCtrl. We need to fill it with the values extracted from
+
+            //Extract all the selection items.
+            Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
+
+
+            // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+            // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+            //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
+                style |= wxCB_READONLY;
+            }
+
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
+                m_CtrlDataItem[index].comCtl->Disable();
+            }
+
+            //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+            m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
+
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+
+
+            //Fill the list box with the selection items.
+            Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
+            //for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
+            //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
+
+            //Make sure you set the default value after you append selection items.
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            //Attache handlers to buttons
+
+            // Connect a closeup event so I can remove the comments.
+            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboCloseUp ), nullptr, this );
+
+            //These events will prevent the replacement of text and add them together.
+
+            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboChange ), nullptr, this );
+            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX_DROPDOWN, wxCommandEventHandler( DialogBaseClass::OnComboDropDown ), nullptr, this );
+
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer, 0, wxEXPAND, BORDER_WIDTH );
+            break;
+
+        case CTL_SELECTION :
+
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=m_CtrlDataItem[index].comCtl->GetWindowStyle() ;
+            //Create a wxComboCtrl. We need to fill it with the values extracted from
+
+            //Extract all the selection items.
+            Utility::ExtractSelectionItems(m_asSelectionItemArray,sFlags);
+
+
+            // The issue here is, if we are viewing the text control only and have a value in the control that isn't in the pull down list
+            // then that value will not be loaded if we have a read only flag. If we are only viewing the combobox, it's proably better to disable the pull down.
+            //if (m_sUse=="VIEW" || find != wxNOT_FOUND)
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY")){
+                style |= wxCB_READONLY;
+            }
+
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"DISABLED")){
+                m_CtrlDataItem[index].comCtl->Disable();
+            }
+
+            //m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+            m_CtrlDataItem[index].comCtl->SetWindowStyle(style);
+
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
+
+
+            //Fill the list box with the selection items.
+            Utility::LoadComboFromStringArray(m_CtrlDataItem[index].comCtl,m_asSelectionItemArray);
+            // for ( int iIdx=0; iIdx<sSelectionItemArray.GetCount(); iIdx++ )
+            //m_CtrlDataItem[index].comCtl->Append(sSelectionItemArray[iIdx]);
+
+            //Make sure you set the default value after you append selection items.
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].comCtl->SetValue(m_CtrlDataItem[index].fieldDefault);
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            //Attache handlers to buttons
+            // Connect a closeup event so I can remove the comments.
+            m_CtrlDataItem[index].comCtl->Connect( wxEVT_COMBOBOX, wxCommandEventHandler( DialogBaseClass::OnComboCloseUp ), nullptr, this );
+
+
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+        case CTL_CHECKBOX :
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+            //m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].pCheckBox, 0, wxALL, BORDER_WIDTH );
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+        case CTL_DATE :
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+
+            style = wxDP_DEFAULT | wxDP_DROPDOWN | wxDP_SHOWCENTURY;
+
+            //m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( this, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].datePickerCtl->SetWindowStyle(style);
+
+
+            m_CtrlDataItem[index].datePickerCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].datePickerCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+            //gSizer1->Add( itemArray[i].textCtl, 0, 0, BORDER_WIDTH );
+
+            if(!m_CtrlDataItem[index].fieldDefault.IsEmpty())
+                m_CtrlDataItem[index].datePickerCtl->SetValue(Utility::StringToDate(m_CtrlDataItem[index].fieldDefault));
+            else if(m_CtrlDataItem[index].fieldType == "DATE") { //Check to see if the type is date, then set with current date.
+                m_CtrlDataItem[index].datePickerCtl->SetValue(wxDateTime::Now());
+            }
+
+            if (Utility::HasFlag(m_CtrlDataItem[index].Flags,"READONLY"))
+                m_CtrlDataItem[index].datePickerCtl->Disable();
+
+
+            m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+
+        case CTL_LISTBOX :
+
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].pListBox,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+
+        case CTL_BUTTON :
+
+            m_CtrlDataItem[index].pBoxSizer = new wxBoxSizer( wxHORIZONTAL );
+            //m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
+            style=0;
+
+            m_CtrlDataItem[index].pBoxSizer->Add( m_CtrlDataItem[index].pButton,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
+
+            m_CtrlItemSizer->Add( m_CtrlDataItem[index].pBoxSizer,0, wxEXPAND, BORDER_WIDTH );
+            break;
+
+
+        default:
+            break;
+    }
+
 }
 
 void DialogBaseClass::SetDataValue(wxString sIdentifier,wxString sData)
@@ -807,5 +814,42 @@ void DialogBaseClass::SetCheckState(wxString sIdentifier, bool bCheckState){
                     break;
             }
         }
+    }
+}
+
+//Before you dropdown, save the combo contents.
+void DialogBaseClass::OnComboDropDown( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    m_sOldSelectionText = combo->GetValue();
+
+}
+void DialogBaseClass::OnComboChange( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+    wxString value = combo->GetStringSelection();
+
+    if(m_sOldSelectionText.IsEmpty())
+        combo->SetValue(value);
+    else{
+        m_sOldSelectionText << " - " << value;
+        combo->SetValue(m_sOldSelectionText);
+    }
+}
+
+
+void DialogBaseClass::OnComboCloseUp( wxCommandEvent& event )
+{
+    wxComboBox * combo = (wxComboBox*) event.GetEventObject();
+
+
+    //Remove the comments from the combo.
+    wxString value = combo->GetStringSelection();
+    int i = value.find('[',0);
+
+    if(i!= wxNOT_FOUND){
+        value = value.Left(i);
+        value = value.Trim(true);
+        combo->SetValue(value);
     }
 }

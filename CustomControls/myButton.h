@@ -18,12 +18,17 @@ private:
 
     bool m_bPressedDown;
     wxString m_sAction;
+    wxString m_sFormId;
+    wxString m_sBuildQuery;
 
 public:
     myButton(wxWindow* parent, wxString title);
     void SetAction(wxString sAction);
     wxString GetAction();
-
+    void SetFormId(wxString sId);
+    wxString GetFormId();
+    void SetBuildQuery(wxString sQuery);
+    wxString GetBuildQuery();
 DECLARE_EVENT_TABLE()
 };
 

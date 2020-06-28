@@ -666,9 +666,30 @@ void RunForm::RenderControl(int index)
 
             m_CtrlDataItem[index].pmyButton->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( RunForm::OnButtonClick ), nullptr, this );
 
-
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Action",sAction);
             m_CtrlDataItem[index].pmyButton->SetAction(sAction);
+
+            if(sAction=="ACTION_OPEN_FORM"){
+
+                //See if we have a form saved, then select that form.
+                Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"ActionFormToOpen",sAction);
+                wxArrayString sArray;
+                Utility::GetRecordIDFromTableWhereFieldEquals(Settings.sDatabase, sArray, "usr_Forms", "formName", sAction);
+                m_CtrlDataItem[index].pmyButton->SetFormId(sArray[0]);
+
+                sArray.Clear();
+                Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sArray, "usr_Forms", "usr_queriesId", "usr_FormsId", m_CtrlDataItem[index].pmyButton->GetFormId());
+                wxString queryID = sArray[0];
+
+                sArray.Clear();
+                Utility::GetFieldFromTableWhereFieldEquals(Settings.sDatabase, sArray, "usr_queries", "queryDefinition", "usr_queriesId", queryID);
+                wxString BuildQuery = sArray[0];
+
+                m_CtrlDataItem[index].pmyButton->SetBuildQuery(BuildQuery);
+
+
+
+            }
 
             m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
             m_MainFormSizer->Add( gSizer1,0, wxEXPAND, BORDER_WIDTH );
@@ -1076,6 +1097,13 @@ void RunForm::OnButtonClick( wxCommandEvent& event )
                 DeleteItem(m_TableList[0], m_sCurrentId);
                 Close(true);
             }
+        }
+        else if(sAction=="ACTION_OPEN_FORM") {
+            MyEvent my_event( this );
+            my_event.m_sFormId=pButton->GetFormId();
+            my_event.m_sBuildQuery=pButton->GetBuildQuery();
+            my_event.m_bRunForm=true;
+            GetParent()->ProcessWindowEvent( my_event );
         }
         else
             wxLogMessage(sAction);

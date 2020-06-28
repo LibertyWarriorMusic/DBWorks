@@ -217,25 +217,15 @@ wxString DesignPagePanel::PromptEditSingleTextDialog(wxString sKey, wxString sDi
 
 void DesignPagePanel::OnManageActions(wxCommandEvent& event)
 {
-
     if(m_pObCurrentFormControl!= nullptr){
-
         wxString sControlId = ""; //m_pObCurrentFormControl->GetControlID();
-        ManageActionsDlg * pDlg = new ManageActionsDlg(nullptr, "Avaliable actions", "Select Action");
-        pDlg->SetControlID(sControlId);
-        pDlg->Load();
+        ManageActionsDlg * pDlg = new ManageActionsDlg(nullptr, sControlId, "Avaliable actions", "Select Action");
 
         if(pDlg->ShowModal()==wxOK) {
-
             pDlg->Save();
-            //So we can redraw on the screen.
-       //     m_pObCurrentFormControl->SetAction(pDlg->GetAction());
             RedrawFormObjects();
-
-            //We need to create a new entry in the Form queries.
         }
         pDlg->Destroy();
-
     }
 }
 

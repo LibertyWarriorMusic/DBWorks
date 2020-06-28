@@ -237,6 +237,7 @@ public:
     wxButton *pButton;
     myButton *pmyButton;
     wxListBox *pListBox;
+    wxBoxSizer *pBoxSizer;
     MyTextCtrl *pMyTextCtrl;
     RecordSelector *pRecordSelector;
 
@@ -301,7 +302,104 @@ public:
         pListBox = nullptr;
         pMyTextCtrl = nullptr;
         pRecordSelector = nullptr;
+        pBoxSizer = nullptr;
         iTypeOfControl=CTL_NULL; //Set the control type as a simple text as default
+    };
+    void HideCtrl(){
+
+        if(TitleCtl != nullptr){
+            TitleCtl->Hide();
+            TitleCtl = nullptr;
+        }
+
+
+        if(SpacerCtl != nullptr){
+            SpacerCtl->Hide();
+            SpacerCtl = nullptr;
+        }
+        else if( textCtl !=nullptr){
+            textCtl->Hide();
+            textCtl = nullptr;
+        }
+        else if( comCtl !=nullptr){
+            comCtl->Hide();
+            comCtl = nullptr;
+        }
+
+            //else if( datePickerCtl != nullptr)
+            //datePickerCtl->Destroy();
+            // else if( linkCtl != nullptr)
+            //linkCtl->Close(true);
+        else if( pCheckBox !=  nullptr){
+            pCheckBox->Hide();
+            pCheckBox = nullptr;
+        }
+        else if( pButton  !=  nullptr){
+            pButton->Hide();
+            pButton = nullptr;
+        }
+
+            // else if( pmyButton  !=  nullptr)
+            //pmyButton->Close(true);
+        else if( pListBox  !=  nullptr){
+            pListBox->Hide();
+            pListBox = nullptr;
+        }
+
+        //else if( pMyTextCtrl  !=  nullptr)
+        //pMyTextCtrl->CloseCtrl();
+        // else if( pRecordSelector  != nullptr)
+        //pRecordSelector->Close(true);
+
+
+    };
+    void DestroyCtrl(){
+
+        if(TitleCtl != nullptr){
+            TitleCtl->Destroy();
+            TitleCtl = nullptr;
+        }
+
+
+        if(SpacerCtl != nullptr){
+            SpacerCtl->Destroy();
+            SpacerCtl = nullptr;
+        }
+        else if( textCtl !=nullptr){
+            textCtl->Destroy();
+            textCtl = nullptr;
+        }
+        else if( comCtl !=nullptr){
+            comCtl->Destroy();
+            comCtl = nullptr;
+        }
+
+        //else if( datePickerCtl != nullptr)
+            //datePickerCtl->Destroy();
+       // else if( linkCtl != nullptr)
+            //linkCtl->Close(true);
+        else if( pCheckBox !=  nullptr){
+            pCheckBox->Destroy();
+            pCheckBox = nullptr;
+        }
+        else if( pButton  !=  nullptr){
+            pButton->Destroy();
+            pButton = nullptr;
+        }
+
+       // else if( pmyButton  !=  nullptr)
+            //pmyButton->Close(true);
+        else if( pListBox  !=  nullptr){
+            pListBox->Destroy();
+            pListBox = nullptr;
+        }
+
+        //else if( pMyTextCtrl  !=  nullptr)
+            //pMyTextCtrl->CloseCtrl();
+       // else if( pRecordSelector  != nullptr)
+            //pRecordSelector->Close(true);
+
+
     };
 
     //We need to set the type identifier when we set the type names.

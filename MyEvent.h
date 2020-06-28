@@ -11,6 +11,7 @@ class MyEvent : public wxEvent
 
     wxString m_sTableName;
     wxString m_sTableId;
+    wxString m_sFormId;
     wxString m_sDatabaseName;
     wxString m_sNewDatabaseName;
 
@@ -49,6 +50,7 @@ class MyEvent : public wxEvent
     wxString m_sWhereCondition;
     wxString m_sQueryToApply;
     wxString m_sTitle;
+    wxString m_sBuildQuery;
     //DRAWING
     bool m_bRedraw = false;
     bool m_bAddTableObject = false;

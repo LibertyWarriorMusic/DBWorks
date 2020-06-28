@@ -11,6 +11,7 @@ class DialogBaseClass : public wxDialog{
 private:
     wxDECLARE_EVENT_TABLE();
     wxBoxSizer* m_MainFormSizer;
+    wxBoxSizer* m_CtrlItemSizer;
     wxButton* m_Cancel;
     wxButton* m_bOk;
     wxArrayString m_asSelectionItemArray;
@@ -28,6 +29,7 @@ private:
     void OnComboDropDown( wxCommandEvent& event );
     void OnComboChange( wxCommandEvent& event );
     void OnComboCloseUp( wxCommandEvent& event );
+    void RenderCtrl(int index);
 protected:
     wxBoxSizer* GetMainSizer();
     int GetCtlIndex(wxString sIdentifier); // Get the index to the control by the identifier.
@@ -51,8 +53,10 @@ public:
 
     //USER FUNCTIONS
     void AddCtlItem(int iTypeOfControl, wxString TitleName, wxString Description, wxString sIdentifier, int ID = wxID_ANY);
+    void RemoveCtlItem(wxString sIdentifier);
+    bool HasCtlItem(wxString sIdentifier);
     void RenderAllControls();
-
+    void RenderNewControl();
     //We are overriding the Destroy function so we can send a message to the parent that this window has been destroyed.
     // This is needed if the parent can null any pointers to this class so they can be tested for null condition.
     bool Destroy() override;

@@ -21,6 +21,8 @@ private:
     int m_CalculatedHeightWindow;
     wxArrayString m_asSelectionItemArray;
 
+
+
     ArrayFieldDataCtls m_CtrlDataItem; // Used to store information about each control
 
     wxString m_sOldSelectionText; //Remember the selectiontext

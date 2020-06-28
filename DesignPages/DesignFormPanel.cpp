@@ -228,9 +228,7 @@ void DesignFormPanel::OnManageActions(wxCommandEvent& event)
     if(m_pObCurrentFormControl!= nullptr){
 
         wxString sControlId = m_pObCurrentFormControl->GetControlID();
-        ManageActionsDlg * pDlg = new ManageActionsDlg(nullptr, "Avaliable actions", "Select Action");
-        pDlg->SetControlID(sControlId);
-        pDlg->Load();
+        ManageActionsDlg * pDlg = new ManageActionsDlg(nullptr, sControlId, "Avaliable actions", "Select Action");
 
         if(pDlg->ShowModal()==wxOK) {
 

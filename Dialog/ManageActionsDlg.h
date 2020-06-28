@@ -9,13 +9,14 @@
 class ManageActionsDlg : public DialogBaseClass{
 
 public:
-    ManageActionsDlg(wxWindow* parent, wxString sDialogTitle, wxString sFieldTitle);
-
-    void SetControlID(wxString id);
+    ManageActionsDlg(wxWindow* parent, wxString id, wxString sDialogTitle, wxString sFieldTitle);
     wxString GetAction();
     void Save(); // Save the items to the database
-    void Load(); // Load the list of items
+
 private:
     wxString m_sControlID;
+    wxString m_sSelectedAction;
+    void CheckActionChange(wxString sAction);
+    void OnActionComboChange( wxCommandEvent& event );
 };
 #endif //DBWORKS_ManageActionsDlg_H
