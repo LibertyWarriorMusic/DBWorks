@@ -6,12 +6,15 @@
 #define DBWORKS_RunForm_H
 #include<wx/wxhtml.h>
 
+class RecordScrollDisplay;
+
 //Query Mode
 enum {
     mode_select = wxID_HIGHEST + 3000, // m_bStartObLinkageSide  m_pEndTableObject
     mode_insert, // m_bStartObLinkageSide  m_pEndTableObject
     mode_update
 };
+
 
 class RunForm : public wxWindow{
 
@@ -20,8 +23,7 @@ private:
     wxBoxSizer* m_MainFormSizer;
     int m_CalculatedHeightWindow;
     wxArrayString m_asSelectionItemArray;
-
-
+    RecordScrollDisplay *m_pRecordScrollDisplay;
 
     ArrayFieldDataCtls m_CtrlDataItem; // Used to store information about each control
 
@@ -51,7 +53,6 @@ private:
     void OnComboDropDown( wxCommandEvent& event );
     void OnComboChange( wxCommandEvent& event );
     void OnButtonClick( wxCommandEvent& event );
-    void OnChangeRecord( wxCommandEvent& event );
     void OnMyEvent(MyEvent& event);
 
     //This the DialogBaseClass, these are public functions and sIdentifier can be set to any value.

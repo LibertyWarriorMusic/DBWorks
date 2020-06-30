@@ -198,6 +198,7 @@ public:
 
     //Generic Database Functions
     static bool GetSingleFieldRecords(wxString sQueryString, wxString FieldToGet,wxArrayString& ArrayFieldResults);
+    static int GetNumberOfRecords(wxString sQueryString);
     static bool LoadArrayFieldRecordFromQuery(ArrayFieldRecord &aRecord, wxString sQuery);
 
 };

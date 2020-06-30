@@ -132,6 +132,10 @@ void DesignFormPanel::rightClick(wxMouseEvent& event)
             menu->Append(ID_MENU_MANAGE_ACTIONS, wxT("Manage Actions"), wxT("Manage Actions"));
 
         }
+        else if(m_pObCurrentFormControl->GetTypeName()=="CTL_GRID_DISPLAY")
+        {
+
+        }
         else if(m_pObCurrentFormControl->GetTypeName()!="CTL_RECORD_SELECTOR")
         {
             menu->Append(ID_MENU_EDIT_STATIC, wxT("Set Label"), wxT("Set the Label."));

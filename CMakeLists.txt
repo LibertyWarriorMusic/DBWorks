@@ -28,6 +28,7 @@ set(SOURCE_FILES
         CustomControls/MyTextCtrl.cpp
         CustomControls/myButton.cpp
         CustomControls/RecordSelector.cpp
+        CustomControls/RecordScrollDisplay.cpp
         TableDefDiagram/DiagramFrame.cpp
         TableDefDiagram/ObTablePanel.cpp
         TableDefDiagram/ObTable.cpp

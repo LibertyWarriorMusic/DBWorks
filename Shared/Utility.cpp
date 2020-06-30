@@ -453,6 +453,7 @@ bool Utility::CreateSystemTables(wxString sDatabase)
             query += "('CTL_SELECTION_LOOKUP_NAME'),";
             query += "('CTL_SELECTION_LINKED_NAME'),";
             query += "('CTL_RECORD_SELECTOR'),";
+            query += "('CTL_GRID_DISPLAY'),";
             query += "('CTL_TIME');";
 
             ExecuteQuery(sDatabase,query);
@@ -4020,4 +4021,37 @@ void Utility::LoadStringArrayWithAllIDSFromTable(wxString sTableName, wxArrayStr
         //wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
     }
 
+}
+
+int Utility::GetNumberOfRecords(wxString sQueryString)
+{
+    wxString database(Settings.sDatabase);
+    wxString server(Settings.sServer);
+    wxString user(Settings.sDatabaseUser);
+    wxString pass(Settings.sPassword);
+
+    // Connect to the sample database.
+    Connection conn(false);
+
+    if (conn.connect((const_cast<char*>((const char*)database.mb_str())),
+                     (const_cast<char*>((const char*)server.mb_str())),
+                     (const_cast<char*>((const char*)user.mb_str())),
+                     (const_cast<char*>((const char*)pass.mb_str())))) {
+
+        //Remove those stupid unicode characters that mySQL doesn't understand.
+        Utility::EscapeAscii(sQueryString);
+        Query query = conn.query(sQueryString);
+        StoreQueryResult res = query.store();
+
+        if (res) {
+            return res.num_rows();
+        }
+        else {
+            //wxLogMessage(MSG_DATABASE_FAIL_ITEM_LIST);
+        }
+    }
+    else{
+        // wxLogMessage(MSG_DATABASE_CONNECTION_FAILURE);
+    }
+    return 0;
 }

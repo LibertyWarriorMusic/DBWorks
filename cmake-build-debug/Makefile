@@ -177,6 +177,33 @@ CustomControls/MyTextCtrl.cpp.s:
 	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/CustomControls/MyTextCtrl.cpp.s
 .PHONY : CustomControls/MyTextCtrl.cpp.s
 
+CustomControls/RecordScrollDisplay.o: CustomControls/RecordScrollDisplay.cpp.o
+
+.PHONY : CustomControls/RecordScrollDisplay.o
+
+# target to build an object file
+CustomControls/RecordScrollDisplay.cpp.o:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o
+.PHONY : CustomControls/RecordScrollDisplay.cpp.o
+
+CustomControls/RecordScrollDisplay.i: CustomControls/RecordScrollDisplay.cpp.i
+
+.PHONY : CustomControls/RecordScrollDisplay.i
+
+# target to preprocess a source file
+CustomControls/RecordScrollDisplay.cpp.i:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.i
+.PHONY : CustomControls/RecordScrollDisplay.cpp.i
+
+CustomControls/RecordScrollDisplay.s: CustomControls/RecordScrollDisplay.cpp.s
+
+.PHONY : CustomControls/RecordScrollDisplay.s
+
+# target to generate assembly for a file
+CustomControls/RecordScrollDisplay.cpp.s:
+	$(MAKE) -f CMakeFiles/DBWorks.dir/build.make CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.s
+.PHONY : CustomControls/RecordScrollDisplay.cpp.s
+
 CustomControls/RecordSelector.o: CustomControls/RecordSelector.cpp.o
 
 .PHONY : CustomControls/RecordSelector.o
@@ -1191,6 +1218,9 @@ help:
 	@echo "... CustomControls/MyTextCtrl.o"
 	@echo "... CustomControls/MyTextCtrl.i"
 	@echo "... CustomControls/MyTextCtrl.s"
+	@echo "... CustomControls/RecordScrollDisplay.o"
+	@echo "... CustomControls/RecordScrollDisplay.i"
+	@echo "... CustomControls/RecordScrollDisplay.s"
 	@echo "... CustomControls/RecordSelector.o"
 	@echo "... CustomControls/RecordSelector.i"
 	@echo "... CustomControls/RecordSelector.s"

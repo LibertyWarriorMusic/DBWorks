@@ -211,6 +211,7 @@ enum {
     CTL_SELECTION_LOOKUP_ID,
     CTL_SELECTION_LINKED_ID,
     CTL_RECORD_SELECTOR,
+    CTL_GRID_DISPLAY,
     CTL_LISTBOX,
     CTL_MYTEXTCTRL,
     CTL_TIME
@@ -219,6 +220,7 @@ class ListBoxManager;
 class MyTextCtrl;
 class myButton;
 class RecordSelector;
+
 
 //This class is used to generate fields for either database forms or dialog based forms
 class FieldCtlItem  : public TableField
@@ -240,6 +242,7 @@ public:
     wxBoxSizer *pBoxSizer;
     MyTextCtrl *pMyTextCtrl;
     RecordSelector *pRecordSelector;
+
 
     int iTypeOfControl; //Used to identify the type of control we have, combo - checkbox. Identified by the enum above
     bool bFound; // A temp field used for searching items.
@@ -439,6 +442,8 @@ public:
             iTypeOfControl = CTL_SELECTION_LINKED_ID;
         else if(m_sTypeName=="CTL_RECORD_SELECTOR")
             iTypeOfControl = CTL_RECORD_SELECTOR;
+        else if(m_sTypeName=="CTL_GRID_DISPLAY")
+            iTypeOfControl = CTL_GRID_DISPLAY;
         else if(m_sTypeName=="CTL_LISTBOX")
             iTypeOfControl = CTL_LISTBOX;
         else if(m_sTypeName=="CTL_MYTEXTCTRL")

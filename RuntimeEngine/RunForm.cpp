@@ -8,6 +8,7 @@
 
 #include "../CustomControls/myButton.h"
 #include "../CustomControls/RecordSelector.h"
+#include "../CustomControls/RecordScrollDisplay.h"
 #include "../MyEvent.h"
 #include "../Shared/Utility.h"
 #include "../Shared/global.h"
@@ -30,6 +31,7 @@ RunForm::RunForm( wxWindow* parent, wxWindowID id, const wxString& title, const 
     wxString m_sFormId=""; //Set for testing
     m_sCurrentId="";
     m_bLoadFields=false;
+    m_pRecordScrollDisplay = nullptr;
 
     m_MainFormSizer = new wxBoxSizer( wxVERTICAL );
 }
@@ -250,9 +252,23 @@ bool RunForm::GetControlIndexWithLowestYValue(int &index){
 //After we add all our control, we call this function to render our constrols to the main sizer so they display
 void RunForm::RenderAllControls()
 {
-    //Clear found flags, just in case
-    for(int idx=0; idx < m_CtrlDataItem.GetCount(); idx++)
+    //Clear found flags, just in case and check for a grid display
+    for(int idx=0; idx < m_CtrlDataItem.GetCount(); idx++){
         m_CtrlDataItem[idx].bFound=false;
+        if(m_CtrlDataItem[idx].iTypeOfControl==CTL_GRID_DISPLAY && m_pRecordScrollDisplay==nullptr){
+            wxSize size(GetFormSize().x, GetFormSize().y);
+            m_pRecordScrollDisplay = new RecordScrollDisplay(this,wxID_ANY, wxDefaultPosition, size,(unsigned)wxVSCROLL | (unsigned)wxFULL_REPAINT_ON_RESIZE);
+
+            if(m_TableList.GetCount()>0){
+                m_pRecordScrollDisplay->LoadAllRecordID(m_TableList[0]);
+                m_sCurrentId = m_pRecordScrollDisplay->GetCurrentRecordID();
+                int noRecord = Utility::GetNumberOfRecords(m_sBuildQuery);
+                m_pRecordScrollDisplay->SetScrollbar(wxVERTICAL,0,1,noRecord);
+
+                m_bLoadFields=true; //Make sure we load the first field.
+            }
+        }
+    }
 
     int LowestIndex = wxNOT_FOUND;
     while(GetControlIndexWithLowestYValue(LowestIndex)){
@@ -288,6 +304,11 @@ void RunForm::RenderControl(int index)
     bool bWebLink = false;
     unsigned long style=0;
 
+    wxWindow *pParent = this;
+
+    if(m_pRecordScrollDisplay != nullptr)
+        pParent = m_pRecordScrollDisplay;
+
 
     sFlags =  m_CtrlDataItem[index].Flags; // Get additional flags for the control
     switch(m_CtrlDataItem[index].iTypeOfControl) {
@@ -297,7 +318,7 @@ void RunForm::RenderControl(int index)
         case CTL_SPACER :
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].SpacerCtl = new wxStaticText( this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].SpacerCtl = new wxStaticText( pParent, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0 );
             //m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             //m_CtrlDataItem[index].TitleCtl->SetSize(500,30);
             //m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
@@ -312,10 +333,10 @@ void RunForm::RenderControl(int index)
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
 
-            m_CtrlDataItem[index].SpacerCtl = new wxStaticText( this, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].SpacerCtl = new wxStaticText( pParent, wxID_ANY, "", wxDefaultPosition, wxDefaultSize, 0 );
             gSizer1->Add( m_CtrlDataItem[index].SpacerCtl, 0, wxALL, BORDER_WIDTH);
 
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             //m_CtrlDataItem[index].TitleCtl->SetSize(500,30);
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
@@ -327,7 +348,7 @@ void RunForm::RenderControl(int index)
             break;
         case CTL_TEXT :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -339,7 +360,7 @@ void RunForm::RenderControl(int index)
             else if(Utility::HasFlag(m_CtrlDataItem[index].Flags,"PASSWORD") )
                 style = wxTE_PASSWORD;
 
-            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
             m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
@@ -354,7 +375,7 @@ void RunForm::RenderControl(int index)
             break;
         case CTL_PASSWORD :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -367,7 +388,7 @@ void RunForm::RenderControl(int index)
 
             style |= wxTE_PASSWORD;
 
-            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
             m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
@@ -383,7 +404,7 @@ void RunForm::RenderControl(int index)
         case CTL_MULTI_TEXT :
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -400,7 +421,7 @@ void RunForm::RenderControl(int index)
 
             //m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style);
 
-            m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_CtrlDataItem[index].textCtl = new wxTextCtrl( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
             m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,TEXTCTLMULTI_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].textCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
@@ -415,7 +436,7 @@ void RunForm::RenderControl(int index)
 
         case CTL_SELECTION_LINKED_NAME :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -426,7 +447,7 @@ void RunForm::RenderControl(int index)
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Display_Field",sFieldName);
 
 
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
+            m_CtrlDataItem[index].comCtl = new wxComboBox( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
             //Fill the list box with the selection items.
@@ -442,7 +463,7 @@ void RunForm::RenderControl(int index)
             break;
         case CTL_SELECTION_LOOKUP_NAME :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -453,7 +474,7 @@ void RunForm::RenderControl(int index)
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,"Linked_Table",sTableName);
             Utility::LoadTableData(Settings.sDatabase,"usr_controls",sControlId,"Display_Field",sFieldName);
 
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
+            m_CtrlDataItem[index].comCtl = new wxComboBox( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style );
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
             //Fill the list box with the selection items.
@@ -470,7 +491,7 @@ void RunForm::RenderControl(int index)
 
         case CTL_SELECTION_ADDITIVE :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -493,7 +514,7 @@ void RunForm::RenderControl(int index)
                 m_CtrlDataItem[index].comCtl->Disable();
             }
 
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+            m_CtrlDataItem[index].comCtl = new wxComboBox( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
 
             //Fill the list box with the selection items.
@@ -516,7 +537,7 @@ void RunForm::RenderControl(int index)
         case CTL_SELECTION :
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -541,7 +562,7 @@ void RunForm::RenderControl(int index)
                 m_CtrlDataItem[index].comCtl->Disable();
             }
 
-            m_CtrlDataItem[index].comCtl = new wxComboBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
+            m_CtrlDataItem[index].comCtl = new wxComboBox( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0,0,style);
 
 
             gSizer1->Add( m_CtrlDataItem[index].comCtl, ALLOW_TO_GROW , wxEXPAND, BORDER_WIDTH);
@@ -565,13 +586,13 @@ void RunForm::RenderControl(int index)
             break;
         case CTL_CHECKBOX :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
             style=0;
 
-            m_CtrlDataItem[index].pCheckBox = new wxCheckBox( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
+            m_CtrlDataItem[index].pCheckBox = new wxCheckBox( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, 0);
             gSizer1->Add( m_CtrlDataItem[index].pCheckBox, 0, wxALL, BORDER_WIDTH );
 
             m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
@@ -580,14 +601,14 @@ void RunForm::RenderControl(int index)
             break;
         case CTL_DATE :
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
             style=0;
 
             style = wxDP_DEFAULT | wxDP_DROPDOWN | wxDP_SHOWCENTURY;
-            m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( this, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, style );
+            m_CtrlDataItem[index].datePickerCtl = new wxDatePickerCtrl( pParent, wxID_ANY, wxDefaultDateTime, wxDefaultPosition, wxDefaultSize, style );
 
             m_CtrlDataItem[index].datePickerCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].datePickerCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
@@ -609,7 +630,7 @@ void RunForm::RenderControl(int index)
         case CTL_WEBLINK :
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].Title, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sLabel);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
@@ -623,7 +644,7 @@ void RunForm::RenderControl(int index)
 
             if(bWebLink){
                 //This Hyperlink control needs to have a URL and label, so I just added google, but it gets writen over
-                m_CtrlDataItem[index].linkCtl = new wxHyperlinkCtrl( this, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
+                m_CtrlDataItem[index].linkCtl = new wxHyperlinkCtrl( pParent, wxID_ANY,"weblink","https://www.google.com", wxDefaultPosition, wxDefaultSize, wxHL_CONTEXTMENU | wxHL_DEFAULT_STYLE ,wxHyperlinkCtrlNameStr);
                 m_CtrlDataItem[index].linkCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
                 gSizer1->Add( m_CtrlDataItem[index].linkCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
                 m_CtrlDataItem[index].linkCtl->SetURL("");
@@ -635,7 +656,7 @@ void RunForm::RenderControl(int index)
                 }
             }else{
 
-                m_CtrlDataItem[index].textCtl = new wxTextCtrl( this, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
+                m_CtrlDataItem[index].textCtl = new wxTextCtrl( pParent, wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, style );
                 m_CtrlDataItem[index].textCtl->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
                 gSizer1->Add( m_CtrlDataItem[index].textCtl,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
@@ -654,13 +675,13 @@ void RunForm::RenderControl(int index)
 
 
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sDescription);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
             style = 0;
 
-            m_CtrlDataItem[index].pmyButton = new myButton( this, m_CtrlDataItem[index].m_sLabel );
+            m_CtrlDataItem[index].pmyButton = new myButton( pParent, m_CtrlDataItem[index].m_sLabel );
             m_CtrlDataItem[index].pmyButton->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].pmyButton,ALLOW_TO_GROW, wxEXPAND, BORDER_WIDTH );
 
@@ -698,30 +719,21 @@ void RunForm::RenderControl(int index)
 
         case CTL_RECORD_SELECTOR :
 
-
             gSizer1 = new wxBoxSizer( wxHORIZONTAL );
-            m_CtrlDataItem[index].TitleCtl = new wxStaticText( this, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
+            m_CtrlDataItem[index].TitleCtl = new wxStaticText( pParent, wxID_ANY, m_CtrlDataItem[index].m_sDescription, wxDefaultPosition, wxDefaultSize, 0 );
             m_CtrlDataItem[index].TitleCtl->Wrap( -1 );
             m_CtrlDataItem[index].TitleCtl->SetLabel(m_CtrlDataItem[index].m_sDescription);
             gSizer1->Add( m_CtrlDataItem[index].TitleCtl, 0, wxALL, BORDER_WIDTH);
             style = 0;
 
-            m_CtrlDataItem[index].pRecordSelector = new RecordSelector( this, "Record Selector" );
+            m_CtrlDataItem[index].pRecordSelector = new RecordSelector( pParent, "Record Selector" );
             m_CtrlDataItem[index].pRecordSelector->SetMinSize( wxSize( TEXTCTL_WIDTH,CTRL_HEIGHT ) );
             gSizer1->Add( m_CtrlDataItem[index].pRecordSelector,0, wxALL, BORDER_WIDTH );
-
-            m_CtrlDataItem[index].pRecordSelector->Connect( wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler( RunForm::OnChangeRecord ), nullptr, this );
 
             if(m_TableList.GetCount()>0){
                 m_CtrlDataItem[index].pRecordSelector->LoadAllRecordID(m_TableList[0]);
                     m_sCurrentId = m_CtrlDataItem[index].pRecordSelector->GetCurrentRecordID();
             }
-
-
-            //Utility::LoadTableData(Settings.sDatabase,"usr_controls",m_CtrlDataItem[index].m_sControlId,"Action",sAction);
-
-            //We need to load the record selector with all the tableId's from the query.
-            //m_CtrlDataItem[index].pRecordSelector->SetAction(sAction);
 
             m_CalculatedHeightWindow += CTRL_HEIGHT + BORDER_WIDTH + BORDER_WIDTH;
             m_MainFormSizer->Add( gSizer1,0, 0, BORDER_WIDTH );
@@ -1108,11 +1120,6 @@ void RunForm::OnButtonClick( wxCommandEvent& event )
         else
             wxLogMessage(sAction);
     }
-}
-
-void RunForm::OnChangeRecord( wxCommandEvent& event )
-{
-    wxLogMessage("Change Record");
 }
 
 //Before you dropdown, save the combo contents.

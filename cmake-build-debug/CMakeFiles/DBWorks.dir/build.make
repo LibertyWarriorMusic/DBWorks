@@ -369,9 +369,22 @@ CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.s"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.cpp -o CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.s
 
+CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o: CMakeFiles/DBWorks.dir/flags.make
+CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o: ../CustomControls/RecordScrollDisplay.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.cpp
+
+CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.i"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.cpp > CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.i
+
+CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.s"
+	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.cpp -o CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.s
+
 CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o: ../TableDefDiagram/DiagramFrame.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/DiagramFrame.cpp
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.i: cmake_force
@@ -384,7 +397,7 @@ CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o: ../TableDefDiagram/ObTablePanel.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTablePanel.cpp
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.i: cmake_force
@@ -397,7 +410,7 @@ CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o: ../TableDefDiagram/ObTable.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/ObTable.cpp
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.i: cmake_force
@@ -410,7 +423,7 @@ CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.o: ../TableDefDiagram/TableDiagramFrame.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/TableDefDiagram/TableDiagramFrame.cpp
 
 CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.i: cmake_force
@@ -423,7 +436,7 @@ CMakeFiles/DBWorks.dir/TableDefDiagram/TableDiagramFrame.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.o: ../Dialog/SelectionFieldQueryDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SelectionFieldQueryDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.i: cmake_force
@@ -436,7 +449,7 @@ CMakeFiles/DBWorks.dir/Dialog/SelectionFieldQueryDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.o: ../Dialog/ManageActionsDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ManageActionsDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.i: cmake_force
@@ -449,7 +462,7 @@ CMakeFiles/DBWorks.dir/Dialog/ManageActionsDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.o: ../Dialog/ListBoxDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ListBoxDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.i: cmake_force
@@ -462,7 +475,7 @@ CMakeFiles/DBWorks.dir/Dialog/ListBoxDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.o: ../Dialog/LinkedTableDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/LinkedTableDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.i: cmake_force
@@ -475,7 +488,7 @@ CMakeFiles/DBWorks.dir/Dialog/LinkedTableDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.o: ../Dialog/SetFlagsDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SetFlagsDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.i: cmake_force
@@ -488,7 +501,7 @@ CMakeFiles/DBWorks.dir/Dialog/SetFlagsDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.o: ../Dialog/MultiTextDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/MultiTextDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.i: cmake_force
@@ -501,7 +514,7 @@ CMakeFiles/DBWorks.dir/Dialog/MultiTextDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.o: ../Dialog/SingleTextDlg.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/SingleTextDlg.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.i: cmake_force
@@ -514,7 +527,7 @@ CMakeFiles/DBWorks.dir/Dialog/SingleTextDlg.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.o: ../Dialog/DialogBaseClass.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogBaseClass.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.i: cmake_force
@@ -527,7 +540,7 @@ CMakeFiles/DBWorks.dir/Dialog/DialogBaseClass.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.o: ../Dialog/ImportMySQLDatabase.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/ImportMySQLDatabase.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.i: cmake_force
@@ -540,7 +553,7 @@ CMakeFiles/DBWorks.dir/Dialog/ImportMySQLDatabase.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.o: ../Dialog/DialogTemplate.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DialogTemplate.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.i: cmake_force
@@ -553,7 +566,7 @@ CMakeFiles/DBWorks.dir/Dialog/DialogTemplate.cpp.s: cmake_force
 
 CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.o: CMakeFiles/DBWorks.dir/flags.make
 CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.o: ../Dialog/DlgTableSelect.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.o"
 	/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.o -c /Users/nicholaszounis/Documents/GitHub/DBWorks/Dialog/DlgTableSelect.cpp
 
 CMakeFiles/DBWorks.dir/Dialog/DlgTableSelect.cpp.i: cmake_force
@@ -590,6 +603,7 @@ DBWorks_OBJECTS = \
 "CMakeFiles/DBWorks.dir/CustomControls/MyTextCtrl.cpp.o" \
 "CMakeFiles/DBWorks.dir/CustomControls/myButton.cpp.o" \
 "CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.o" \
+"CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o" \
 "CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o" \
 "CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o" \
 "CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o" \
@@ -633,6 +647,7 @@ DBWorks: CMakeFiles/DBWorks.dir/CustomControls/ListBoxManager.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/CustomControls/MyTextCtrl.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/CustomControls/myButton.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.o
+DBWorks: CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/TableDefDiagram/DiagramFrame.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/TableDefDiagram/ObTablePanel.cpp.o
 DBWorks: CMakeFiles/DBWorks.dir/TableDefDiagram/ObTable.cpp.o
@@ -661,7 +676,7 @@ DBWorks: /usr/local/lib/libpng.dylib
 DBWorks: /usr/local/lib/libjpeg.dylib
 DBWorks: /usr/lib/libz.dylib
 DBWorks: CMakeFiles/DBWorks.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Linking CXX executable DBWorks"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Linking CXX executable DBWorks"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/DBWorks.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

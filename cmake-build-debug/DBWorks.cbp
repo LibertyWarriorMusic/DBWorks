@@ -108,6 +108,12 @@
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/MyTextCtrl.h">
 			<Option target="DBWorks"/>
 		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.cpp">
+			<Option target="DBWorks"/>
+		</Unit>
+		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.h">
+			<Option target="DBWorks"/>
+		</Unit>
 		<Unit filename="/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.cpp">
 			<Option target="DBWorks"/>
 		</Unit>

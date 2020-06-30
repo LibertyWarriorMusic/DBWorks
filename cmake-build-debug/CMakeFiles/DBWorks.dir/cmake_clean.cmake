@@ -1,6 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/DBWorks.dir/CustomControls/ListBoxManager.cpp.o"
   "CMakeFiles/DBWorks.dir/CustomControls/MyTextCtrl.cpp.o"
+  "CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o"
   "CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.o"
   "CMakeFiles/DBWorks.dir/CustomControls/myButton.cpp.o"
   "CMakeFiles/DBWorks.dir/CustomControls/myProgressControl.cpp.o"

@@ -6,6 +6,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_CHECK_CXX
   "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/ListBoxManager.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/ListBoxManager.cpp.o"
   "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/MyTextCtrl.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/MyTextCtrl.cpp.o"
+  "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordScrollDisplay.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/RecordScrollDisplay.cpp.o"
   "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/RecordSelector.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/RecordSelector.cpp.o"
   "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myButton.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/myButton.cpp.o"
   "/Users/nicholaszounis/Documents/GitHub/DBWorks/CustomControls/myProgressControl.cpp" "/Users/nicholaszounis/Documents/GitHub/DBWorks/cmake-build-debug/CMakeFiles/DBWorks.dir/CustomControls/myProgressControl.cpp.o"

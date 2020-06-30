@@ -7,6 +7,7 @@
 #include "../MyEvent.h"
 #include "../Shared/global.h"
 #include "../Shared/Utility.h"
+#include "RunFormFrame.h"
 
 #include "RunForm.h"
 
@@ -117,8 +118,15 @@ bool MainRunPage::Destroy()
 
 void MainRunPage::OnMyEvent(MyEvent& event) {
 
-    if (event.m_bDestroyed) {
-        Close();
-    }
+        if (event.m_bDestroyed)
+            Close(true);
+        else if(event.m_bRunForm){
+
+            RunFormFrame* pRunFormFrame = new RunFormFrame((wxFrame *) this, -1, "Run Form", wxDefaultPosition, wxDefaultSize,wxDEFAULT_FRAME_STYLE);
+            pRunFormFrame->SetFormID(event.m_sFormId); // The formId is used to load the form definition from the database.
+            pRunFormFrame->Create(event.m_sBuildQuery);
+            pRunFormFrame->Show(true);
+        }
+
 }
 
